@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avaliações — Painel Administrativo</title>
+
+  <link rel="icon" href="../assets/img/favicon.png">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <link href="../assets/css/style.css" rel="stylesheet">
+  <link href="../assets/css/admin.css" rel="stylesheet">
+</head>
+
+<body>
+  <div class="admin-wrapper">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="admin-sidebar">
+      <div class="sidebar-brand">
+        <i class="bi bi-bag-heart-fill"></i>
+        <span>Loja MZ</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link">
+          <i class="bi bi-speedometer2"></i>
+          <span>Dashboard</span>
+        </a>
+
+        <a href="produtos.html" class="sidebar-link">
+          <i class="bi bi-box-seam"></i>
+          <span>Produtos</span>
+        </a>
+
+        <a href="categorias.html" class="sidebar-link">
+          <i class="bi bi-tags"></i>
+          <span>Categorias</span>
+        </a>
+
+        <a href="marcas.html" class="sidebar-link">
+          <i class="bi bi-award"></i>
+          <span>Marcas</span>
+        </a>
+
+        <a href="pedidos.html" class="sidebar-link">
+          <i class="bi bi-receipt"></i>
+          <span>Pedidos</span>
+        </a>
+
+        <a href="clientes.html" class="sidebar-link">
+          <i class="bi bi-people"></i>
+          <span>Clientes</span>
+        </a>
+
+        <a href="cupoes.html" class="sidebar-link">
+          <i class="bi bi-ticket-perforated"></i>
+          <span>Cupões</span>
+        </a>
+
+        <a href="banners.html" class="sidebar-link">
+          <i class="bi bi-image"></i>
+          <span>Banners</span>
+        </a>
+
+        <a href="avaliacoes.html" class="sidebar-link active">
+          <i class="bi bi-star"></i>
+          <span>Avaliações</span>
+        </a>
+
+        <a href="relatorios.html" class="sidebar-link">
+          <i class="bi bi-graph-up"></i>
+          <span>Relatórios</span>
+        </a>
+
+        <a href="configuracoes.html" class="sidebar-link">
+          <i class="bi bi-gear"></i>
+          <span>Configurações</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn btn-outline-light w-100" id="admin-logout-button">
+          <i class="bi bi-box-arrow-right me-2"></i>
+          Terminar sessão
+        </button>
+      </div>
+    </aside>
+
+    <!-- Conteúdo -->
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <button class="btn btn-light d-lg-none" id="sidebar-toggle">
+          <i class="bi bi-list"></i>
+        </button>
+
+        <h1 class="admin-title">Avaliações</h1>
+      </header>
+
+      <div class="admin-content">
+        <div class="admin-card">
+          <div class="row g-3 mb-4">
+            <div class="col-md-5">
+              <input type="text" class="form-control" id="review-search" placeholder="Pesquisar por produto ou comentário...">
+            </div>
+
+            <div class="col-md-3">
+              <select class="form-select" id="review-status-filter">
+                <option value="">Todas</option>
+                <option value="approved">Aprovadas</option>
+                <option value="pending">Pendentes</option>
+              </select>
+            </div>
+
+            <div class="col-md-2">
+              <select class="form-select" id="review-rating-filter">
+                <option value="">Todas as notas</option>
+                <option value="5">5 estrelas</option>
+                <option value="4">4 estrelas</option>
+                <option value="3">3 estrelas</option>
+                <option value="2">2 estrelas</option>
+                <option value="1">1 estrela</option>
+              </select>
+            </div>
+
+            <div class="col-md-2">
+              <select class="form-select" id="review-sort">
+                <option value="newest">Mais recentes</option>
+                <option value="rating_desc">Maior nota</option>
+                <option value="rating_asc">Menor nota</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Cliente</th>
+                  <th>Nota</th>
+                  <th>Comentário</th>
+                  <th>Estado</th>
+                  <th>Data</th>
+                  <th class="text-end">Ações</th>
+                </tr>
+              </thead>
+
+              <tbody id="reviews-table">
+                <tr>
+                  <td colspan="7" class="text-center text-muted py-4">
+                    A carregar avaliações...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <nav class="mt-4">
+            <ul class="pagination justify-content-center mb-0" id="reviews-pagination"></ul>
+          </nav>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="review-modal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar avaliação</h5>
+
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nota</label>
+            <select class="form-select" id="review-rating-input">
+              <option value="5">5 estrelas</option>
+              <option value="4">4 estrelas</option>
+              <option value="3">3 estrelas</option>
+              <option value="2">2 estrelas</option>
+              <option value="1">1 estrela</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Comentário</label>
+            <textarea class="form-control" id="review-comment-input" rows="4"></textarea>
+          </div>
+
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="review-approved-input">
+            <label class="form-check-label" for="review-approved-input">
+              Avaliação aprovada
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            Cancelar
+          </button>
+
+          <button type="button" class="btn btn-primary" id="save-review-button">
+            <i class="bi bi-check2 me-1"></i>
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/supabase.js"></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/admin/admin-auth.js"></script>
+  <script src="../assets/js/admin/reviews-admin.js"></script>
+</body>
+</html>

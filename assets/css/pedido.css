@@ -1,0 +1,193 @@
+/* =========================================
+   Loja MZ — Página do pedido
+   ========================================= */
+
+.order-card {
+  background-color: var(--white);
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: var(--shadow-sm);
+}
+
+.order-card h5 {
+  font-weight: 800;
+  margin-bottom: 20px;
+}
+
+.order-status-badge {
+  display: inline-block;
+  font-size: .85rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 50px;
+}
+
+.status-pending {
+  background-color: rgba(255, 193, 7, .15);
+  color: #856404;
+}
+
+.status-processing {
+  background-color: rgba(13, 110, 253, .12);
+  color: var(--primary);
+}
+
+.status-shipped {
+  background-color: rgba(25, 135, 84, .12);
+  color: var(--success);
+}
+
+.status-delivered {
+  background-color: rgba(25, 135, 84, .18);
+  color: var(--success);
+}
+
+.status-cancelled {
+  background-color: rgba(220, 53, 69, .12);
+  color: var(--danger);
+}
+
+.order-progress {
+  height: 10px;
+  border-radius: 50px;
+  background-color: var(--light);
+}
+
+.order-progress .progress-bar {
+  background-color: var(--primary);
+  transition: width .6s ease;
+}
+
+.order-steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.order-step {
+  flex: 1;
+  text-align: center;
+  color: var(--gray-light);
+  font-size: .82rem;
+  font-weight: 600;
+}
+
+.order-step i {
+  display: block;
+  font-size: 1.5rem;
+  margin-bottom: 6px;
+}
+
+.order-step.active {
+  color: var(--primary);
+}
+
+.order-step.completed {
+  color: var(--success);
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.order-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.order-item-info h6 {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.order-item-total {
+  font-weight: 800;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.order-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.order-info-grid small {
+  display: block;
+  color: var(--gray);
+  margin-bottom: 4px;
+}
+
+.order-info-grid strong {
+  color: var(--dark);
+  font-weight: 600;
+}
+
+.order-info-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+.order-summary {
+  background-color: var(--white);
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 105px;
+}
+
+.order-summary h5 {
+  font-weight: 800;
+  margin-bottom: 20px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  color: var(--gray);
+}
+
+.total-row {
+  font-size: 1.15rem;
+  color: var(--dark);
+}
+
+.total-row strong {
+  color: var(--primary);
+  font-size: 1.35rem;
+}
+
+@media (max-width: 767px) {
+  .order-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .order-steps {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .order-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+  }
+
+  .order-step i {
+    margin-bottom: 0;
+  }
+
+  .order-summary {
+    position: static;
+  }
+}

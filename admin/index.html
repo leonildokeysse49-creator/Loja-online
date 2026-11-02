@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Administrativo — Loja MZ</title>
+
+  <link rel="icon" href="../assets/img/favicon.png">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js">
+
+  <link href="../assets/css/style.css" rel="stylesheet">
+  <link href="../assets/css/admin.css" rel="stylesheet">
+</head>
+
+<body>
+  <div class="admin-wrapper">
+
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="admin-sidebar">
+      <div class="sidebar-brand">
+        <i class="bi bi-bag-heart-fill"></i>
+        <span>Loja MZ</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link active">
+          <i class="bi bi-speedometer2"></i>
+          <span>Dashboard</span>
+        </a>
+
+        <a href="produtos.html" class="sidebar-link">
+          <i class="bi bi-box-seam"></i>
+          <span>Produtos</span>
+        </a>
+
+        <a href="categorias.html" class="sidebar-link">
+          <i class="bi bi-tags"></i>
+          <span>Categorias</span>
+        </a>
+
+        <a href="marcas.html" class="sidebar-link">
+          <i class="bi bi-award"></i>
+          <span>Marcas</span>
+        </a>
+
+        <a href="pedidos.html" class="sidebar-link">
+          <i class="bi bi-receipt"></i>
+          <span>Pedidos</span>
+        </a>
+
+        <a href="clientes.html" class="sidebar-link">
+          <i class="bi bi-people"></i>
+          <span>Clientes</span>
+        </a>
+
+        <a href="cupoes.html" class="sidebar-link">
+          <i class="bi bi-ticket-perforated"></i>
+          <span>Cupões</span>
+        </a>
+
+        <a href="banners.html" class="sidebar-link">
+          <i class="bi bi-image"></i>
+          <span>Banners</span>
+        </a>
+
+        <a href="avaliacoes.html" class="sidebar-link">
+          <i class="bi bi-star"></i>
+          <span>Avaliações</span>
+        </a>
+
+        <a href="relatorios.html" class="sidebar-link">
+          <i class="bi bi-graph-up"></i>
+          <span>Relatórios</span>
+        </a>
+
+        <a href="configuracoes.html" class="sidebar-link">
+          <i class="bi bi-gear"></i>
+          <span>Configurações</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn btn-outline-light w-100" id="admin-logout-button">
+          <i class="bi bi-box-arrow-right me-2"></i>
+          Terminar sessão
+        </button>
+      </div>
+    </aside>
+
+    <!-- Conteúdo -->
+    <main class="admin-main">
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <button class="btn btn-light d-lg-none" id="sidebar-toggle">
+          <i class="bi bi-list"></i>
+        </button>
+
+        <h1 class="admin-title">Dashboard</h1>
+
+        <div class="d-flex align-items-center gap-3">
+          <div class="dropdown">
+            <button class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown">
+              <i class="bi bi-person-circle me-1"></i>
+              <span id="admin-name">Administrador</span>
+            </button>
+
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li>
+                <a class="dropdown-item" href="../index.html">
+                  <i class="bi bi-shop me-2"></i>
+                  Ver loja
+                </a>
+              </li>
+
+              <li>
+                <button class="dropdown-item" id="dropdown-logout-button">
+                  <i class="bi bi-box-arrow-right me-2"></i>
+                  Terminar sessão
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </header>
+
+      <!-- Dashboard -->
+      <div class="admin-content">
+        <div id="admin-loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">A carregar...</span>
+          </div>
+
+          <p class="mt-3 text-muted">A carregar painel...</p>
+        </div>
+
+        <div id="admin-content" class="d-none">
+          <!-- Indicadores -->
+          <div class="row g-4 mb-4">
+            <div class="col-sm-6 col-xl-3">
+              <div class="stat-card">
+                <div class="stat-icon bg-primary">
+                  <i class="bi bi-currency-dollar"></i>
+                </div>
+
+                <div>
+                  <small>Vendas totais</small>
+                  <h3 id="total-sales">MT 0,00</h3>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-6 col-xl-3">
+              <div class="stat-card">
+                <div class="stat-icon bg-success">
+                  <i class="bi bi-receipt"></i>
+                </div>
+
+                <div>
+                  <small>Pedidos</small>
+                  <h3 id="total-orders">0</h3>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-6 col-xl-3">
+              <div class="stat-card">
+                <div class="stat-icon bg-warning">
+                  <i class="bi bi-people"></i>
+                </div>
+
+                <div>
+                  <small>Clientes</small>
+                  <h3 id="total-customers">0</h3>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-6 col-xl-3">
+              <div class="stat-card">
+                <div class="stat-icon bg-danger">
+                  <i class="bi bi-box-seam"></i>
+                </div>
+
+                <div>
+                  <small>Produtos</small>
+                  <h3 id="total-products">0</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gráfico e pedidos -->
+          <div class="row g-4">
+            <div class="col-lg-8">
+              <div class="admin-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="mb-0">Vendas por mês</h5>
+                </div>
+
+                <canvas id="sales-chart" height="120"></canvas>
+              </div>
+            </div>
+
+            <div class="col-lg-4">
+              <div class="admin-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="mb-0">Últimos pedidos</h5>
+
+                  <a href="pedidos.html" class="btn btn-sm btn-outline-primary">
+                    Ver todos
+                  </a>
+                </div>
+
+                <div id="recent-orders"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stock baixo -->
+          <div class="row g-4 mt-4">
+            <div class="col-12">
+              <div class="admin-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="mb-0">Produtos com stock baixo</h5>
+
+                  <a href="produtos.html" class="btn btn-sm btn-outline-primary">
+                    Gerir produtos
+                  </a>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table align-middle">
+                    <thead>
+                      <tr>
+                        <th>Produto</th>
+                        <th>Categoria</th>
+                        <th>Preço</th>
+                        <th>Stock</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+
+                    <tbody id="low-stock-products"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/supabase.js"></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/admin/admin-auth.js"></script>
+  <script src="../assets/js/admin/dashboard.js"></script>
+</body>
+</html>

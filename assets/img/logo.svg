@@ -1,0 +1,123 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="720"
+  height="520"
+  viewBox="0 0 720 520"
+  fill="none"
+>
+  <title>Loja MZ</title>
+  <desc>
+    Ilustração de uma sacola de compras e um telemóvel.
+  </desc>
+
+  <rect width="720" height="520" rx="36" fill="#EFF6FF"/>
+
+  <circle cx="370" cy="260" r="195" fill="#DBEAFE"/>
+  <circle cx="590" cy="105" r="30" fill="#FED7AA"/>
+  <circle cx="115" cy="390" r="22" fill="#BFDBFE"/>
+
+  <ellipse
+    cx="365"
+    cy="440"
+    rx="220"
+    ry="25"
+    fill="#CBD5E1"
+    fill-opacity=".5"
+  />
+
+  <path
+    d="M180 205H390L410 415H160L180 205Z"
+    fill="#0D6EFD"
+  />
+
+  <path
+    d="M230 208V175C230 143 252 120 285 120
+       C318 120 340 143 340 175V208"
+    stroke="#084298"
+    stroke-width="16"
+    stroke-linecap="round"
+  />
+
+  <path
+    d="M252 305L278 331L330 275"
+    stroke="white"
+    stroke-width="15"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <g transform="rotate(10 480 280)">
+    <rect
+      x="413"
+      y="132"
+      width="142"
+      height="282"
+      rx="24"
+      fill="#111827"
+    />
+
+    <rect
+      x="424"
+      y="145"
+      width="120"
+      height="253"
+      rx="16"
+      fill="white"
+    />
+
+    <rect
+      x="456"
+      y="153"
+      width="56"
+      height="8"
+      rx="4"
+      fill="#CBD5E1"
+    />
+
+    <rect
+      x="438"
+      y="185"
+      width="92"
+      height="105"
+      rx="12"
+      fill="#DBEAFE"
+    />
+
+    <circle cx="484" cy="234" r="25" fill="#0D6EFD"/>
+
+    <path
+      d="M473 234L481 242L496 225"
+      stroke="white"
+      stroke-width="5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <rect
+      x="438"
+      y="308"
+      width="76"
+      height="9"
+      rx="4.5"
+      fill="#94A3B8"
+    />
+
+    <rect
+      x="438"
+      y="327"
+      width="55"
+      height="9"
+      rx="4.5"
+      fill="#CBD5E1"
+    />
+
+    <rect
+      x="438"
+      y="352"
+      width="92"
+      height="27"
+      rx="8"
+      fill="#FD7E14"
+    />
+  </g>
+</svg>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contacto — Loja MZ</title>
+
+  <link rel="icon" href="assets/img/favicon.png">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+
+<body>
+  <div class="topbar py-2">
+    <div class="container d-flex justify-content-between align-items-center small">
+      <span>
+        <i class="bi bi-telephone me-1"></i>
+        +258 85 321 7149
+      </span>
+
+      <div class="dropdown">
+        <button class="btn btn-sm btn-language dropdown-toggle" data-bs-toggle="dropdown">
+          <i class="bi bi-translate me-1"></i>
+          <span id="current-language">PT</span>
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><button class="dropdown-item" data-language="pt">Português</button></li>
+          <li><button class="dropdown-item" data-language="en">English</button></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <nav class="navbar navbar-expand-lg main-navbar sticky-top">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">
+        <i class="bi bi-bag-heart-fill brand-icon"></i>
+        <span class="brand-name">Loja MZ</span>
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainMenu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainMenu">
+        <ul class="navbar-nav mx-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="index.html" data-i18n="home">Início</a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="produtos.html" data-i18n="products">Produtos</a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="conta.html" data-i18n="my_account">A minha conta</a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link active" href="contacto.html" data-i18n="contact">Contacto</a>
+          </li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2 ms-lg-3">
+          <a href="login.html" class="btn btn-light btn-icon">
+            <i class="bi bi-person-circle"></i>
+          </a>
+
+          <a href="carrinho.html" class="btn btn-light btn-icon position-relative">
+            <i class="bi bi-cart3"></i>
+
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cart-count">
+              0
+            </span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-header">
+    <div class="container">
+      <h1 data-i18n="contact">Contacto</h1>
+      <p class="mb-0">Fale connosco para dúvidas, pedidos ou suporte.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="feature-card">
+            <h4 class="mb-4">Contactos diretos</h4>
+
+            <div class="info-item">
+              <i class="bi bi-envelope"></i>
+              <span>leonildokeysse49@gmail.com</span>
+            </div>
+
+            <div class="info-item">
+              <i class="bi bi-telephone"></i>
+              <span>+258 85 321 7149</span>
+            </div>
+
+            <div class="info-item">
+              <i class="bi bi-whatsapp"></i>
+              <span>+258 85 321 7149</span>
+            </div>
+
+            <a href="https://wa.me/258853217149" target="_blank" class="btn btn-success w-100 mt-3">
+              <i class="bi bi-whatsapp me-2"></i>
+              Falar no WhatsApp
+            </a>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="feature-card">
+            <h4 class="mb-4">Enviar mensagem</h4>
+
+            <form id="contact-form">
+              <div class="mb-3">
+                <label class="form-label">Nome</label>
+                <input type="text" class="form-control" id="contact-name" required>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">E-mail</label>
+                <input type="email" class="form-control" id="contact-email" required>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Mensagem</label>
+                <textarea class="form-control" id="contact-message" rows="5" required></textarea>
+              </div>
+
+              <button class="btn btn-primary w-100" type="submit">
+                <i class="bi bi-send me-2"></i>
+                Enviar mensagem
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container text-center">
+      <p class="mb-0">© <span id="year"></span> Loja MZ. Todos os direitos reservados.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/supabase.js"></script>
+  <script src="assets/js/utils.js"></script>
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script src="assets/js/contact.js"></script>
+</body>
+</html>

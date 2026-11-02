@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clientes — Painel Administrativo</title>
+
+  <link rel="icon" href="../assets/img/favicon.png">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <link href="../assets/css/style.css" rel="stylesheet">
+  <link href="../assets/css/admin.css" rel="stylesheet">
+</head>
+
+<body>
+  <div class="admin-wrapper">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="admin-sidebar">
+      <div class="sidebar-brand">
+        <i class="bi bi-bag-heart-fill"></i>
+        <span>Loja MZ</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link">
+          <i class="bi bi-speedometer2"></i>
+          <span>Dashboard</span>
+        </a>
+
+        <a href="produtos.html" class="sidebar-link">
+          <i class="bi bi-box-seam"></i>
+          <span>Produtos</span>
+        </a>
+
+        <a href="categorias.html" class="sidebar-link">
+          <i class="bi bi-tags"></i>
+          <span>Categorias</span>
+        </a>
+
+        <a href="marcas.html" class="sidebar-link">
+          <i class="bi bi-award"></i>
+          <span>Marcas</span>
+        </a>
+
+        <a href="pedidos.html" class="sidebar-link">
+          <i class="bi bi-receipt"></i>
+          <span>Pedidos</span>
+        </a>
+
+        <a href="clientes.html" class="sidebar-link active">
+          <i class="bi bi-people"></i>
+          <span>Clientes</span>
+        </a>
+
+        <a href="cupoes.html" class="sidebar-link">
+          <i class="bi bi-ticket-perforated"></i>
+          <span>Cupões</span>
+        </a>
+
+        <a href="banners.html" class="sidebar-link">
+          <i class="bi bi-image"></i>
+          <span>Banners</span>
+        </a>
+
+        <a href="avaliacoes.html" class="sidebar-link">
+          <i class="bi bi-star"></i>
+          <span>Avaliações</span>
+        </a>
+
+        <a href="relatorios.html" class="sidebar-link">
+          <i class="bi bi-graph-up"></i>
+          <span>Relatórios</span>
+        </a>
+
+        <a href="configuracoes.html" class="sidebar-link">
+          <i class="bi bi-gear"></i>
+          <span>Configurações</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn btn-outline-light w-100" id="admin-logout-button">
+          <i class="bi bi-box-arrow-right me-2"></i>
+          Terminar sessão
+        </button>
+      </div>
+    </aside>
+
+    <!-- Conteúdo -->
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <button class="btn btn-light d-lg-none" id="sidebar-toggle">
+          <i class="bi bi-list"></i>
+        </button>
+
+        <h1 class="admin-title">Clientes</h1>
+      </header>
+
+      <div class="admin-content">
+        <div class="admin-card">
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <input type="text" class="form-control" id="customer-search" placeholder="Pesquisar por nome, e-mail ou telefone...">
+            </div>
+
+            <div class="col-md-3">
+              <select class="form-select" id="customer-role-filter">
+                <option value="">Todos os papéis</option>
+                <option value="customer">Clientes</option>
+                <option value="admin">Administradores</option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <select class="form-select" id="customer-sort">
+                <option value="newest">Mais recentes</option>
+                <option value="name">Nome A-Z</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Contacto</th>
+                  <th>Papel</th>
+                  <th>Registo</th>
+                  <th class="text-end">Ações</th>
+                </tr>
+              </thead>
+
+              <tbody id="customers-table">
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">
+                    A carregar clientes...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <nav class="mt-4">
+            <ul class="pagination justify-content-center mb-0" id="customers-pagination"></ul>
+          </nav>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/supabase.js"></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/admin/admin-auth.js"></script>
+  <script src="../assets/js/admin/customers-admin.js"></script>
+</body>
+</html>

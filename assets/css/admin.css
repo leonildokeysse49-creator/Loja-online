@@ -1,0 +1,391 @@
+/* =========================================
+   Loja MZ — Painel administrativo
+   ========================================= */
+
+:root {
+  --primary: #0d6efd;
+  --primary-dark: #084298;
+  --primary-light: #eff6ff;
+
+  --accent: #fd7e14;
+  --success: #198754;
+  --danger: #dc3545;
+  --warning: #ffc107;
+
+  --dark: #111827;
+  --gray: #6b7280;
+  --gray-light: #9ca3af;
+  --light: #f8fafc;
+  --white: #ffffff;
+
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 20px;
+
+  --shadow-sm: 0 4px 12px rgba(15, 23, 42, .06);
+  --shadow: 0 10px 30px rgba(15, 23, 42, .08);
+
+  --transition: .25s ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background-color: var(--light);
+  color: var(--dark);
+}
+
+a {
+  text-decoration: none;
+}
+
+/* =========================================
+   Layout
+   ========================================= */
+
+.admin-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  width: 265px;
+  background-color: var(--dark);
+  color: #d1d5db;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1040;
+  transition: var(--transition);
+}
+
+.admin-main {
+  flex-grow: 1;
+  margin-left: 265px;
+  min-width: 0;
+}
+
+.admin-content {
+  padding: 28px;
+}
+
+/* =========================================
+   Sidebar
+   ========================================= */
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 22px;
+  color: var(--white);
+  font-size: 1.25rem;
+  font-weight: 800;
+  border-bottom: 1px solid rgba(255, 255, 255, .1);
+}
+
+.sidebar-brand i {
+  color: var(--primary);
+  font-size: 1.6rem;
+}
+
+.sidebar-nav {
+  flex-grow: 1;
+  padding: 18px 14px;
+  overflow-y: auto;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #d1d5db;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.sidebar-link:hover {
+  background-color: rgba(255, 255, 255, .08);
+  color: var(--white);
+}
+
+.sidebar-link.active {
+  background-color: var(--primary);
+  color: var(--white);
+}
+
+.sidebar-link i {
+  font-size: 1.15rem;
+}
+
+.sidebar-footer {
+  padding: 18px;
+  border-top: 1px solid rgba(255, 255, 255, .1);
+}
+
+/* =========================================
+   Topbar
+   ========================================= */
+
+.admin-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background-color: var(--white);
+  padding: 18px 28px;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
+
+.admin-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+/* =========================================
+   Cartões
+   ========================================= */
+
+.admin-card {
+  background-color: var(--white);
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius);
+  padding: 25px;
+  box-shadow: var(--shadow-sm);
+  height: 100%;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background-color: var(--white);
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow-sm);
+  height: 100%;
+}
+
+.stat-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.stat-icon.bg-primary {
+  background-color: var(--primary);
+}
+
+.stat-icon.bg-success {
+  background-color: var(--success);
+}
+
+.stat-icon.bg-warning {
+  background-color: var(--warning);
+}
+
+.stat-icon.bg-danger {
+  background-color: var(--danger);
+}
+
+.stat-card small {
+  color: var(--gray);
+  font-weight: 600;
+}
+
+.stat-card h3 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 4px 0 0;
+}
+
+/* =========================================
+   Tabelas
+   ========================================= */
+
+.table th {
+  font-size: .82rem;
+  text-transform: uppercase;
+  color: var(--gray);
+  font-weight: 700;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.badge-stock-low {
+  background-color: rgba(255, 193, 7, .18);
+  color: #856404;
+}
+
+.badge-stock-out {
+  background-color: rgba(220, 53, 69, .15);
+  color: var(--danger);
+}
+
+.badge-stock-ok {
+  background-color: rgba(25, 135, 84, .15);
+  color: var(--success);
+}
+
+/* =========================================
+   Imagens do formulário
+   ========================================= */
+
+.image-preview {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-preview .remove-image {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =========================================
+   Botões
+   ========================================= */
+
+.btn-primary {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  font-weight: 600;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.btn-primary:disabled {
+  background-color: var(--gray-light);
+  border-color: var(--gray-light);
+}
+
+/* =========================================
+   Responsivo
+   ========================================= */
+
+@media (max-width: 991px) {
+  .admin-sidebar {
+    left: -265px;
+  }
+
+  .admin-sidebar.open {
+    left: 0;
+  }
+
+  .admin-main {
+    margin-left: 0;
+  }
+
+  .admin-content {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 575px) {
+  .admin-topbar {
+    padding: 15px 18px;
+  }
+
+  .admin-content {
+    padding: 16px;
+  }
+
+  .admin-card {
+    padding: 18px;
+  }
+}
+/* =========================================
+   Clientes
+   ========================================= */
+
+.customer-avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: .9rem;
+  flex-shrink: 0;
+}
+
+.customer-order {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.customer-order:last-child {
+  border-bottom: 0;
+}
+/* =========================================
+   Banners
+   ========================================= */
+
+.banner-preview {
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background-color: var(--light);
+}
+
+.banner-preview img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+}
+/* =========================================
+   Avaliações
+   ========================================= */
+
+.review-comment {
+  max-width: 260px;
+}
