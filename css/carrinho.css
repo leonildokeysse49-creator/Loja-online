@@ -1,0 +1,124 @@
+/* =========================================
+   Loja MZ — Carrinho
+   ========================================= */
+
+.cart-items-card,
+.cart-summary-card {
+  background-color: var(--white);
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius);
+  padding: 25px;
+  box-shadow: var(--shadow-sm);
+}
+
+.cart-summary-card {
+  position: sticky;
+  top: 105px;
+}
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.cart-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.cart-item-image {
+  width: 95px;
+  height: 95px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background-color: var(--light);
+  flex-shrink: 0;
+}
+
+.cart-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cart-item-info {
+  flex-grow: 1;
+}
+
+.cart-item-info h6 {
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.cart-item-price {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.cart-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.quantity-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.quantity-control .quantity-input {
+  width: 62px;
+  height: 38px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.cart-item-total {
+  min-width: 105px;
+  font-weight: 800;
+  color: var(--dark);
+  text-align: right;
+}
+
+.cart-summary-card h5 {
+  font-weight: 800;
+  margin-bottom: 20px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  color: var(--gray);
+}
+
+.total-row {
+  font-size: 1.15rem;
+  color: var(--dark);
+}
+
+.total-row strong {
+  color: var(--primary);
+  font-size: 1.3rem;
+}
+
+@media (max-width: 767px) {
+  .cart-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cart-item-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .cart-summary-card {
+    position: static;
+  }
+}
