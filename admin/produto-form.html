@@ -2,7 +2,10 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>Produto — Administração Loja MZ</title>
 
@@ -18,10 +21,133 @@
 
   <link href="../assets/css/style.css" rel="stylesheet">
   <link href="../assets/css/admin.css" rel="stylesheet">
+
+  <style>
+    /* Ajustes específicos deste formulário. */
+
+    #product-form,
+    #product-fields {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    #product-fields {
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    #product-form .product-section {
+      height: auto;
+      min-width: 0;
+      margin-bottom: 20px;
+      scroll-margin-top: 110px;
+    }
+
+    .product-section-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .product-section-heading i {
+      color: var(--primary);
+    }
+
+    .product-section-heading h2 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 750;
+    }
+
+    .product-section-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .product-section-links a {
+      padding: 8px 12px;
+      color: var(--primary);
+      background-color: var(--primary-light);
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      font-size: .85rem;
+      font-weight: 600;
+    }
+
+    .product-section-links a:hover {
+      color: var(--white);
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    #product-form textarea {
+      min-height: 88px;
+    }
+
+    #product-form .description-long {
+      min-height: 120px;
+    }
+
+    #product-form .image-source-box {
+      padding: 16px;
+      border: 1px solid var(--admin-border, #e5e7eb);
+      border-radius: var(--radius-sm);
+    }
+
+    #product-form .image-source-box + .image-source-box {
+      margin-top: 16px;
+    }
+
+    .product-save-panel {
+      padding: 18px;
+      background-color: var(--white);
+      border: 1px solid var(--admin-border, #e5e7eb);
+      border-radius: var(--radius);
+    }
+
+    @media (max-width: 575.98px) {
+      #product-form .product-section {
+        margin-bottom: 16px;
+        padding: 16px;
+      }
+
+      .product-section-heading {
+        margin-bottom: 14px;
+      }
+
+      .product-section-heading h2 {
+        font-size: 1rem;
+      }
+
+      .product-section-links {
+        gap: 6px;
+        margin-bottom: 16px;
+      }
+
+      .product-section-links a {
+        padding: 7px 10px;
+        font-size: .78rem;
+      }
+
+      #product-form .form-label {
+        font-size: .82rem;
+      }
+
+      #product-form .image-source-box {
+        padding: 12px;
+      }
+    }
+  </style>
 </head>
 
 <body>
   <div class="admin-wrapper">
+
+    <!-- Menu administrativo -->
     <aside class="admin-sidebar" id="admin-sidebar">
       <div class="sidebar-brand">
         <i class="bi bi-bag-heart-fill" aria-hidden="true"></i>
@@ -34,7 +160,11 @@
           <span>Dashboard</span>
         </a>
 
-        <a href="produtos.html" class="sidebar-link active">
+        <a
+          href="produtos.html"
+          class="sidebar-link active"
+          aria-current="page"
+        >
           <i class="bi bi-box-seam" aria-hidden="true"></i>
           <span>Produtos</span>
         </a>
@@ -97,13 +227,17 @@
       </div>
     </aside>
 
+    <!-- Conteúdo principal -->
     <main class="admin-main">
+
       <header class="admin-topbar">
         <button
           type="button"
           class="btn btn-light d-lg-none"
           id="sidebar-toggle"
           aria-label="Abrir menu"
+          aria-controls="admin-sidebar"
+          aria-expanded="false"
         >
           <i class="bi bi-list" aria-hidden="true"></i>
         </button>
@@ -119,6 +253,7 @@
       </header>
 
       <div class="admin-content">
+
         <div
           id="product-form-status"
           class="alert alert-info"
@@ -127,15 +262,42 @@
           A preparar formulário...
         </div>
 
+        <!-- Atalhos para não depender de uma rolagem longa -->
+        <nav
+          class="product-section-links"
+          aria-label="Secções do produto"
+        >
+          <a href="#product-basic-section">Dados básicos</a>
+          <a href="#product-pricing-section">Preço e stock</a>
+          <a href="#product-images-section">Imagens</a>
+          <a href="#product-description-section">Descrições</a>
+          <a href="#product-organization-section">Categoria</a>
+        </nav>
+
         <form id="product-form">
           <fieldset id="product-fields" disabled>
+            <legend class="visually-hidden">
+              Dados do produto
+            </legend>
+
             <div class="row g-4">
-              <div class="col-lg-8">
-                <section class="admin-card mb-4">
-                  <h2 class="h5 mb-3">Informação principal</h2>
+
+              <!-- Coluna principal -->
+              <div class="col-12 col-lg-8">
+
+                <!-- Dados básicos -->
+                <section
+                  id="product-basic-section"
+                  class="admin-card product-section"
+                  aria-labelledby="product-basic-title"
+                >
+                  <div class="product-section-heading">
+                    <i class="bi bi-box-seam" aria-hidden="true"></i>
+                    <h2 id="product-basic-title">Dados básicos</h2>
+                  </div>
 
                   <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-12 col-md-6">
                       <label for="name-pt" class="form-label">
                         Nome em português *
                       </label>
@@ -149,7 +311,7 @@
                       >
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-12 col-md-6">
                       <label for="name-en" class="form-label">
                         Nome em inglês
                       </label>
@@ -162,7 +324,7 @@
                       >
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-12 col-sm-6">
                       <label for="slug" class="form-label">
                         Slug *
                       </label>
@@ -177,7 +339,7 @@
                       >
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-12 col-sm-6">
                       <label for="sku" class="form-label">SKU</label>
 
                       <input
@@ -187,7 +349,169 @@
                         maxlength="100"
                       >
                     </div>
+                  </div>
+                </section>
 
+                <!-- Preço e stock: agora antes das descrições -->
+                <section
+                  id="product-pricing-section"
+                  class="admin-card product-section"
+                  aria-labelledby="product-pricing-title"
+                >
+                  <div class="product-section-heading">
+                    <i class="bi bi-cash-stack" aria-hidden="true"></i>
+                    <h2 id="product-pricing-title">Preço e stock</h2>
+                  </div>
+
+                  <div class="row g-3">
+                    <div class="col-12 col-sm-6 col-xl-4">
+                      <label for="price" class="form-label">
+                        Preço normal (MT) *
+                      </label>
+
+                      <input
+                        id="price"
+                        class="form-control"
+                        type="number"
+                        inputmode="decimal"
+                        step="0.01"
+                        min="0"
+                        placeholder="0,00"
+                        required
+                      >
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-xl-4">
+                      <label for="promotional-price" class="form-label">
+                        Preço promocional (MT)
+                      </label>
+
+                      <input
+                        id="promotional-price"
+                        class="form-control"
+                        type="number"
+                        inputmode="decimal"
+                        step="0.01"
+                        min="0"
+                        placeholder="Opcional"
+                      >
+                    </div>
+
+                    <div class="col-12 col-xl-4">
+                      <label for="stock" class="form-label">
+                        Stock disponível *
+                      </label>
+
+                      <input
+                        id="stock"
+                        class="form-control"
+                        type="number"
+                        inputmode="numeric"
+                        step="1"
+                        min="0"
+                        value="0"
+                        required
+                      >
+                    </div>
+                  </div>
+                </section>
+
+                <!-- Imagens -->
+                <section
+                  id="product-images-section"
+                  class="admin-card product-section"
+                  aria-labelledby="product-images-title"
+                >
+                  <div class="product-section-heading">
+                    <i class="bi bi-images" aria-hidden="true"></i>
+                    <h2 id="product-images-title">Imagens do produto</h2>
+                  </div>
+
+                  <p class="text-muted small">
+                    Até 10 imagens por upload ou URL.
+                    A primeira será a imagem principal.
+                  </p>
+
+                  <div class="image-source-box">
+                    <label
+                      for="image-files"
+                      class="form-label fw-semibold"
+                    >
+                      <i class="bi bi-upload me-1" aria-hidden="true"></i>
+                      Upload de imagens
+                    </label>
+
+                    <input
+                      id="image-files"
+                      class="form-control"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      aria-describedby="image-upload-help"
+                    >
+
+                    <div id="image-upload-help" class="form-text">
+                      JPEG, PNG ou WebP. Até 5 MB por imagem.
+                      O envio é feito ao guardar.
+                    </div>
+                  </div>
+
+                  <div class="image-source-box">
+                    <label
+                      for="main-image"
+                      class="form-label fw-semibold"
+                    >
+                      <i class="bi bi-link-45deg me-1" aria-hidden="true"></i>
+                      Imagem por URL
+                    </label>
+
+                    <div class="input-group">
+                      <input
+                        id="main-image"
+                        class="form-control"
+                        type="url"
+                        placeholder="https://exemplo.com/imagem.jpg"
+                        aria-describedby="image-url-help"
+                      >
+
+                      <button
+                        id="add-image-button"
+                        class="btn btn-outline-primary"
+                        type="button"
+                      >
+                        Adicionar
+                      </button>
+                    </div>
+
+                    <div id="image-url-help" class="form-text">
+                      Usa o endereço público direto da imagem.
+                    </div>
+                  </div>
+
+                  <p
+                    id="images-count"
+                    class="small text-muted mt-3"
+                  ></p>
+
+                  <div
+                    id="images-preview"
+                    class="row g-3"
+                    aria-live="polite"
+                  ></div>
+                </section>
+
+                <!-- Descrições separadas dos dados principais -->
+                <section
+                  id="product-description-section"
+                  class="admin-card product-section"
+                  aria-labelledby="product-description-title"
+                >
+                  <div class="product-section-heading">
+                    <i class="bi bi-text-paragraph" aria-hidden="true"></i>
+                    <h2 id="product-description-title">Descrições</h2>
+                  </div>
+
+                  <div class="row g-3">
                     <div class="col-12">
                       <label for="description-pt" class="form-label">
                         Descrição em português
@@ -213,152 +537,49 @@
                     </div>
 
                     <div class="col-12">
-                      <label for="long-description-pt" class="form-label">
+                      <label
+                        for="long-description-pt"
+                        class="form-label"
+                      >
                         Descrição longa em português
                       </label>
 
                       <textarea
                         id="long-description-pt"
-                        class="form-control"
-                        rows="5"
+                        class="form-control description-long"
+                        rows="4"
                       ></textarea>
                     </div>
 
                     <div class="col-12">
-                      <label for="long-description-en" class="form-label">
+                      <label
+                        for="long-description-en"
+                        class="form-label"
+                      >
                         Descrição longa em inglês
                       </label>
 
                       <textarea
                         id="long-description-en"
-                        class="form-control"
-                        rows="5"
+                        class="form-control description-long"
+                        rows="4"
                       ></textarea>
                     </div>
                   </div>
                 </section>
-
-                <section class="admin-card mb-4">
-                  <h2 class="h5 mb-3">Preço e stock</h2>
-
-                  <div class="row g-3">
-                    <div class="col-md-4">
-                      <label for="price" class="form-label">
-                        Preço normal (MT) *
-                      </label>
-
-                      <input
-                        id="price"
-                        class="form-control"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        required
-                      >
-                    </div>
-
-                    <div class="col-md-4">
-                      <label for="promotional-price" class="form-label">
-                        Preço promocional (MT)
-                      </label>
-
-                      <input
-                        id="promotional-price"
-                        class="form-control"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                      >
-                    </div>
-
-                    <div class="col-md-4">
-                      <label for="stock" class="form-label">
-                        Stock *
-                      </label>
-
-                      <input
-                        id="stock"
-                        class="form-control"
-                        type="number"
-                        step="1"
-                        min="0"
-                        value="0"
-                        required
-                      >
-                    </div>
-                  </div>
-                </section>
-
-                <section class="admin-card mb-4">
-                  <h2 class="h5 mb-2">Imagens do produto</h2>
-
-                  <p class="text-muted small">
-                    Adiciona até 10 imagens por URL ou upload.
-                    A primeira imagem será a principal.
-                  </p>
-
-                  <div class="border rounded p-3 mb-3">
-                    <label for="image-files" class="form-label fw-semibold">
-                      <i class="bi bi-upload me-1" aria-hidden="true"></i>
-                      Upload do computador ou telemóvel
-                    </label>
-
-                    <input
-                      id="image-files"
-                      class="form-control"
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      multiple
-                    >
-
-                    <div class="form-text">
-                      JPEG, PNG ou WebP. Máximo de 5 MB por imagem.
-                      O envio ocorre ao guardar o produto.
-                    </div>
-                  </div>
-
-                  <div class="border rounded p-3 mb-3">
-                    <label for="main-image" class="form-label fw-semibold">
-                      <i class="bi bi-link-45deg me-1" aria-hidden="true"></i>
-                      Adicionar por URL
-                    </label>
-
-                    <div class="input-group">
-                      <input
-                        id="main-image"
-                        class="form-control"
-                        type="url"
-                        placeholder="https://exemplo.com/imagem.jpg"
-                      >
-
-                      <button
-                        id="add-image-button"
-                        class="btn btn-outline-primary"
-                        type="button"
-                      >
-                        Adicionar
-                      </button>
-                    </div>
-
-                    <div class="form-text">
-                      Usa um URL público direto da imagem.
-                      Imagens por URL não são copiadas para o Storage.
-                    </div>
-                  </div>
-
-                  <p id="images-count" class="small text-muted"></p>
-
-                  <div
-                    id="images-preview"
-                    class="row g-3"
-                    aria-live="polite"
-                  ></div>
-                </section>
               </div>
 
-              <div class="col-lg-4">
-                <section class="admin-card mb-4">
-                  <h2 class="h5 mb-3">Organização</h2>
+              <!-- Organização e publicação -->
+              <div class="col-12 col-lg-4">
+                <section
+                  id="product-organization-section"
+                  class="admin-card product-section"
+                  aria-labelledby="product-organization-title"
+                >
+                  <div class="product-section-heading">
+                    <i class="bi bi-tags" aria-hidden="true"></i>
+                    <h2 id="product-organization-title">Organização</h2>
+                  </div>
 
                   <label for="category" class="form-label">
                     Categoria *
@@ -372,15 +593,23 @@
                     <option value="">Seleciona</option>
                   </select>
 
-                  <label for="brand" class="form-label">Marca</label>
+                  <label for="brand" class="form-label">
+                    Marca
+                  </label>
 
                   <select id="brand" class="form-select">
                     <option value="">Sem marca</option>
                   </select>
                 </section>
 
-                <section class="admin-card mb-4">
-                  <h2 class="h5 mb-3">Publicação</h2>
+                <section
+                  class="admin-card product-section"
+                  aria-labelledby="product-publication-title"
+                >
+                  <div class="product-section-heading">
+                    <i class="bi bi-eye" aria-hidden="true"></i>
+                    <h2 id="product-publication-title">Publicação</h2>
+                  </div>
 
                   <div class="form-check form-switch mb-3">
                     <input
@@ -390,7 +619,10 @@
                       checked
                     >
 
-                    <label for="is-active" class="form-check-label">
+                    <label
+                      for="is-active"
+                      class="form-check-label"
+                    >
                       Produto ativo
                     </label>
                   </div>
@@ -402,27 +634,32 @@
                       type="checkbox"
                     >
 
-                    <label for="is-featured" class="form-check-label">
+                    <label
+                      for="is-featured"
+                      class="form-check-label"
+                    >
                       Produto destacado
                     </label>
                   </div>
                 </section>
 
-                <button
-                  id="save-product-button"
-                  class="btn btn-primary btn-lg w-100"
-                  type="submit"
-                >
-                  <i class="bi bi-check2 me-1" aria-hidden="true"></i>
-                  Guardar produto
-                </button>
+                <div class="product-save-panel">
+                  <button
+                    id="save-product-button"
+                    class="btn btn-primary btn-lg w-100"
+                    type="submit"
+                  >
+                    <i class="bi bi-check2 me-1" aria-hidden="true"></i>
+                    Guardar produto
+                  </button>
 
-                <p
-                  id="upload-status"
-                  class="small text-muted mt-3"
-                  role="status"
-                  aria-live="polite"
-                ></p>
+                  <p
+                    id="upload-status"
+                    class="small text-muted mt-3 mb-0"
+                    role="status"
+                    aria-live="polite"
+                  ></p>
+                </div>
               </div>
             </div>
           </fieldset>
