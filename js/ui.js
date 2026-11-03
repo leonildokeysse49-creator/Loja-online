@@ -1,9 +1,40 @@
+
 /* =========================================
    Loja MZ — Interface partilhada
    ========================================= */
 
 (function initializeSharedUI() {
   "use strict";
+
+  const CART_KEY = "loja_mz_cart";
+
+  function getCart() {
+    try {
+      const value = JSON.parse(
+        localStorage.getItem(CART_KEY) || "[]"
+      );
+
+      return Array.isArray(value) ? value : [];
+    } catch (error) {
+      console.warn("[Loja MZ] Carrinho inválido:", error);
+      return [];
+    }
+  }
+
+  function updateCartCount() {
+    const badge = document.getElementById("cart-count");
+
+    if (!badge) return;
+
+    const cart = getCart();
+
+    const total = cart.reduce(
+      (sum, item) => sum + (Number(item.quantity) || 0),
+      0
+    );
+
+    badge.textContent = String(total);
+  }
 
   function updateYear() {
     const year = document.getElementById("year");
@@ -34,17 +65,11 @@
     const input = document.getElementById("search-input");
     const button = document.getElementById("search-button");
 
-    if (!input || !button) {
-      return;
-    }
+    if (!input || !button) return;
 
     function submitSearch() {
       const query = input.value.trim();
-
-      const url = new URL(
-        "produtos.html",
-        window.location.href
-      );
+      const url = new URL("produtos.html", window.location.href);
 
       if (query) {
         url.searchParams.set("pesquisa", query);
@@ -68,19 +93,14 @@
     }
   }
 
-  function refreshCartCount() {
-    if (typeof updateCartCount !== "function") {
-      return;
-    }
-
-    try {
-      updateCartCount();
-    } catch (error) {
-      console.warn(
-        "[Loja MZ] Não foi possível atualizar o contador do carrinho:",
-        error
-      );
-    }
+  function initializeLanguageMenu() {
+    document.querySelectorAll("[data-language]").forEach(button => {
+      button.addEventListener("click", () => {
+        if (typeof setLanguage === "function") {
+          setLanguage(button.dataset.language);
+        }
+      });
+    });
   }
 
   function initializePage() {
@@ -96,9 +116,10 @@
     }
 
     updateYear();
-    refreshCartCount();
+    updateCartCount();
     initializeAnimations();
     initializeSearch();
+    initializeLanguageMenu();
   }
 
   if (document.readyState === "loading") {
@@ -112,13 +133,10 @@
   }
 
   window.addEventListener("storage", event => {
-    if (
-      event.key === "loja_mz_cart" ||
-      event.key === null
-    ) {
-      refreshCartCount();
+    if (event.key === CART_KEY || event.key === null) {
+      updateCartCount();
     }
   });
 
-  window.addEventListener("pageshow", refreshCartCount);
+  window.addEventListener("pageshow", updateCartCount);
 })();

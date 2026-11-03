@@ -1,3 +1,4 @@
+
 /* =========================================
    Loja MZ — Estilos globais
    ========================================= */
@@ -63,6 +64,9 @@ img {
    ========================================= */
 
 .topbar {
+  position: relative;
+  z-index: 1055;
+
   background-color: var(--dark);
   color: var(--white);
   font-size: .85rem;
@@ -74,6 +78,14 @@ img {
 
 .topbar a:hover {
   color: var(--primary-light);
+}
+
+.topbar .dropdown {
+  position: relative;
+}
+
+.topbar .dropdown-menu {
+  z-index: 1060;
 }
 
 .btn-language {

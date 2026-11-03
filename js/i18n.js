@@ -1,10 +1,10 @@
+
 /* =========================================
    Loja MZ — Sistema de tradução PT / EN
    ========================================= */
 
 const translations = {
   pt: {
-    /* Geral */
     home: "Início",
     products: "Produtos",
     categories: "Categorias",
@@ -20,11 +20,7 @@ const translations = {
     rights: "Todos os direitos reservados.",
     quick_links: "Links rápidos",
     footer_about: "A sua loja online para malas, roupas, telemóveis e acessórios em Moçambique.",
-
-    /* Topbar */
     free_delivery: "Entregas em Maputo",
-
-    /* Homepage */
     hero_badge: "Novidades",
     hero_title: "Compre malas, roupas, telemóveis e acessórios",
     hero_text: "Produtos selecionados com preços em Metical e entrega em Moçambique.",
@@ -42,8 +38,6 @@ const translations = {
     error_loading_categories: "Erro ao carregar categorias.",
     error_loading_products: "Erro ao carregar produtos.",
     added_to_cart: "Produto adicionado ao carrinho",
-
-    /* Catálogo */
     all_products: "Todos os produtos disponíveis",
     filters: "Filtros",
     category: "Categoria",
@@ -67,8 +61,6 @@ const translations = {
     out_of_stock: "Esgotado",
     add_to_cart: "Adicionar",
     loading_products: "A carregar produtos...",
-
-    /* Produto */
     product_not_found: "Produto não encontrado",
     back_to_products: "Voltar aos produtos",
     choose_option: "Escolha uma opção",
@@ -83,8 +75,6 @@ const translations = {
     delivery_info: "Entrega em Maputo e outras zonas.",
     payment_info: "Multicaixa Express, transferência ou pagamento na entrega.",
     support_info: "Suporte: +258 85 321 7149",
-
-    /* Carrinho */
     shopping_cart: "Carrinho de compras",
     cart_empty: "O seu carrinho está vazio",
     cart_empty_text: "Adicione produtos para continuar a compra.",
@@ -104,8 +94,6 @@ const translations = {
     delivery_fee: "Taxa de entrega",
     calculated_at_checkout: "Calculado no checkout",
     free: "Grátis",
-
-    /* Checkout */
     checkout_title: "Finalizar compra",
     checkout_subtitle: "Confirme os seus dados e finalize o pedido.",
     customer_information: "Dados do cliente",
@@ -138,8 +126,6 @@ const translations = {
     order_error_text: "Verifique os dados e tente novamente.",
     fill_required_fields: "Preencha os campos obrigatórios",
     check_form_data: "Verifique os dados do formulário.",
-
-    /* Pedido */
     my_orders: "Os meus pedidos",
     order_details: "Detalhes do pedido",
     order_not_found: "Pedido não encontrado",
@@ -159,15 +145,11 @@ const translations = {
     confirmed: "Confirmado",
     failed: "Falhou",
     refunded: "Reembolsado",
-    multicaixa_express: "Multicaixa Express",
-    bank_transfer: "Transferência bancária",
-    cash_on_delivery: "Pagamento na entrega",
     back_to_home: "Voltar ao início",
     contact_support: "Contactar suporte"
   },
 
   en: {
-    /* General */
     home: "Home",
     products: "Products",
     categories: "Categories",
@@ -183,11 +165,7 @@ const translations = {
     rights: "All rights reserved.",
     quick_links: "Quick links",
     footer_about: "Your online store for bags, clothes, phones and accessories in Mozambique.",
-
-    /* Topbar */
     free_delivery: "Deliveries in Maputo",
-
-    /* Homepage */
     hero_badge: "New arrivals",
     hero_title: "Shop bags, clothes, phones and accessories",
     hero_text: "Selected products with prices in Mozambican Metical and delivery across Mozambique.",
@@ -205,8 +183,6 @@ const translations = {
     error_loading_categories: "Error loading categories.",
     error_loading_products: "Error loading products.",
     added_to_cart: "Product added to cart",
-
-    /* Catalog */
     all_products: "All available products",
     filters: "Filters",
     category: "Category",
@@ -230,8 +206,6 @@ const translations = {
     out_of_stock: "Out of stock",
     add_to_cart: "Add",
     loading_products: "Loading products...",
-
-    /* Product */
     product_not_found: "Product not found",
     back_to_products: "Back to products",
     choose_option: "Choose an option",
@@ -246,8 +220,6 @@ const translations = {
     delivery_info: "Delivery in Maputo and other areas.",
     payment_info: "Multicaixa Express, bank transfer or cash on delivery.",
     support_info: "Support: +258 85 321 7149",
-
-    /* Cart */
     shopping_cart: "Shopping cart",
     cart_empty: "Your cart is empty",
     cart_empty_text: "Add products to continue shopping.",
@@ -267,8 +239,6 @@ const translations = {
     delivery_fee: "Delivery fee",
     calculated_at_checkout: "Calculated at checkout",
     free: "Free",
-
-    /* Checkout */
     checkout_title: "Checkout",
     checkout_subtitle: "Confirm your details and complete your order.",
     customer_information: "Customer information",
@@ -301,8 +271,6 @@ const translations = {
     order_error_text: "Check your details and try again.",
     fill_required_fields: "Fill in the required fields",
     check_form_data: "Check the form data.",
-
-    /* Order */
     my_orders: "My orders",
     order_details: "Order details",
     order_not_found: "Order not found",
@@ -322,17 +290,10 @@ const translations = {
     confirmed: "Confirmed",
     failed: "Failed",
     refunded: "Refunded",
-    multicaixa_express: "Multicaixa Express",
-    bank_transfer: "Bank transfer",
-    cash_on_delivery: "Cash on delivery",
     back_to_home: "Back to home",
     contact_support: "Contact support"
   }
 };
-
-/* =========================================
-   Idioma atual
-   ========================================= */
 
 function getCurrentLanguage() {
   const savedLanguage = localStorage.getItem("loja_mz_language");
@@ -341,18 +302,18 @@ function getCurrentLanguage() {
     return savedLanguage;
   }
 
-  return APP_CONFIG?.defaultLanguage || "pt";
+  return window.APP_CONFIG?.defaultLanguage || "pt";
 }
 
 function getTranslation(key) {
   const language = getCurrentLanguage();
 
-  return translations[language]?.[key] || translations.pt[key] || key;
+  return (
+    translations[language]?.[key] ||
+    translations.pt[key] ||
+    key
+  );
 }
-
-/* =========================================
-   Aplicar traduções
-   ========================================= */
 
 function applyTranslations() {
   const language = getCurrentLanguage();
@@ -399,29 +360,10 @@ function applyTranslations() {
   });
 }
 
-/* =========================================
-   Mudar idioma
-   ========================================= */
-
 function setLanguage(language) {
-  if (!translations[language]) {
-    return;
-  }
+  if (!translations[language]) return;
 
   localStorage.setItem("loja_mz_language", language);
   applyTranslations();
-
   window.location.reload();
 }
-
-/* =========================================
-   Eventos globais
-   ========================================= */
-
-document.addEventListener("click", event => {
-  const languageButton = event.target.closest("[data-language]");
-
-  if (languageButton) {
-    setLanguage(languageButton.dataset.language);
-  }
-});
