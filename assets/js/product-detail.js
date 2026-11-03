@@ -2,9 +2,87 @@
    Loja MZ — Detalhe do produto
    ========================================= */
 
+const CART_KEY = "loja_mz_cart";
+
 let currentProduct = null;
 let selectedVariant = null;
 let selectedQuantity = 1;
+
+/* =========================================
+   Carrinho partilhado
+   ========================================= */
+
+function getCartItems() {
+  try {
+    const value = JSON.parse(
+      localStorage.getItem(CART_KEY) || "[]"
+    );
+
+    return Array.isArray(value) ? value : [];
+  } catch (error) {
+    console.warn("[Loja MZ] Carrinho inválido:", error);
+    return [];
+  }
+}
+
+function saveCartItems(cart) {
+  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  updateCartCount(cart);
+}
+
+function updateCartCount(cart = getCartItems()) {
+  const badge = document.getElementById("cart-count");
+
+  if (!badge) return;
+
+  const total = cart.reduce(
+    (sum, item) => sum + (Number(item.quantity) || 0),
+    0
+  );
+
+  badge.textContent = String(total);
+}
+
+function addToCart(product, quantity = 1) {
+  if (!product || !product.id) return;
+
+  const cart = getCartItems();
+
+  const variantId = product.variant_id || null;
+
+  const existing = cart.find(item =>
+    String(item.id) === String(product.id) &&
+    String(item.variant_id || "") === String(variantId || "")
+  );
+
+  if (existing) {
+    existing.quantity =
+      (Number(existing.quantity) || 0) + (Number(quantity) || 1);
+  } else {
+    cart.push({
+      id: product.id,
+      variant_id: variantId,
+      name: product.name || product.name_pt || "Produto",
+      variant_name: product.variant_name || null,
+      price: Number(product.price) || 0,
+      image: product.image || product.main_image || null,
+      quantity: Math.max(1, Number(quantity) || 1)
+    });
+  }
+
+  saveCartItems(cart);
+
+  Swal.fire({
+    icon: "success",
+    title: getTranslation("added_to_cart"),
+    timer: 1600,
+    showConfirmButton: false
+  });
+}
+
+/* =========================================
+   Inicialização
+   ========================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
   const slug = new URLSearchParams(window.location.search).get("slug");
@@ -16,25 +94,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadProduct(slug);
 
-  document.getElementById("quantity-decrease").addEventListener("click", () => {
-    changeQuantity(-1);
-  });
+  document
+    .getElementById("quantity-decrease")
+    ?.addEventListener("click", () => changeQuantity(-1));
 
-  document.getElementById("quantity-increase").addEventListener("click", () => {
-    changeQuantity(1);
-  });
+  document
+    .getElementById("quantity-increase")
+    ?.addEventListener("click", () => changeQuantity(1));
 
-  document.getElementById("product-quantity").addEventListener("change", event => {
-    setQuantity(Number(event.target.value));
-  });
+  document
+    .getElementById("product-quantity")
+    ?.addEventListener("change", event => {
+      setQuantity(Number(event.target.value));
+    });
 
-  document.getElementById("add-to-cart-button").addEventListener("click", () => {
-    addCurrentProductToCart();
-  });
+  document
+    .getElementById("add-to-cart-button")
+    ?.addEventListener("click", () => {
+      addCurrentProductToCart();
+    });
 
-  document.getElementById("buy-now-button").addEventListener("click", () => {
-    addCurrentProductToCart(true);
-  });
+  document
+    .getElementById("buy-now-button")
+    ?.addEventListener("click", () => {
+      addCurrentProductToCart(true);
+    });
 });
 
 /* =========================================
@@ -111,7 +195,6 @@ async function loadProduct(slug) {
 
     loading.classList.add("d-none");
     content.classList.remove("d-none");
-
   } catch (error) {
     console.error("Erro ao carregar produto:", error);
     showProductError();
@@ -148,15 +231,20 @@ function renderProduct(product) {
     : product.categories?.name_pt;
 
   const hasPromotion = Boolean(product.promotional_price);
-  const finalPrice = hasPromotion ? product.promotional_price : product.price;
+  const finalPrice = hasPromotion
+    ? product.promotional_price
+    : product.price;
+
   const outOfStock = product.stock <= 0;
 
   document.title = `${name} — Loja MZ`;
 
   document.getElementById("breadcrumb-product").textContent = name;
-  document.getElementById("product-category").textContent = categoryName || "";
+  document.getElementById("product-category").textContent =
+    categoryName || "";
   document.getElementById("product-name").textContent = name;
-  document.getElementById("product-description").textContent = description || "";
+  document.getElementById("product-description").textContent =
+    description || "";
 
   document.getElementById("product-sku").textContent = product.sku
     ? `SKU: ${product.sku}`
@@ -169,12 +257,14 @@ function renderProduct(product) {
     stockElement.classList.add("out-of-stock");
     stockElement.classList.remove("in-stock");
   } else {
-    stockElement.textContent = `${getTranslation("in_stock")}: ${product.stock}`;
+    stockElement.textContent =
+      `${getTranslation("in_stock")}: ${product.stock}`;
     stockElement.classList.add("in-stock");
     stockElement.classList.remove("out-of-stock");
   }
 
-  document.getElementById("product-price").textContent = formatMZN(finalPrice);
+  document.getElementById("product-price").textContent =
+    formatMZN(finalPrice);
 
   const oldPrice = document.getElementById("product-old-price");
   const discountBadge = document.getElementById("product-discount");
@@ -194,12 +284,15 @@ function renderProduct(product) {
     discountBadge.classList.add("d-none");
   }
 
-  const longDescriptionContainer = document.getElementById("product-long-description");
+  const longDescriptionContainer = document.getElementById(
+    "product-long-description"
+  );
 
   if (longDescription) {
     longDescriptionContainer.innerHTML = longDescription;
   } else {
-    longDescriptionContainer.innerHTML = `<p>${description || ""}</p>`;
+    longDescriptionContainer.innerHTML =
+      `<p>${description || ""}</p>`;
   }
 
   const addButton = document.getElementById("add-to-cart-button");
@@ -225,15 +318,19 @@ function renderProductImages(images) {
     return;
   }
 
-  const sortedImages = [...images].sort((a, b) => {
-    return (a.sort_order || 0) - (b.sort_order || 0);
-  });
+  const sortedImages = [...images].sort((a, b) =>
+    (a.sort_order || 0) - (b.sort_order || 0)
+  );
 
   mainImage.src = sortedImages[0].image_url;
   mainImage.alt = currentProduct.name_pt;
 
   thumbnails.innerHTML = sortedImages.map((image, index) => `
-    <button class="thumbnail ${index === 0 ? "active" : ""}" type="button" data-image="${image.image_url}">
+    <button
+      class="thumbnail ${index === 0 ? "active" : ""}"
+      type="button"
+      data-image="${image.image_url}"
+    >
       <img src="${image.image_url}" alt="${currentProduct.name_pt}">
     </button>
   `).join("");
@@ -258,9 +355,11 @@ function renderProductVariants(variants) {
   const section = document.getElementById("variants-section");
   const container = document.getElementById("product-variants");
 
-  const activeVariants = variants.filter(variant => variant.is_active);
+  const activeVariants = (variants || []).filter(
+    variant => variant.is_active
+  );
 
-  if (!activeVariants || activeVariants.length === 0) {
+  if (!activeVariants.length) {
     section.classList.add("d-none");
     return;
   }
@@ -277,18 +376,22 @@ function renderProductVariants(variants) {
     const disabled = variant.stock <= 0;
 
     return `
-      <button class="variant-button ${index === 0 && !disabled ? "active" : ""}"
+      <button
+        class="variant-button ${
+          index === 0 && !disabled ? "active" : ""
+        }"
         type="button"
         data-variant-id="${variant.id}"
-        data-variant-price="${variant.price || ""}"
-        data-variant-stock="${variant.stock}"
-        ${disabled ? "disabled" : ""}>
+        ${disabled ? "disabled" : ""}
+      >
         ${label}
       </button>
     `;
   }).join("");
 
-  const firstAvailable = activeVariants.find(variant => variant.stock > 0);
+  const firstAvailable = activeVariants.find(
+    variant => variant.stock > 0
+  );
 
   if (firstAvailable) {
     selectedVariant = firstAvailable;
@@ -305,8 +408,9 @@ function renderProductVariants(variants) {
       button.classList.add("active");
 
       const variantId = button.dataset.variantId;
-      selectedVariant = activeVariants.find(
-        variant => String(variant.id) === String(variantId)
+
+      selectedVariant = activeVariants.find(variant =>
+        String(variant.id) === String(variantId)
       );
 
       updateProductPrice();
@@ -324,6 +428,7 @@ function updateProductPrice() {
   if (!currentProduct) return;
 
   const hasPromotion = Boolean(currentProduct.promotional_price);
+
   let finalPrice = hasPromotion
     ? currentProduct.promotional_price
     : currentProduct.price;
@@ -419,6 +524,7 @@ function addCurrentProductToCart(goToCheckout = false) {
     : currentProduct.name_pt;
 
   const hasPromotion = Boolean(currentProduct.promotional_price);
+
   let finalPrice = hasPromotion
     ? currentProduct.promotional_price
     : currentProduct.price;
@@ -429,21 +535,21 @@ function addCurrentProductToCart(goToCheckout = false) {
 
   const mainImage = document.getElementById("main-product-image").src;
 
-  const cartProduct = {
-    id: currentProduct.id,
-    variant_id: selectedVariant ? selectedVariant.id : null,
-    name: name,
-    variant_name: selectedVariant
-      ? (language === "en" && selectedVariant.name_en
-          ? selectedVariant.name_en
-          : selectedVariant.name_pt)
-      : null,
-    price: finalPrice,
-    image: mainImage,
-    quantity: selectedQuantity
-  };
-
-  addToCart(cartProduct, selectedQuantity);
+  addToCart(
+    {
+      id: currentProduct.id,
+      variant_id: selectedVariant ? selectedVariant.id : null,
+      name,
+      variant_name: selectedVariant
+        ? (language === "en" && selectedVariant.name_en
+            ? selectedVariant.name_en
+            : selectedVariant.name_pt)
+        : null,
+      price: finalPrice,
+      image: mainImage
+    },
+    selectedQuantity
+  );
 
   if (goToCheckout) {
     window.location.href = "carrinho.html";
@@ -507,24 +613,22 @@ async function loadRelatedProducts(product) {
 
       const outOfStock = relatedProduct.stock <= 0;
 
-      const productForCart = {
-        id: relatedProduct.id,
-        name_pt: relatedProduct.name_pt,
-        price: finalPrice,
-        main_image: image
-      };
-
       return `
         <div class="col-6 col-md-4 col-lg-3">
           <div class="product-card">
-            ${hasPromotion ? `
-              <span class="product-badge">
-                ${getTranslation("promotion")}
-              </span>
-            ` : ""}
+            ${
+              hasPromotion
+                ? `<span class="product-badge">
+                    ${getTranslation("promotion")}
+                  </span>`
+                : ""
+            }
 
             <a href="produto.html?slug=${relatedProduct.slug}">
-              <img src="${getProductImage(image)}" alt="${relatedProduct.name_pt}">
+              <img
+                src="${getProductImage(image)}"
+                alt="${relatedProduct.name_pt}"
+              >
             </a>
 
             <div class="product-body">
@@ -534,18 +638,33 @@ async function loadRelatedProducts(product) {
                 ${formatMZN(finalPrice)}
               </div>
 
-              ${hasPromotion ? `
-                <div class="product-old-price">
-                  ${formatMZN(relatedProduct.price)}
-                </div>
-              ` : ""}
+              ${
+                hasPromotion
+                  ? `<div class="product-old-price">
+                      ${formatMZN(relatedProduct.price)}
+                    </div>`
+                  : ""
+              }
 
-              <button class="btn btn-primary w-100 mt-2"
+              <button
+                class="btn btn-primary w-100 mt-2"
+                type="button"
+                data-add-to-cart
+                data-product='${JSON.stringify({
+                  id: relatedProduct.id,
+                  name: relatedProduct.name_pt,
+                  price: finalPrice,
+                  image
+                }).replace(/'/g, "&#39;")}'
                 ${outOfStock ? "disabled" : ""}
-                onclick='addToCart(${JSON.stringify(productForCart)})'>
-                ${outOfStock
-                  ? getTranslation("out_of_stock")
-                  : `<i class="bi bi-cart-plus me-1"></i> ${getTranslation("add_to_cart")}`}
+              >
+                ${
+                  outOfStock
+                    ? getTranslation("out_of_stock")
+                    : `<i class="bi bi-cart-plus me-1"></i> ${
+                        getTranslation("add_to_cart")
+                      }`
+                }
               </button>
             </div>
           </div>
@@ -553,6 +672,15 @@ async function loadRelatedProducts(product) {
       `;
     }).join("");
 
+    container.querySelectorAll("[data-add-to-cart]").forEach(button => {
+      button.addEventListener("click", () => {
+        try {
+          addToCart(JSON.parse(button.dataset.product), 1);
+        } catch (error) {
+          console.error("[Loja MZ] Produto relacionado:", error);
+        }
+      });
+    });
   } catch (error) {
     console.error("Erro ao carregar produtos relacionados:", error);
 

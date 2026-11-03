@@ -1,345 +1,607 @@
-/* =========================================
-   Loja MZ — Gestão de produtos
-   ========================================= */
+/* ==========================================================
+   Loja MZ — Gestão administrativa de produtos
+   Tabela desktop + cartões mobile
+   ========================================================== */
 
-const PRODUCTS_PER_PAGE_ADMIN = 10;
+(function productsAdmin() {
+  "use strict";
 
-let adminCurrentPage = 1;
-let adminProducts = [];
+  const PAGE_SIZE = 10;
 
-document.addEventListener("DOMContentLoaded", () => {
-  const checkAdminLoaded = setInterval(() => {
-    if (window.currentAdmin) {
-      clearInterval(checkAdminLoaded);
-      loadAdminCategories();
-      loadAdminProducts();
+  let initialized = false;
+  let currentPage = 1;
+  let products = [];
+  let requestVersion = 0;
+  let searchTimer = null;
+  let mutationBusy = false;
+
+  const el = id => document.getElementById(id);
+
+  function client() {
+    const instance = window.lojaMzSupabaseClient;
+
+    if (!instance || typeof instance.from !== "function") {
+      throw new Error("O cliente Supabase não está disponível.");
     }
-  }, 200);
 
-  document.getElementById("product-search").addEventListener("input", () => {
-    adminCurrentPage = 1;
-    loadAdminProducts();
-  });
-
-  document.getElementById("product-category-filter").addEventListener("change", () => {
-    adminCurrentPage = 1;
-    loadAdminProducts();
-  });
-
-  document.getElementById("product-status-filter").addEventListener("change", () => {
-    adminCurrentPage = 1;
-    loadAdminProducts();
-  });
-});
-
-async function loadAdminCategories() {
-  const select = document.getElementById("product-category-filter");
-
-  const { data, error } = await supabase
-    .from("categories")
-    .select("id, name_pt")
-    .order("name_pt", { ascending: true });
-
-  if (error) {
-    console.error(error);
-    return;
+    return instance;
   }
 
-  select.innerHTML = `
-    <option value="">Todas as categorias</option>
-    ${data.map(category => `
-      <option value="${category.id}">
-        ${category.name_pt}
-      </option>
-    `).join("")}
-  `;
-}
-
-async function loadAdminProducts() {
-  const table = document.getElementById("products-table");
-  const pagination = document.getElementById("products-pagination");
-
-  table.innerHTML = `
-    <tr>
-      <td colspan="6" class="text-center text-muted py-4">
-        A carregar produtos...
-      </td>
-    </tr>
-  `;
-
-  pagination.innerHTML = "";
-
-  const search = document.getElementById("product-search").value.trim();
-  const categoryId = document.getElementById("product-category-filter").value;
-  const statusFilter = document.getElementById("product-status-filter").value;
-
-  let query = supabase
-    .from("products")
-    .select(`
-      id,
-      name_pt,
-      slug,
-      sku,
-      price,
-      promotional_price,
-      stock,
-      is_active,
-      is_featured,
-      categories (
-        id,
-        name_pt
-      ),
-      product_images (
-        image_url
-      )
-    `, { count: "exact" })
-    .order("created_at", { ascending: false });
-
-  if (search) {
-    const term = `%${search}%`;
-
-    query = query.or(`name_pt.ilike.${term},sku.ilike.${term}`);
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
   }
 
-  if (categoryId) {
-    query = query.eq("category_id", categoryId);
+  function money(value) {
+    return new Intl.NumberFormat("pt-MZ", {
+      style: "currency",
+      currency: "MZN"
+    }).format(Number(value) || 0);
   }
 
-  if (statusFilter === "active") {
-    query = query.eq("is_active", true);
-  }
+  function productImage(product) {
+    const images = [...(product.product_images || [])].sort(
+      (a, b) => (a.sort_order || 0) - (b.sort_order || 0)
+    );
 
-  if (statusFilter === "inactive") {
-    query = query.eq("is_active", false);
-  }
+    const value = images[0]?.image_url;
 
-  const from = (adminCurrentPage - 1) * PRODUCTS_PER_PAGE_ADMIN;
-  const to = from + PRODUCTS_PER_PAGE_ADMIN - 1;
+    if (value) {
+      try {
+        // URLs relativas são resolvidas a partir da raiz da loja,
+        // não da pasta admin.
+        const storeRoot = new URL("../", window.location.href);
+        const url = new URL(value, storeRoot);
 
-  const { data, error, count } = await query.range(from, to);
-
-  if (error) {
-    console.error(error);
-
-    table.innerHTML = `
-      <tr>
-        <td colspan="6" class="text-center text-danger py-4">
-          Erro ao carregar produtos.
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  adminProducts = data || [];
-
-  if (adminProducts.length === 0) {
-    table.innerHTML = `
-      <tr>
-        <td colspan="6" class="text-center text-muted py-4">
-          Nenhum produto encontrado.
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  table.innerHTML = adminProducts.map(product => {
-    const image = product.product_images?.[0]?.image_url;
-    const hasPromotion = Boolean(product.promotional_price);
-    const finalPrice = hasPromotion ? product.promotional_price : product.price;
-
-    let stockBadge = "badge-stock-ok";
-    let stockText = "Disponível";
-
-    if (product.stock === 0) {
-      stockBadge = "badge-stock-out";
-      stockText = "Esgotado";
-    } else if (product.stock <= 5) {
-      stockBadge = "badge-stock-low";
-      stockText = "Stock baixo";
+        if (["http:", "https:"].includes(url.protocol)) {
+          return url.href;
+        }
+      } catch (error) {
+        console.warn("[Loja MZ] URL de imagem inválido:", value);
+      }
     }
+
+    return new URL(
+      "../assets/img/placeholders/product.svg",
+      window.location.href
+    ).href;
+  }
+
+  function stockInfo(product) {
+    const stock = Number(product.stock) || 0;
+
+    if (stock <= 0) {
+      return {
+        className: "badge-stock-out",
+        text: "Esgotado"
+      };
+    }
+
+    if (stock <= 5) {
+      return {
+        className: "badge-stock-low",
+        text: "Stock baixo"
+      };
+    }
+
+    return {
+      className: "badge-stock-ok",
+      text: "Disponível"
+    };
+  }
+
+  function badges(product) {
+    const stock = stockInfo(product);
 
     return `
+      <span class="badge ${
+        product.is_active ? "bg-success" : "bg-secondary"
+      }">
+        ${product.is_active ? "Ativo" : "Inativo"}
+      </span>
+      <span class="badge ${stock.className}">
+        ${stock.text}
+      </span>
+    `;
+  }
+
+  function actions(product, mobile = false) {
+    const id = escapeHtml(product.id);
+    const editUrl =
+      `produto-form.html?id=${encodeURIComponent(product.id)}`;
+
+    return `
+      <div class="product-actions">
+        <a
+          href="${escapeHtml(editUrl)}"
+          class="btn btn-sm btn-outline-primary"
+          aria-label="Editar produto"
+          title="Editar produto"
+        >
+          <i class="bi bi-pencil-square" aria-hidden="true"></i>
+          ${mobile ? "<span>Editar</span>" : ""}
+        </a>
+
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          data-action="toggle"
+          data-id="${id}"
+          aria-label="${product.is_active ? "Desativar" : "Ativar"} produto"
+          title="${product.is_active ? "Desativar" : "Ativar"}"
+        >
+          <i
+            class="bi ${
+              product.is_active ? "bi-eye-slash" : "bi-eye"
+            }"
+            aria-hidden="true"
+          ></i>
+          ${
+            mobile
+              ? `<span>${product.is_active ? "Ocultar" : "Ativar"}</span>`
+              : ""
+          }
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-danger"
+          data-action="delete"
+          data-id="${id}"
+          aria-label="Apagar produto"
+          title="Apagar produto"
+        >
+          <i class="bi bi-trash" aria-hidden="true"></i>
+          ${mobile ? "<span>Apagar</span>" : ""}
+        </button>
+      </div>
+    `;
+  }
+
+  function priceMarkup(product) {
+    const hasPromotion = product.promotional_price !== null &&
+      product.promotional_price !== undefined;
+
+    const finalPrice = hasPromotion
+      ? product.promotional_price
+      : product.price;
+
+    return `
+      ${escapeHtml(money(finalPrice))}
+      ${
+        hasPromotion
+          ? `<small class="product-old-value">${
+              escapeHtml(money(product.price))
+            }</small>`
+          : ""
+      }
+    `;
+  }
+
+  function renderProducts() {
+    el("products-table").innerHTML = products.map(product => `
       <tr>
         <td>
           <div class="d-flex align-items-center gap-3">
-            <img src="${getProductImage(image)}"
-              alt="${product.name_pt}"
-              class="rounded"
-              style="width: 52px; height: 52px; object-fit: cover;">
+            <img
+              src="${escapeHtml(productImage(product))}"
+              alt=""
+              class="product-table-image"
+              loading="lazy"
+            >
 
-            <div>
-              <strong>${product.name_pt}</strong>
+            <div class="product-table-name">
+              <strong>${escapeHtml(product.name_pt)}</strong>
               <small class="d-block text-muted">
-                ${product.sku || "Sem SKU"}
+                ${escapeHtml(product.sku || "Sem SKU")}
               </small>
             </div>
           </div>
         </td>
 
-        <td>${product.categories?.name_pt || "-"}</td>
+        <td>${escapeHtml(product.categories?.name_pt || "Sem categoria")}</td>
 
-        <td>
-          ${formatMZN(finalPrice)}
-
-          ${hasPromotion ? `
-            <small class="d-block text-muted text-decoration-line-through">
-              ${formatMZN(product.price)}
-            </small>
-          ` : ""}
+        <td class="product-table-price">
+          ${priceMarkup(product)}
         </td>
 
-        <td>${product.stock}</td>
+        <td>${Number(product.stock) || 0}</td>
 
         <td>
-          <span class="badge ${product.is_active ? "bg-success" : "bg-secondary"}">
-            ${product.is_active ? "Ativo" : "Inativo"}
-          </span>
-
-          <span class="badge ${stockBadge} d-block mt-1">
-            ${stockText}
-          </span>
-        </td>
-
-        <td class="text-end">
-          <div class="d-flex justify-content-end gap-2">
-            <a href="produto-form.html?id=${product.id}"
-              class="btn btn-sm btn-outline-primary"
-              title="Editar">
-              <i class="bi bi-pencil-square"></i>
-            </a>
-
-            <button class="btn btn-sm btn-outline-warning"
-              onclick="toggleProductStatus('${product.id}', ${product.is_active})"
-              title="${product.is_active ? "Desativar" : "Ativar"}">
-              <i class="bi ${product.is_active ? "bi-eye-slash" : "bi-eye"}"></i>
-            </button>
-
-            <button class="btn btn-sm btn-outline-danger"
-              onclick="deleteProduct('${product.id}', '${product.name_pt}')"
-              title="Apagar">
-              <i class="bi bi-trash"></i>
-            </button>
+          <div class="d-flex flex-column align-items-start gap-1">
+            ${badges(product)}
           </div>
+        </td>
+
+        <td class="text-end">${actions(product)}</td>
+      </tr>
+    `).join("");
+
+    el("products-mobile").innerHTML = products.map(product => `
+      <article class="product-mobile-card">
+        <div class="product-mobile-header">
+          <img
+            src="${escapeHtml(productImage(product))}"
+            alt=""
+            class="product-mobile-image"
+            loading="lazy"
+          >
+
+          <div class="product-mobile-info">
+            <h2 class="product-mobile-name">
+              ${escapeHtml(product.name_pt)}
+            </h2>
+
+            <p class="product-mobile-meta">
+              ${escapeHtml(product.categories?.name_pt || "Sem categoria")}
+              · ${escapeHtml(product.sku || "Sem SKU")}
+            </p>
+
+            <div class="product-mobile-badges">
+              ${badges(product)}
+            </div>
+          </div>
+        </div>
+
+        <dl class="product-mobile-values">
+          <div>
+            <dt>Preço</dt>
+            <dd class="product-price-value">
+              ${priceMarkup(product)}
+            </dd>
+          </div>
+
+          <div>
+            <dt>Stock</dt>
+            <dd>${Number(product.stock) || 0} un.</dd>
+          </div>
+        </dl>
+
+        ${actions(product, true)}
+      </article>
+    `).join("");
+  }
+
+  function showMessage(message, error = false) {
+    el("products-table").innerHTML = `
+      <tr>
+        <td
+          colspan="6"
+          class="text-center py-4 ${error ? "text-danger" : "text-muted"}"
+        >
+          ${escapeHtml(message)}
         </td>
       </tr>
     `;
-  }).join("");
 
-  renderAdminPagination(count || 0);
-}
-
-function renderAdminPagination(total) {
-  const pagination = document.getElementById("products-pagination");
-  const totalPages = Math.ceil(total / PRODUCTS_PER_PAGE_ADMIN);
-
-  if (totalPages <= 1) return;
-
-  let html = `
-    <li class="page-item ${adminCurrentPage === 1 ? "disabled" : ""}">
-      <button class="page-link" data-page="${adminCurrentPage - 1}">
-        <i class="bi bi-chevron-left"></i>
-      </button>
-    </li>
-  `;
-
-  for (let page = 1; page <= totalPages; page++) {
-    html += `
-      <li class="page-item ${page === adminCurrentPage ? "active" : ""}">
-        <button class="page-link" data-page="${page}">
-          ${page}
-        </button>
-      </li>
+    el("products-mobile").innerHTML = `
+      <p class="products-message ${error ? "text-danger" : "text-muted"}">
+        ${escapeHtml(message)}
+      </p>
     `;
   }
 
-  html += `
-    <li class="page-item ${adminCurrentPage === totalPages ? "disabled" : ""}">
-      <button class="page-link" data-page="${adminCurrentPage + 1}">
-        <i class="bi bi-chevron-right"></i>
-      </button>
-    </li>
-  `;
+  async function loadCategories() {
+    try {
+      const { data, error } = await client()
+        .from("categories")
+        .select("id, name_pt")
+        .order("name_pt", { ascending: true });
 
-  pagination.innerHTML = html;
+      if (error) throw error;
 
-  pagination.querySelectorAll("button[data-page]").forEach(button => {
-    button.addEventListener("click", () => {
-      const page = Number(button.dataset.page);
+      const select = el("product-category-filter");
 
-      if (page >= 1 && page <= totalPages) {
-        adminCurrentPage = page;
-        loadAdminProducts();
+      select.replaceChildren(
+        new Option("Todas as categorias", "")
+      );
+
+      (data || []).forEach(category => {
+        select.add(new Option(category.name_pt, category.id));
+      });
+    } catch (error) {
+      console.error("[Loja MZ] Categorias:", error);
+
+      el("products-filter-warning").textContent =
+        "Não foi possível carregar as categorias.";
+    }
+  }
+
+  async function loadProducts() {
+    const version = ++requestVersion;
+
+    showMessage("A carregar produtos...");
+    el("products-pagination").replaceChildren();
+    el("products-results").textContent = "A carregar...";
+
+    try {
+      const search = el("product-search").value.trim();
+      const categoryId = el("product-category-filter").value;
+      const status = el("product-status-filter").value;
+
+      let query = client()
+        .from("products")
+        .select(`
+          id,
+          name_pt,
+          slug,
+          sku,
+          price,
+          promotional_price,
+          stock,
+          is_active,
+          created_at,
+          categories (
+            name_pt
+          ),
+          product_images (
+            image_url,
+            sort_order
+          )
+        `, { count: "exact" });
+
+      if (search) {
+        // A expressão OR usa sintaxe PostgREST.
+        // Escapa os caracteres especiais da expressão.
+        const term = `%${search
+          .replace(/\\/g, "\\\\")
+          .replace(/"/g, '\\"')}%`;
+
+        query = query.or(
+          `name_pt.ilike."${term}",sku.ilike."${term}"`
+        );
       }
-    });
-  });
-}
 
-async function toggleProductStatus(productId, currentStatus) {
-  const { error } = await supabase
-    .from("products")
-    .update({ is_active: !currentStatus })
-    .eq("id", productId);
+      if (categoryId) {
+        query = query.eq("category_id", categoryId);
+      }
 
-  if (error) {
-    console.error(error);
+      if (status) {
+        query = query.eq("is_active", status === "active");
+      }
 
-    Swal.fire({
-      icon: "error",
-      title: "Erro",
-      text: "Não foi possível atualizar o estado do produto."
-    });
+      const from = (currentPage - 1) * PAGE_SIZE;
 
-    return;
+      const { data, error, count } = await query
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .range(from, from + PAGE_SIZE - 1);
+
+      // Ignora respostas antigas de pesquisas anteriores.
+      if (version !== requestVersion) return;
+
+      if (error) throw error;
+
+      const total = count || 0;
+      const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+      if (currentPage > lastPage) {
+        currentPage = lastPage;
+        await loadProducts();
+        return;
+      }
+
+      products = data || [];
+
+      el("products-results").textContent =
+        `${total} produto(s) encontrado(s)`;
+
+      if (!products.length) {
+        showMessage("Nenhum produto encontrado.");
+        return;
+      }
+
+      renderProducts();
+      renderPagination(total);
+    } catch (error) {
+      if (version !== requestVersion) return;
+
+      console.error("[Loja MZ] Produtos:", error);
+
+      products = [];
+
+      showMessage("Não foi possível carregar os produtos.", true);
+
+      el("products-results").textContent =
+        "Falha no carregamento. Atualiza a página para tentar novamente.";
+    }
   }
 
-  Swal.fire({
-    icon: "success",
-    title: "Estado atualizado",
-    timer: 1400,
-    showConfirmButton: false
-  });
+  function renderPagination(total) {
+    const container = el("products-pagination");
+    const totalPages = Math.ceil(total / PAGE_SIZE);
 
-  loadAdminProducts();
-}
+    container.replaceChildren();
 
-async function deleteProduct(productId, productName) {
-  const result = await Swal.fire({
-    title: "Apagar produto",
-    text: `Tem certeza de que deseja apagar "${productName}"?`,
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Sim, apagar",
-    cancelButtonText: "Cancelar",
-    confirmButtonColor: "#dc3545"
-  });
+    if (totalPages <= 1) return;
 
-  if (!result.isConfirmed) return;
+    function addButton(label, page, disabled, active = false) {
+      const li = document.createElement("li");
 
-  const { error } = await supabase
-    .from("products")
-    .delete()
-    .eq("id", productId);
+      li.className = "page-item";
+      li.classList.toggle("disabled", disabled);
+      li.classList.toggle("active", active);
 
-  if (error) {
-    console.error(error);
+      const button = document.createElement("button");
 
-    Swal.fire({
-      icon: "error",
-      title: "Erro",
-      text: "Não foi possível apagar o produto."
-    });
+      button.type = "button";
+      button.className = "page-link";
+      button.textContent = label;
+      button.disabled = disabled;
 
-    return;
+      if (active) {
+        button.setAttribute("aria-current", "page");
+      }
+
+      button.addEventListener("click", () => {
+        currentPage = page;
+        loadProducts();
+      });
+
+      li.append(button);
+      container.append(li);
+    }
+
+    addButton("Anterior", currentPage - 1, currentPage === 1);
+
+    const first = Math.max(1, currentPage - 2);
+    const last = Math.min(totalPages, currentPage + 2);
+
+    for (let page = first; page <= last; page++) {
+      addButton(String(page), page, false, page === currentPage);
+    }
+
+    addButton(
+      "Seguinte",
+      currentPage + 1,
+      currentPage === totalPages
+    );
   }
 
-  Swal.fire({
-    icon: "success",
-    title: "Produto apagado",
-    timer: 1500,
-    showConfirmButton: false
-  });
+  async function handleAction(event) {
+    const button = event.target.closest("button[data-action]");
 
-  loadAdminProducts();
-}
+    if (!button || mutationBusy) return;
+
+    const product = products.find(
+      item => item.id === button.dataset.id
+    );
+
+    if (!product) return;
+
+    const action = button.dataset.action;
+
+    const result = await Swal.fire({
+      icon: action === "delete" ? "warning" : "question",
+      title: action === "delete"
+        ? "Apagar produto?"
+        : `${product.is_active ? "Desativar" : "Ativar"} produto?`,
+      text: action === "delete"
+        ? `Pretendes apagar "${product.name_pt}"?`
+        : `Alterar a publicação de "${product.name_pt}"?`,
+      showCancelButton: true,
+      confirmButtonText: action === "delete"
+        ? "Apagar"
+        : "Confirmar",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: action === "delete"
+        ? "#dc3545"
+        : "#0d6efd"
+    });
+
+    if (!result.isConfirmed || mutationBusy) return;
+
+    mutationBusy = true;
+
+    document.querySelectorAll(
+      "#admin-products-page button[data-action]"
+    ).forEach(item => {
+      item.disabled = true;
+    });
+
+    try {
+      let response;
+
+      if (action === "delete") {
+        response = await client()
+          .from("products")
+          .delete()
+          .eq("id", product.id)
+          .select("id")
+          .single();
+      } else {
+        response = await client()
+          .from("products")
+          .update({ is_active: !product.is_active })
+          .eq("id", product.id)
+          .select("id")
+          .single();
+      }
+
+      if (response.error) throw response.error;
+
+      await loadProducts();
+
+      await Swal.fire({
+        icon: "success",
+        title: action === "delete"
+          ? "Produto apagado"
+          : "Estado atualizado",
+        timer: 1300,
+        showConfirmButton: false
+      });
+    } catch (error) {
+      console.error("[Loja MZ] Operação de produto:", error);
+
+      await Swal.fire({
+        icon: "error",
+        title: "Não foi possível concluir",
+        text: error.message || "Verifica as permissões e tenta novamente."
+      });
+    } finally {
+      mutationBusy = false;
+
+      document.querySelectorAll(
+        "#admin-products-page button[data-action]"
+      ).forEach(item => {
+        item.disabled = false;
+      });
+    }
+  }
+
+  function initialize() {
+    if (initialized || !window.currentAdmin) return;
+
+    if (!el("admin-products-page")) return;
+
+    initialized = true;
+
+    el("product-search").addEventListener("input", () => {
+      clearTimeout(searchTimer);
+
+      // Invalida qualquer consulta anterior.
+      requestVersion++;
+
+      searchTimer = setTimeout(() => {
+        currentPage = 1;
+        loadProducts();
+      }, 300);
+    });
+
+    [
+      "product-category-filter",
+      "product-status-filter"
+    ].forEach(id => {
+      el(id).addEventListener("change", () => {
+        clearTimeout(searchTimer);
+        currentPage = 1;
+        loadProducts();
+      });
+    });
+
+    el("admin-products-page").addEventListener(
+      "click",
+      handleAction
+    );
+
+    loadCategories();
+    loadProducts();
+  }
+
+  document.addEventListener("admin:ready", initialize);
+
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      initialize,
+      { once: true }
+    );
+  } else {
+    initialize();
+  }
+})();
