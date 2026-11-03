@@ -1,281 +1,567 @@
+
 /* =========================================
-   Loja MZ — Checkout e criação de pedido
+   Loja MZ — Checkout e entrega configurada
    ========================================= */
 
-const DELIVERY_FEES = {
-  "Maputo Cidade": 150,
-  "Maputo Província": 250,
-  "Gaza": 400,
-  "Inhambane": 500,
-  "Sofala": 650,
-  "Manica": 700,
-  "Tete": 750,
-  "Zambézia": 800,
-  "Nampula": 900,
-  "Cabo Delgado": 1000,
-  "Niassa": 1000
-};
+(function checkoutPage() {
+  "use strict";
 
-let checkoutCart = [];
+  const el = id => document.getElementById(id);
 
-document.addEventListener("DOMContentLoaded", () => {
-  checkoutCart = getCart();
+  let cart = [];
+  let settings = null;
+  let submitting = false;
+  let orderWriteStarted = false;
+  let createdOrderId = null;
+  let deliveryError = "";
 
-  if (!checkoutCart || checkoutCart.length === 0) {
-    document.getElementById("checkout-empty").classList.remove("d-none");
-    document.getElementById("checkout-content").classList.add("d-none");
-    return;
+  function client() {
+    if (
+      window.lojaMzSupabaseClient &&
+      typeof window.lojaMzSupabaseClient.from === "function"
+    ) {
+      return window.lojaMzSupabaseClient;
+    }
+
+    if (
+      typeof supabase !== "undefined" &&
+      typeof supabase.from === "function"
+    ) {
+      return supabase;
+    }
+
+    throw new Error("O cliente Supabase não está disponível.");
   }
 
-  document.getElementById("checkout-empty").classList.add("d-none");
-  document.getElementById("checkout-content").classList.remove("d-none");
+  function english() {
+    return typeof getCurrentLanguage === "function" &&
+      getCurrentLanguage() === "en";
+  }
 
-  prefillCustomerData();
-  renderCheckoutItems();
-  updateCheckoutSummary();
+  function text(pt, en) {
+    return english() ? en : pt;
+  }
 
-  document.getElementById("customer-province").addEventListener("change", () => {
-    updateCheckoutSummary();
-  });
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
+  }
 
-  document.getElementById("place-order-button").addEventListener("click", () => {
-    placeOrder();
-  });
-});
+  function money(value) {
+    return new Intl.NumberFormat(
+      english() ? "en-MZ" : "pt-MZ",
+      {
+        style: "currency",
+        currency: "MZN"
+      }
+    ).format(value);
+  }
 
-/* =========================================
-   Dados do cliente
-   ========================================= */
+  function cents(value) {
+    return Math.round(Number(value) * 100);
+  }
 
-async function prefillCustomerData() {
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser();
+  function validateCart(items) {
+    if (!Array.isArray(items) || !items.length) {
+      throw new Error(text("O carrinho está vazio.", "Your cart is empty."));
+    }
 
-    if (error || !user) return;
+    items.forEach(item => {
+      if (
+        !(item.id || item.product_id) ||
+        !Number.isFinite(Number(item.price)) ||
+        Number(item.price) < 0 ||
+        !Number.isInteger(Number(item.quantity)) ||
+        Number(item.quantity) < 1
+      ) {
+        throw new Error(
+          text(
+            "Há um artigo inválido no carrinho.",
+            "Your cart contains an invalid item."
+          )
+        );
+      }
+    });
+  }
 
-    document.getElementById("customer-email").value = user.email || "";
+  function subtotalCents() {
+    return cart.reduce(
+      (sum, item) =>
+        sum + cents(item.price) * Number(item.quantity),
+      0
+    );
+  }
 
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("full_name, phone, phone_alt")
-      .eq("id", user.id)
+  async function loadDeliverySettings() {
+    const { data, error } = await client()
+      .from("settings")
+      .select(
+        "delivery_fees, delivery_fee_maputo, is_maintenance_mode"
+      )
+      .order("created_at", { ascending: true })
+      .limit(1)
       .maybeSingle();
 
-    if (profileError) throw profileError;
+    if (error) throw error;
 
-    if (profile) {
-      document.getElementById("customer-name").value = profile.full_name || "";
-      document.getElementById("customer-phone").value = profile.phone || "";
-      document.getElementById("customer-phone-alt").value = profile.phone_alt || "";
+    if (!data) {
+      throw new Error(
+        text(
+          "As taxas de entrega ainda não foram configuradas.",
+          "Delivery rates have not been configured."
+        )
+      );
     }
 
-  } catch (error) {
-    console.error("Erro ao carregar dados do cliente:", error);
+    settings = data;
+    deliveryError = "";
   }
-}
 
-/* =========================================
-   Resumo do checkout
-   ========================================= */
-
-function renderCheckoutItems() {
-  const container = document.getElementById("checkout-items");
-
-  container.innerHTML = checkoutCart.map(item => {
-    const itemTotal = Number(item.price) * Number(item.quantity);
-
-    return `
-      <div class="checkout-item">
-        <div class="checkout-item-image">
-          <img src="${getProductImage(item.image)}" alt="${item.name}">
-        </div>
-
-        <div class="checkout-item-info">
-          <h6>${item.name}</h6>
-
-          ${item.variant_name ? `
-            <small>${item.variant_name}</small>
-          ` : ""}
-
-          <small class="d-block">
-            ${item.quantity} x ${formatMZN(item.price)}
-          </small>
-        </div>
-
-        <div class="checkout-item-price">
-          ${formatMZN(itemTotal)}
-        </div>
-      </div>
-    `;
-  }).join("");
-}
-
-function getDeliveryFee() {
-  const province = document.getElementById("customer-province").value;
-
-  return DELIVERY_FEES[province] || 0;
-}
-
-function updateCheckoutSummary() {
-  const subtotal = getCartTotal();
-  const deliveryFee = getDeliveryFee();
-  const total = subtotal + deliveryFee;
-
-  document.getElementById("checkout-subtotal").textContent = formatMZN(subtotal);
-  document.getElementById("checkout-delivery").textContent = formatMZN(deliveryFee);
-  document.getElementById("checkout-total").textContent = formatMZN(total);
-}
-
-/* =========================================
-   Validação
-   ========================================= */
-
-function validateCheckoutForm() {
-  const requiredFields = [
-    "customer-name",
-    "customer-email",
-    "customer-phone",
-    "customer-province",
-    "customer-city",
-    "customer-neighborhood",
-    "customer-street"
-  ];
-
-  for (const fieldId of requiredFields) {
-    const field = document.getElementById(fieldId);
-
-    if (!field.value.trim()) {
-      field.focus();
-      field.classList.add("is-invalid");
-
-      Swal.fire({
-        icon: "warning",
-        title: getTranslation("fill_required_fields"),
-        text: getTranslation("check_form_data")
-      });
-
-      return false;
+  function deliveryState() {
+    if (deliveryError) {
+      return { valid: false, message: deliveryError };
     }
 
-    field.classList.remove("is-invalid");
-  }
+    if (!settings) {
+      return {
+        valid: false,
+        message: text("A carregar entrega...", "Loading delivery...")
+      };
+    }
 
-  return true;
-}
+    if (settings.is_maintenance_mode) {
+      return {
+        valid: false,
+        message: text(
+          "A loja está temporariamente em manutenção.",
+          "The store is temporarily under maintenance."
+        )
+      };
+    }
 
-/* =========================================
-   Criar pedido
-   ========================================= */
+    const province = el("customer-province").value;
 
-async function placeOrder() {
-  if (!checkoutCart || checkoutCart.length === 0) {
-    window.location.href = "carrinho.html";
-    return;
-  }
+    if (!province) {
+      return {
+        valid: false,
+        message: text(
+          "Selecione a província",
+          "Select a province"
+        )
+      };
+    }
 
-  if (!validateCheckoutForm()) {
-    return;
-  }
+    const fees = settings.delivery_fees;
+    let raw = null;
 
-  const button = document.getElementById("place-order-button");
-  const originalButtonText = button.innerHTML;
+    if (
+      fees &&
+      typeof fees === "object" &&
+      !Array.isArray(fees)
+    ) {
+      raw = fees[province];
+    } else if (province === "Maputo Cidade") {
+      raw = settings.delivery_fee_maputo;
+    }
 
-  button.disabled = true;
-  button.innerHTML = `
-    <span class="spinner-border spinner-border-sm me-2"></span>
-    ${getTranslation("processing_order")}
-  `;
+    if (
+      raw === null ||
+      raw === undefined ||
+      raw === "" ||
+      typeof raw === "boolean" ||
+      !Number.isFinite(Number(raw)) ||
+      Number(raw) < 0
+    ) {
+      return {
+        valid: false,
+        message: text(
+          "Entrega não configurada para esta província",
+          "Delivery is not configured for this province"
+        )
+      };
+    }
 
-  try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-    if (userError) throw userError;
-
-    const subtotal = getCartTotal();
-    const deliveryFee = getDeliveryFee();
-    const total = subtotal + deliveryFee;
-
-    const paymentMethod = document.querySelector(
-      'input[name="payment_method"]:checked'
-    ).value;
-
-    const orderData = {
-      user_id: user ? user.id : null,
-      customer_name: document.getElementById("customer-name").value.trim(),
-      customer_email: document.getElementById("customer-email").value.trim(),
-      customer_phone: document.getElementById("customer-phone").value.trim(),
-      customer_phone_alt: document.getElementById("customer-phone-alt").value.trim() || null,
-      province: document.getElementById("customer-province").value,
-      city: document.getElementById("customer-city").value.trim(),
-      neighborhood: document.getElementById("customer-neighborhood").value.trim(),
-      street: document.getElementById("customer-street").value.trim(),
-      reference: document.getElementById("customer-reference").value.trim() || null,
-      notes: document.getElementById("order-notes").value.trim() || null,
-      payment_method: paymentMethod,
-      subtotal: subtotal,
-      delivery_fee: deliveryFee,
-      total: total,
-      status: "pending"
+    return {
+      valid: true,
+      feeCents: cents(raw)
     };
+  }
 
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .insert(orderData)
-      .select()
-      .single();
+  function updateSummary() {
+    const subtotal = subtotalCents();
+    const delivery = deliveryState();
 
-    if (orderError) throw orderError;
+    el("checkout-subtotal").textContent = money(subtotal / 100);
 
-    const orderItems = checkoutCart.map(item => ({
-      order_id: order.id,
-      product_id: item.product_id,
-      variant_id: item.variant_id || null,
-      product_name: item.name,
-      variant_name: item.variant_name || null,
-      price: item.price,
-      quantity: item.quantity,
-      total: Number(item.price) * Number(item.quantity)
-    }));
+    el("checkout-delivery").textContent = delivery.valid
+      ? delivery.feeCents === 0
+        ? text("Grátis", "Free")
+        : money(delivery.feeCents / 100)
+      : delivery.message;
 
-    const { error: itemsError } = await supabase
-      .from("order_items")
-      .insert(orderItems);
+    el("checkout-total").textContent = delivery.valid
+      ? money((subtotal + delivery.feeCents) / 100)
+      : "—";
 
-    if (itemsError) throw itemsError;
+    el("place-order-button").disabled =
+      submitting || orderWriteStarted || !delivery.valid;
+  }
 
-    const { error: paymentError } = await supabase
-      .from("payments")
-      .insert({
+  function renderItems() {
+    el("checkout-items").innerHTML = cart.map(item => {
+      const price = Number(item.price);
+      const quantity = Number(item.quantity);
+
+      return `
+        <div class="checkout-item">
+          <div class="checkout-item-image">
+            <img
+              src="${escapeHtml(getProductImage(item.image))}"
+              alt="${escapeHtml(item.name || item.name_pt || "Produto")}"
+            >
+          </div>
+
+          <div class="checkout-item-info">
+            <h6>
+              ${escapeHtml(item.name || item.name_pt || "Produto")}
+            </h6>
+
+            ${
+              item.variant_name
+                ? `<small>${escapeHtml(item.variant_name)}</small>`
+                : ""
+            }
+
+            <small class="d-block">
+              ${quantity} × ${escapeHtml(money(price))}
+            </small>
+          </div>
+
+          <div class="checkout-item-price">
+            ${escapeHtml(money(cents(price) * quantity / 100))}
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function prefillCustomer() {
+    try {
+      const { data, error } = await client().auth.getUser();
+
+      if (error || !data.user) return;
+
+      const user = data.user;
+
+      if (!el("customer-email").value) {
+        el("customer-email").value = user.email || "";
+      }
+
+      const { data: profile, error: profileError } = await client()
+        .from("profiles")
+        .select("full_name, phone, phone_alt")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+      if (!profile) return;
+
+      const values = {
+        "customer-name": profile.full_name,
+        "customer-phone": profile.phone,
+        "customer-phone-alt": profile.phone_alt
+      };
+
+      Object.entries(values).forEach(([id, value]) => {
+        if (!el(id).value) {
+          el(id).value = value || "";
+        }
+      });
+    } catch (error) {
+      console.warn("[Loja MZ] Dados do cliente:", error);
+    }
+  }
+
+  async function placeOrder() {
+    if (submitting || orderWriteStarted) return;
+
+    if (!el("checkout-form").reportValidity()) return;
+
+    const originalCart = JSON.stringify(cart);
+    const previousDelivery = deliveryState();
+
+    if (!previousDelivery.valid) return;
+
+    submitting = true;
+    updateSummary();
+
+    const button = el("place-order-button");
+    const originalText = button.innerHTML;
+    button.textContent = text("A processar...", "Processing...");
+
+    try {
+      // Não envia o pedido com um carrinho desatualizado.
+      const latestCart = getCart();
+      validateCart(latestCart);
+
+      if (JSON.stringify(latestCart) !== originalCart) {
+        cart = latestCart;
+        renderItems();
+
+        throw new Error(
+          text(
+            "O carrinho mudou. Confirma os valores e tenta novamente.",
+            "Your cart changed. Review the values and try again."
+          )
+        );
+      }
+
+      // Relê as taxas antes de iniciar a gravação.
+      try {
+        await loadDeliverySettings();
+      } catch (error) {
+        settings = null;
+        deliveryError = text(
+          "Não foi possível confirmar a taxa de entrega.",
+          "Could not confirm the delivery fee."
+        );
+        throw error;
+      }
+
+      const delivery = deliveryState();
+
+      if (!delivery.valid) {
+        throw new Error(delivery.message);
+      }
+
+      if (delivery.feeCents !== previousDelivery.feeCents) {
+        throw new Error(
+          text(
+            "A taxa de entrega foi atualizada. Confirma o novo total.",
+            "The delivery fee changed. Review the new total."
+          )
+        );
+      }
+
+      const paymentMethod = document.querySelector(
+        'input[name="payment_method"]:checked'
+      )?.value;
+
+      if (![
+        "multicaixa_express",
+        "bank_transfer",
+        "cash_on_delivery"
+      ].includes(paymentMethod)) {
+        throw new Error(
+          text("Escolhe o pagamento.", "Choose a payment method.")
+        );
+      }
+
+      const { data: sessionData, error: sessionError } =
+        await client().auth.getSession();
+
+      if (sessionError) throw sessionError;
+
+      const user = sessionData.session?.user || null;
+
+      const subtotal = subtotalCents() / 100;
+      const fee = delivery.feeCents / 100;
+      const total = (subtotalCents() + delivery.feeCents) / 100;
+
+      const value = id => el(id).value.trim();
+
+      const orderData = {
+        user_id: user?.id || null,
+        customer_name: value("customer-name"),
+        customer_email: value("customer-email"),
+        customer_phone: value("customer-phone"),
+        customer_phone_alt: value("customer-phone-alt") || null,
+        province: value("customer-province"),
+        city: value("customer-city"),
+        neighborhood: value("customer-neighborhood"),
+        street: value("customer-street"),
+        reference: value("customer-reference") || null,
+        notes: value("order-notes") || null,
+        payment_method: paymentMethod,
+        subtotal,
+        delivery_fee: fee,
+        total,
+        status: "pending"
+      };
+
+      // As três gravações abaixo mantêm a estrutura atual do projeto.
+      // Após iniciar, não permite repetir automaticamente nesta página.
+      orderWriteStarted = true;
+
+      const { data: order, error: orderError } = await client()
+        .from("orders")
+        .insert(orderData)
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      createdOrderId = order.id;
+
+      const orderItems = cart.map(item => ({
         order_id: order.id,
-        method: paymentMethod,
-        amount: total,
-        status: paymentMethod === "cash_on_delivery" ? "pending" : "awaiting_confirmation"
+        product_id: item.id || item.product_id,
+        variant_id: item.variant_id || null,
+        product_name: item.name || item.name_pt || "Produto",
+        variant_name: item.variant_name || null,
+        price: Number(item.price),
+        quantity: Number(item.quantity),
+        total: cents(item.price) * Number(item.quantity) / 100
+      }));
+
+      const { error: itemsError } = await client()
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      const { error: paymentError } = await client()
+        .from("payments")
+        .insert({
+          order_id: order.id,
+          method: paymentMethod,
+          amount: total,
+          status: paymentMethod === "cash_on_delivery"
+            ? "pending"
+            : "awaiting_confirmation"
+        });
+
+      if (paymentError) throw paymentError;
+
+      // Não apaga alterações feitas noutra aba durante a gravação.
+      try {
+        if (JSON.stringify(getCart()) === originalCart) {
+          clearCart();
+        }
+      } catch (storageError) {
+        console.warn(
+          "[Loja MZ] Pedido guardado; carrinho não foi limpo:",
+          storageError
+        );
+      }
+
+      await window.Swal.fire({
+        icon: "success",
+        title: text("Pedido criado", "Order created"),
+        text: `${text("Pedido", "Order")}: ${
+          order.order_number || order.id
+        }`,
+        confirmButtonText: text("Ver pedido", "View order")
       });
 
-    if (paymentError) throw paymentError;
+      window.location.assign(
+        `pedido.html?id=${encodeURIComponent(order.id)}`
+      );
+    } catch (error) {
+      console.error("[Loja MZ] Checkout:", error);
 
-    clearCart();
+      const warning = orderWriteStarted
+        ? text(
+            "A gravação pode ter ficado incompleta. " +
+            "Não repitas a compra antes de verificar o pedido com a loja.",
+            "Saving may be incomplete. " +
+            "Do not repeat the purchase before checking with the store."
+          )
+        : error.message;
 
-    Swal.fire({
-      icon: "success",
-      title: getTranslation("order_created"),
-      text: `${getTranslation("order_number")}: ${order.order_number || order.id}`,
-      confirmButtonText: getTranslation("view_order")
-    }).then(() => {
-      window.location.href = `pedido.html?id=${order.id}`;
-    });
-
-  } catch (error) {
-    console.error("Erro ao criar pedido:", error);
-
-    Swal.fire({
-      icon: "error",
-      title: getTranslation("order_error"),
-      text: getTranslation("order_error_text")
-    });
-
-  } finally {
-    button.disabled = false;
-    button.innerHTML = originalButtonText;
+      await window.Swal.fire({
+        icon: "error",
+        title: text(
+          "Não foi possível concluir",
+          "Could not complete checkout"
+        ),
+        text: [
+          warning,
+          createdOrderId ? `ID: ${createdOrderId}` : "",
+          orderWriteStarted ? error.message : ""
+        ].filter(Boolean).join("\n")
+      });
+    } finally {
+      submitting = false;
+      button.innerHTML = originalText;
+      updateSummary();
+    }
   }
-}
+
+  async function initialize() {
+    if (!el("checkout-form")) return;
+
+    el("place-order-button").disabled = true;
+
+    try {
+      cart = getCart();
+
+      if (!cart.length) {
+        el("checkout-empty").classList.remove("d-none");
+        el("checkout-content").classList.add("d-none");
+        return;
+      }
+
+      validateCart(cart);
+
+      el("checkout-empty").classList.add("d-none");
+      el("checkout-content").classList.remove("d-none");
+
+      renderItems();
+      updateSummary();
+
+      el("customer-province").addEventListener(
+        "change",
+        updateSummary
+      );
+
+      el("place-order-button").addEventListener(
+        "click",
+        placeOrder
+      );
+
+      el("checkout-form").addEventListener("submit", event => {
+        event.preventDefault();
+        placeOrder();
+      });
+
+      prefillCustomer();
+
+      try {
+        await loadDeliverySettings();
+      } catch (error) {
+        console.error("[Loja MZ] Entrega:", error);
+
+        deliveryError = text(
+          "Não foi possível carregar a entrega. Contacta a loja.",
+          "Could not load delivery rates. Contact the store."
+        );
+      }
+
+      updateSummary();
+    } catch (error) {
+      console.error("[Loja MZ] Preparação do checkout:", error);
+
+      await window.Swal.fire({
+        icon: "error",
+        title: text("Erro no carrinho", "Cart error"),
+        text: error.message
+      });
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      initialize,
+      { once: true }
+    );
+  } else {
+    initialize();
+  }
+})();

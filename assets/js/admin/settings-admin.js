@@ -1,26 +1,179 @@
+
 /* =========================================
-   Loja MZ — Configurações da loja
+   Loja MZ — Configurações e entrega
    ========================================= */
 
-let currentSettingsId = null;
+(function settingsAdmin() {
+  "use strict";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const checkAdminLoaded = setInterval(() => {
-    if (window.currentAdmin) {
-      clearInterval(checkAdminLoaded);
-      loadSettings();
+  const PROVINCES = [
+    "Maputo Cidade",
+    "Maputo Província",
+    "Gaza",
+    "Inhambane",
+    "Sofala",
+    "Manica",
+    "Tete",
+    "Zambézia",
+    "Nampula",
+    "Cabo Delgado",
+    "Niassa"
+  ];
+
+  const el = id => document.getElementById(id);
+
+  let initialized = false;
+  let saving = false;
+  let settingsId = null;
+
+  function client() {
+    if (
+      window.lojaMzSupabaseClient &&
+      typeof window.lojaMzSupabaseClient.from === "function"
+    ) {
+      return window.lojaMzSupabaseClient;
     }
-  }, 200);
 
-  document.getElementById("settings-form").addEventListener("submit", event => {
-    event.preventDefault();
-    saveSettings();
-  });
-});
+    if (
+      typeof supabase !== "undefined" &&
+      typeof supabase.from === "function"
+    ) {
+      return supabase;
+    }
 
-async function loadSettings() {
-  try {
-    const { data, error } = await supabase
+    throw new Error("O cliente Supabase não está disponível.");
+  }
+
+  function message(icon, title, text) {
+    if (window.Swal) {
+      return window.Swal.fire({ icon, title, text });
+    }
+
+    window.alert(`${title}\n${text}`);
+    return Promise.resolve();
+  }
+
+  function feeInput(index) {
+    return index === 0
+      ? el("delivery-fee-maputo")
+      : el(`delivery-fee-province-${index}`);
+  }
+
+  function prepareDeliveryFields() {
+    const maputoInput = el("delivery-fee-maputo");
+
+    if (!maputoInput) {
+      throw new Error("O campo da taxa de Maputo não foi encontrado.");
+    }
+
+    const card = maputoInput.closest(".admin-card");
+
+    if (!card) {
+      throw new Error("A secção de entrega não foi encontrada.");
+    }
+
+    const label = maputoInput
+      .closest(".col-md-6")
+      ?.querySelector("label");
+
+    if (label) {
+      label.textContent = "Maputo Cidade (MT)";
+      label.htmlFor = maputoInput.id;
+    }
+
+    maputoInput.placeholder = "Vazio = entrega não configurada";
+    maputoInput.required = false;
+
+    if (el("delivery-province-fields")) return;
+
+    const note = document.createElement("p");
+    note.className = "small text-muted mt-3";
+    note.textContent =
+      "Define a taxa de cada província. " +
+      "0 significa entrega gratuita. " +
+      "Deixa vazio para não aceitar entregas nessa província.";
+
+    const row = document.createElement("div");
+    row.className = "row g-3";
+    row.id = "delivery-province-fields";
+
+    PROVINCES.slice(1).forEach((province, offset) => {
+      const index = offset + 1;
+      const column = document.createElement("div");
+      column.className = "col-md-6";
+
+      const fieldLabel = document.createElement("label");
+      fieldLabel.className = "form-label";
+      fieldLabel.htmlFor = `delivery-fee-province-${index}`;
+      fieldLabel.textContent = `${province} (MT)`;
+
+      const input = document.createElement("input");
+      input.type = "number";
+      input.className = "form-control";
+      input.id = fieldLabel.htmlFor;
+      input.min = "0";
+      input.step = "0.01";
+      input.placeholder = "Não configurada";
+
+      column.append(fieldLabel, input);
+      row.append(column);
+    });
+
+    card.append(note, row);
+  }
+
+  function fillForm(data) {
+    settingsId = data.id;
+
+    const mapping = {
+      "store-name": "store_name",
+      "store-email": "store_email",
+      "store-phone": "store_phone",
+      "whatsapp-number": "whatsapp_number",
+      "currency": "currency",
+      "currency-symbol": "currency_symbol",
+      "default-language": "default_language"
+    };
+
+    Object.entries(mapping).forEach(([id, column]) => {
+      el(id).value = data[column] ?? "";
+    });
+
+    el("currency").value = data.currency || "MZN";
+    el("currency-symbol").value = data.currency_symbol || "MT";
+    el("default-language").value = data.default_language || "pt";
+
+    el("maintenance-mode").checked =
+      Boolean(data.is_maintenance_mode);
+
+    const fees = data.delivery_fees;
+
+    PROVINCES.forEach((province, index) => {
+      let value = null;
+
+      if (
+        fees &&
+        typeof fees === "object" &&
+        !Array.isArray(fees)
+      ) {
+        value = fees[province];
+      } else if (index === 0) {
+        // Compatibilidade com a configuração antiga.
+        value = data.delivery_fee_maputo;
+      }
+
+      feeInput(index).value =
+        value === null || value === undefined
+          ? ""
+          : value;
+    });
+
+    el("settings-loading").classList.add("d-none");
+    el("settings-form").classList.remove("d-none");
+  }
+
+  async function loadSettings() {
+    const { data, error } = await client()
       .from("settings")
       .select("*")
       .order("created_at", { ascending: true })
@@ -29,42 +182,20 @@ async function loadSettings() {
 
     if (error) throw error;
 
-    if (!data) {
-      await createDefaultSettings();
+    if (data) {
+      if (!Object.prototype.hasOwnProperty.call(data, "delivery_fees")) {
+        throw new Error(
+          "Falta a coluna delivery_fees. " +
+          "Executa primeiro o SQL indicado."
+        );
+      }
+
+      fillForm(data);
       return;
     }
 
-    currentSettingsId = data.id;
-
-    document.getElementById("store-name").value = data.store_name || "";
-    document.getElementById("store-email").value = data.store_email || "";
-    document.getElementById("store-phone").value = data.store_phone || "";
-    document.getElementById("whatsapp-number").value = data.whatsapp_number || "";
-
-    document.getElementById("currency").value = data.currency || "MZN";
-    document.getElementById("currency-symbol").value = data.currency_symbol || "MT";
-    document.getElementById("default-language").value = data.default_language || "pt";
-
-    document.getElementById("delivery-fee-maputo").value = data.delivery_fee_maputo || 0;
-    document.getElementById("maintenance-mode").checked = Boolean(data.is_maintenance_mode);
-
-    document.getElementById("settings-loading").classList.add("d-none");
-    document.getElementById("settings-form").classList.remove("d-none");
-
-  } catch (error) {
-    console.error("Erro ao carregar configurações:", error);
-
-    Swal.fire({
-      icon: "error",
-      title: "Erro",
-      text: "Não foi possível carregar as configurações."
-    });
-  }
-}
-
-async function createDefaultSettings() {
-  try {
-    const { data, error } = await supabase
+    // Sem valores de entrega assumidos automaticamente.
+    const { data: created, error: createError } = await client()
       .from("settings")
       .insert({
         store_name: "Loja MZ",
@@ -74,127 +205,185 @@ async function createDefaultSettings() {
         currency: "MZN",
         currency_symbol: "MT",
         default_language: "pt",
-        delivery_fee_maputo: 150,
+        delivery_fee_maputo: 0,
+        delivery_fees: {},
         is_maintenance_mode: false
       })
-      .select()
+      .select("*")
       .single();
 
-    if (error) throw error;
+    if (createError) throw createError;
 
-    currentSettingsId = data.id;
-
-    document.getElementById("store-name").value = data.store_name;
-    document.getElementById("store-email").value = data.store_email;
-    document.getElementById("store-phone").value = data.store_phone;
-    document.getElementById("whatsapp-number").value = data.whatsapp_number;
-    document.getElementById("currency").value = data.currency;
-    document.getElementById("currency-symbol").value = data.currency_symbol;
-    document.getElementById("default-language").value = data.default_language;
-    document.getElementById("delivery-fee-maputo").value = data.delivery_fee_maputo;
-    document.getElementById("maintenance-mode").checked = data.is_maintenance_mode;
-
-    document.getElementById("settings-loading").classList.add("d-none");
-    document.getElementById("settings-form").classList.remove("d-none");
-
-  } catch (error) {
-    console.error("Erro ao criar configurações padrão:", error);
-
-    Swal.fire({
-      icon: "error",
-      title: "Erro",
-      text: "Não foi possível criar as configurações padrão."
-    });
-  }
-}
-
-function validateSettingsForm() {
-  const storeName = document.getElementById("store-name").value.trim();
-  const storeEmail = document.getElementById("store-email").value.trim();
-  const storePhone = document.getElementById("store-phone").value.trim();
-
-  if (!storeName || !storeEmail || !storePhone) {
-    Swal.fire({
-      icon: "warning",
-      title: "Dados incompletos",
-      text: "Preencha o nome, e-mail e telefone da loja."
-    });
-
-    return false;
+    fillForm(created);
   }
 
-  return true;
-}
+  function readFees() {
+    const fees = {};
 
-async function saveSettings() {
-  if (!validateSettingsForm()) return;
+    PROVINCES.forEach((province, index) => {
+      const input = feeInput(index);
+      const raw = input.value.trim();
 
-  if (!currentSettingsId) {
-    Swal.fire({
-      icon: "error",
-      title: "Erro",
-      text: "Nenhuma configuração foi carregada."
+      if (raw === "") {
+        fees[province] = null;
+        return;
+      }
+
+      const value = Number(raw);
+
+      if (!Number.isFinite(value) || value < 0) {
+        input.focus();
+        throw new Error(`A taxa de ${province} é inválida.`);
+      }
+
+      fees[province] = Math.round(value * 100) / 100;
     });
 
-    return;
+    return fees;
   }
 
-  const settingsData = {
-    store_name: document.getElementById("store-name").value.trim(),
-    store_email: document.getElementById("store-email").value.trim(),
-    store_phone: document.getElementById("store-phone").value.trim(),
-    whatsapp_number: document.getElementById("whatsapp-number").value.trim() || null,
-    currency: document.getElementById("currency").value,
-    currency_symbol: document.getElementById("currency-symbol").value.trim() || "MT",
-    default_language: document.getElementById("default-language").value,
-    delivery_fee_maputo: Number(document.getElementById("delivery-fee-maputo").value || 0),
-    is_maintenance_mode: document.getElementById("maintenance-mode").checked
-  };
+  async function saveSettings() {
+    if (saving || !settingsId) return;
 
-  const button = document.getElementById("save-settings-button");
-  const originalText = button.innerHTML;
+    const form = el("settings-form");
 
-  button.disabled = true;
-  button.innerHTML = `
-    <span class="spinner-border spinner-border-sm me-2"></span>
-    A guardar...
-  `;
+    if (!form.reportValidity()) return;
 
-  try {
-    const { error } = await supabase
-      .from("settings")
-      .update(settingsData)
-      .eq("id", currentSettingsId);
+    let fees;
 
-    if (error) throw error;
+    try {
+      fees = readFees();
+    } catch (error) {
+      await message("warning", "Verifica a entrega", error.message);
+      return;
+    }
 
-    APP_CONFIG.storeName = settingsData.store_name;
-    APP_CONFIG.supportEmail = settingsData.store_email;
-    APP_CONFIG.supportPhone = settingsData.store_phone;
-    APP_CONFIG.whatsappNumber = settingsData.whatsapp_number;
-    APP_CONFIG.currency = settingsData.currency;
-    APP_CONFIG.currencySymbol = settingsData.currency_symbol;
-    APP_CONFIG.defaultLanguage = settingsData.default_language;
+    const data = {
+      store_name: el("store-name").value.trim(),
+      store_email: el("store-email").value.trim(),
+      store_phone: el("store-phone").value.trim(),
+      whatsapp_number: el("whatsapp-number").value.trim() || null,
+      currency: el("currency").value,
+      currency_symbol: el("currency-symbol").value.trim() || "MT",
+      default_language: el("default-language").value,
+      delivery_fee_maputo: fees["Maputo Cidade"] ?? 0,
+      delivery_fees: fees,
+      is_maintenance_mode: el("maintenance-mode").checked
+    };
 
-    Swal.fire({
-      icon: "success",
-      title: "Configurações guardadas",
-      text: "As alterações foram aplicadas com sucesso.",
-      timer: 1800,
-      showConfirmButton: false
-    });
+    if (!data.store_name || !data.store_email || !data.store_phone) {
+      await message(
+        "warning",
+        "Dados incompletos",
+        "Preenche o nome, e-mail e telefone da loja."
+      );
+      return;
+    }
 
-  } catch (error) {
-    console.error("Erro ao guardar configurações:", error);
+    saving = true;
 
-    Swal.fire({
-      icon: "error",
-      title: "Erro",
-      text: "Não foi possível guardar as configurações."
-    });
+    const button = el("save-settings-button");
+    const original = button.innerHTML;
 
-  } finally {
-    button.disabled = false;
-    button.innerHTML = originalText;
+    button.disabled = true;
+    button.textContent = "A guardar...";
+
+    try {
+      const { error } = await client()
+        .from("settings")
+        .update(data)
+        .eq("id", settingsId)
+        .select("id")
+        .single();
+
+      if (error) throw error;
+
+      if (typeof APP_CONFIG !== "undefined") {
+        try {
+          Object.assign(APP_CONFIG, {
+            storeName: data.store_name,
+            supportEmail: data.store_email,
+            supportPhone: data.store_phone,
+            whatsappNumber: data.whatsapp_number,
+            currency: data.currency,
+            currencySymbol: data.currency_symbol,
+            defaultLanguage: data.default_language
+          });
+        } catch (configError) {
+          console.warn(
+            "[Loja MZ] Configuração local:",
+            configError
+          );
+        }
+      }
+
+      await message(
+        "success",
+        "Configurações guardadas",
+        "As taxas de entrega foram guardadas na base de dados."
+      );
+    } catch (error) {
+      console.error("[Loja MZ] Configurações:", error);
+
+      await message(
+        "error",
+        "Não foi possível guardar",
+        error.message || "Verifica as permissões da tabela settings."
+      );
+    } finally {
+      saving = false;
+      button.disabled = false;
+      button.innerHTML = original;
+    }
   }
-}
+
+  async function initialize() {
+    if (initialized || !window.currentAdmin) return;
+    if (!el("settings-form")) return;
+
+    initialized = true;
+
+    try {
+      prepareDeliveryFields();
+
+      el("settings-form").addEventListener("submit", event => {
+        event.preventDefault();
+        saveSettings();
+      });
+
+      await loadSettings();
+    } catch (error) {
+      console.error("[Loja MZ] Preparação:", error);
+
+      el("settings-loading").classList.remove("d-none");
+      el("settings-loading").textContent =
+        `Não foi possível carregar: ${error.message}`;
+    }
+  }
+
+  document.addEventListener("admin:ready", initialize);
+
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      initialize,
+      { once: true }
+    );
+  } else {
+    initialize();
+  }
+
+  // Compatibilidade com versões do admin-auth.js sem admin:ready.
+  let attempts = 0;
+
+  const timer = window.setInterval(() => {
+    attempts++;
+
+    if (window.currentAdmin) {
+      window.clearInterval(timer);
+      initialize();
+    } else if (attempts >= 150) {
+      window.clearInterval(timer);
+    }
+  }, 200);
+})();
