@@ -5,11 +5,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Loja MZ — Malas, Roupas, Telemóveis e Acessórios</title>
+  <title>Loja MZ — Malas, roupas, telemóveis e acessórios</title>
 
   <meta
     name="description"
-    content="Loja online em Moçambique: roupas, malas, telemóveis, acessórios e mais. Preços em MZN."
+    content="Explore malas, roupas, telemóveis e acessórios. Preços em meticais e entrega nas zonas disponíveis."
   >
 
   <meta name="author" content="Leonildo Keysse">
@@ -43,7 +43,7 @@
   <!-- Estilos do projeto -->
   <link href="assets/css/style.css" rel="stylesheet">
 
-  <!-- Ajustes específicos da página inicial -->
+  <!-- Ajustes da página inicial -->
   <style>
     .topbar {
       position: relative;
@@ -51,18 +51,18 @@
     }
 
     .topbar .dropdown-menu {
-      background-color: #ffffff;
+      min-width: 160px;
       color: #111827;
+      background-color: #ffffff;
       border: 1px solid #e5e7eb;
       border-radius: 12px;
       box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
-      min-width: 160px;
     }
 
     .topbar .dropdown-menu .dropdown-item {
+      padding: 10px 16px;
       color: #111827;
       background-color: transparent;
-      padding: 10px 16px;
     }
 
     .topbar .dropdown-menu .dropdown-item:hover,
@@ -71,16 +71,31 @@
       background-color: #eff6ff;
     }
 
-    .topbar .dropdown-menu .dropdown-item.active {
-      color: #ffffff;
-      background-color: #0d6efd;
+    .home-section-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .home-section-heading .see-all {
+      white-space: nowrap;
+    }
+
+    .home-section-description {
+      max-width: 720px;
+      margin-bottom: 24px;
+      color: var(--gray);
+      line-height: 1.7;
     }
 
     #categories-grid .category-card {
       height: 100%;
     }
 
-    #categories-grid .home-category-action {
+    .home-category-action {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -92,33 +107,23 @@
       line-height: 1.4;
     }
 
-    #categories-grid a.home-category-action {
+    a.home-category-action {
       padding: 7px 12px;
       border: 1px solid #dbeafe;
       border-radius: 8px;
     }
 
-    #categories-grid .category-card:hover .home-category-action {
+    .category-card:hover .home-category-action {
       color: var(--primary-dark);
     }
 
-    #featured-products .home-details-link {
+    .store-images-link {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
       width: 100%;
       margin-top: 12px;
       margin-bottom: 8px;
-    }
-
-    .home-section-heading {
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .home-section-heading .see-all {
-      white-space: nowrap;
     }
 
     .footer-links a {
@@ -126,19 +131,23 @@
     }
 
     @media (max-width: 575.98px) {
-      #categories-grid .home-category-action {
+      .home-category-action {
         font-size: 0.8rem;
       }
 
-      #featured-products .home-details-link {
+      .store-images-link {
         padding: 8px;
         font-size: 0.82rem;
+      }
+
+      .home-section-description {
+        font-size: 0.92rem;
       }
     }
   </style>
 </head>
 
-<body>
+<body data-page="home">
   <!-- Topbar -->
   <div class="topbar py-2">
     <div
@@ -148,8 +157,8 @@
         href="tel:+258853217149"
         class="text-white text-decoration-none"
       >
-        <i class="bi bi-telephone me-1" aria-hidden="true"></i>
-        +258 85 321 7149
+        <i class="bi b" aria-hidden="true"></i>
+
       </a>
 
       <div class="d-flex align-items-center gap-3">
@@ -219,7 +228,9 @@
           aria-hidden="true"
         ></i>
 
-        <span class="brand-name">Loja MZ</span>
+        <span class="brand-name" data-store-name>
+          Loja MZ
+        </span>
       </a>
 
       <button
@@ -365,22 +376,35 @@
   </nav>
 
   <main>
-    <!-- Hero -->
+    <!-- Apresentação -->
     <section class="hero">
       <div class="container">
         <div class="row align-items-center g-5">
           <div class="col-lg-6" data-aos="fade-right">
-            <span class="hero-badge" data-i18n="hero_badge">
-              Novidades
+            <span
+              class="hero-badge"
+              data-home-copy="hero_badge"
+              data-i18n="hero_badge"
+            >
+              Descubra a nossa seleção
             </span>
 
-            <h1 class="hero-title" data-i18n="hero_title">
-              Compre malas, roupas, telemóveis e acessórios
+            <h1
+              class="hero-title"
+              data-home-copy="hero_title"
+              data-i18n="hero_title"
+            >
+             roupas, Malas, telemóveis e acessórios para o seu dia a dia
             </h1>
 
-            <p class="hero-text" data-i18n="hero_text">
-              Produtos selecionados com preços em Metical e entrega em
-              Moçambique.
+            <p
+              class="hero-text"
+              data-home-copy="hero_text"
+              data-i18n="hero_text"
+            >
+              Explore as categorias, veja as imagens e escolha os seus
+              favoritos, com preços em meticais e entrega nas zonas
+              disponíveis.
             </p>
 
             <a
@@ -397,8 +421,8 @@
             data-aos="fade-left"
           >
             <img
-              src="assets/img/placeholders/hero.svg"
-              alt="Loja MZ"
+              src="assets/img/placeholders/hero.png"
+              alt="Seleção de produtos da loja"
               class="img-fluid hero-image"
             >
           </div>
@@ -412,15 +436,14 @@
       aria-labelledby="categories-title"
     >
       <div class="container">
-        <div
-          class="home-section-heading d-flex justify-content-between align-items-center mb-4"
-        >
+        <div class="home-section-heading">
           <h2
             class="section-title mb-0"
             id="categories-title"
+            data-home-copy="shop_by_category"
             data-i18n="shop_by_category"
           >
-            Comprar por categoria
+            Encontre o que procura
           </h2>
 
           <a
@@ -431,6 +454,15 @@
             Ver tudo
           </a>
         </div>
+
+        <p
+          class="home-section-description"
+          data-home-copy="home_categories_text"
+          data-i18n="home_categories_text"
+        >
+          Explore as nossas categorias e descubra os produtos disponíveis
+          para si.
+        </p>
 
         <div class="row g-4" id="categories-grid">
           <div
@@ -449,15 +481,14 @@
       aria-labelledby="featured-title"
     >
       <div class="container">
-        <div
-          class="home-section-heading d-flex justify-content-between align-items-center mb-4"
-        >
+        <div class="home-section-heading">
           <h2
             class="section-title mb-0"
             id="featured-title"
+            data-home-copy="featured_products"
             data-i18n="featured_products"
           >
-            Produtos destacados
+            Destaques da loja
           </h2>
 
           <a
@@ -468,6 +499,15 @@
             Ver tudo
           </a>
         </div>
+
+        <p
+          class="home-section-description"
+          data-home-copy="home_featured_text"
+          data-i18n="home_featured_text"
+        >
+          Veja os produtos em destaque, consulte as imagens e adicione
+          os seus favoritos ao carrinho.
+        </p>
 
         <div class="row g-4" id="featured-products">
           <div
@@ -480,8 +520,8 @@
       </div>
     </section>
 
-    <!-- Vantagens -->
-    <section class="section" aria-label="Vantagens da Loja MZ">
+    <!-- Serviços -->
+    <section class="section" aria-label="Serviços da loja">
       <div class="container">
         <div class="row g-4">
           <div class="col-md-4" data-aos="fade-up">
@@ -540,19 +580,20 @@
     <noscript>
       <div class="container pb-4">
         <p class="alert alert-warning">
-          Ativa o JavaScript no navegador para carregar as categorias
-          e os produtos.
+          Ativa o JavaScript para carregar as categorias e os produtos.
         </p>
       </div>
     </noscript>
   </main>
 
-  <!-- Footer -->
+  <!-- Rodapé -->
   <footer class="footer">
     <div class="container">
       <div class="row g-4">
         <div class="col-lg-4">
-          <h5 class="footer-title">Loja MZ</h5>
+          <h5 class="footer-title" data-store-name>
+            Loja MZ
+          </h5>
 
           <p data-i18n="footer_about">
             A sua loja online para malas, roupas, telemóveis e acessórios
@@ -632,7 +673,8 @@
       <hr class="footer-divider">
 
       <div class="text-center small">
-        © <span id="year"></span> Loja MZ.
+        © <span id="year"></span>
+        <span data-store-name>Loja MZ</span>.
         <span data-i18n="rights">
           Todos os direitos reservados.
         </span>
@@ -647,7 +689,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- Scripts existentes do projeto -->
+  <!-- Scripts do projeto -->
   <script src="assets/js/config.js"></script>
   <script src="assets/js/supabase.js"></script>
   <script src="assets/js/utils.js"></script>
@@ -655,193 +697,5 @@
   <script src="assets/js/ui.js"></script>
   <script src="assets/js/products.js"></script>
   <script src="assets/js/home.js"></script>
-
-  <!-- Complemento visual dos cartões da página inicial -->
-  <script>
-    (function homeCardActions() {
-      "use strict";
-
-      function isEnglish() {
-        if (typeof getCurrentLanguage === "function") {
-          return getCurrentLanguage() === "en";
-        }
-
-        return document.documentElement.lang === "en";
-      }
-
-      function label(pt, en) {
-        return isEnglish() ? en : pt;
-      }
-
-      function isDestination(link, filename) {
-        try {
-          const url = new URL(link.href, window.location.href);
-
-          return (
-            url.origin === window.location.origin &&
-            url.pathname.endsWith("/" + filename)
-          );
-        } catch (error) {
-          return false;
-        }
-      }
-
-      function setText(node, value) {
-        if (node.textContent !== value) {
-          node.textContent = value;
-        }
-      }
-
-      function enhanceCategories() {
-        const grid = document.getElementById("categories-grid");
-
-        if (!grid) return;
-
-        const cards = new Set();
-
-        grid.querySelectorAll(".category-card").forEach(card => {
-          cards.add(card);
-        });
-
-        grid.querySelectorAll('a[href]').forEach(link => {
-          if (isDestination(link, "produtos.html")) {
-            cards.add(link.closest(".category-card") || link);
-          }
-        });
-
-        cards.forEach(card => {
-          const links = card.matches("a[href]")
-            ? [card]
-            : Array.from(card.querySelectorAll("a[href]"));
-
-          const destination = links.find(link =>
-            isDestination(link, "produtos.html")
-          );
-
-          if (!destination) return;
-
-          let action = card.querySelector(
-            "[data-home-category-action]"
-          );
-
-          if (!action) {
-            // Não cria um link dentro de outro link.
-            const outerLink = card.closest("a[href]");
-
-            if (outerLink) {
-              action = document.createElement("span");
-            } else {
-              action = document.createElement("a");
-              action.href = destination.href;
-            }
-
-            action.className = "home-category-action";
-            action.setAttribute("data-home-category-action", "");
-
-            card.append(action);
-          }
-
-          setText(
-            action,
-            label("Ver produtos →", "View products →")
-          );
-        });
-      }
-
-      function enhanceFeaturedProducts() {
-        const grid = document.getElementById("featured-products");
-
-        if (!grid) return;
-
-        grid.querySelectorAll(".product-card").forEach(card => {
-          const destination = Array.from(
-            card.querySelectorAll("a[href]")
-          ).find(link =>
-            isDestination(link, "produto.html")
-          );
-
-          if (!destination) return;
-
-          const body = card.querySelector(".product-body");
-
-          if (!body) return;
-
-          let details = body.querySelector(
-            "[data-home-details-link]"
-          );
-
-          if (!details) {
-            details = document.createElement("a");
-            details.href = destination.href;
-            details.className =
-              "btn btn-outline-primary btn-sm home-details-link";
-
-            details.setAttribute("data-home-details-link", "");
-
-            const addButton = body.querySelector("button");
-
-            if (addButton) {
-              addButton.insertAdjacentElement(
-                "beforebegin",
-                details
-              );
-            } else {
-              body.append(details);
-            }
-          }
-
-          setText(
-            details,
-            label("Ver detalhes", "View details")
-          );
-        });
-      }
-
-      function observeGrid(id, enhance) {
-        const grid = document.getElementById(id);
-
-        if (!grid) return;
-
-        const observer = new MutationObserver(() => {
-          observer.disconnect();
-
-          try {
-            enhance();
-          } finally {
-            observer.observe(grid, {
-              childList: true,
-              subtree: true
-            });
-          }
-        });
-
-        enhance();
-
-        observer.observe(grid, {
-          childList: true,
-          subtree: true
-        });
-      }
-
-      function initialize() {
-        observeGrid("categories-grid", enhanceCategories);
-
-        observeGrid(
-          "featured-products",
-          enhanceFeaturedProducts
-        );
-      }
-
-      if (document.readyState === "loading") {
-        document.addEventListener(
-          "DOMContentLoaded",
-          initialize,
-          { once: true }
-        );
-      } else {
-        initialize();
-      }
-    })();
-  </script>
 </body>
 </html>
