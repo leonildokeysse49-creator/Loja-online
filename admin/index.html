@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -17,16 +18,14 @@
 
 <body>
   <div class="admin-wrapper">
-
-    <!-- Sidebar -->
     <aside class="admin-sidebar" id="admin-sidebar">
       <div class="sidebar-brand">
         <i class="bi bi-bag-heart-fill"></i>
         <span>Loja MZ</span>
       </div>
 
-      <nav class="sidebar-nav">
-        <a href="index.html" class="sidebar-link active">
+      <nav class="sidebar-nav" aria-label="Administração">
+        <a href="index.html" class="sidebar-link active admin-only">
           <i class="bi bi-speedometer2"></i>
           <span>Dashboard</span>
         </a>
@@ -41,42 +40,42 @@
           <span>Categorias</span>
         </a>
 
-        <a href="marcas.html" class="sidebar-link">
-          <i class="bi bi-award"></i>
-          <span>Marcas</span>
-        </a>
-
         <a href="pedidos.html" class="sidebar-link">
           <i class="bi bi-receipt"></i>
           <span>Pedidos</span>
         </a>
 
-        <a href="clientes.html" class="sidebar-link">
+        <a href="utilizadores.html" class="sidebar-link admin-only">
+          <i class="bi bi-person-gear"></i>
+          <span>Utilizadores</span>
+        </a>
+
+        <a href="clientes.html" class="sidebar-link admin-only">
           <i class="bi bi-people"></i>
           <span>Clientes</span>
         </a>
 
-        <a href="cupoes.html" class="sidebar-link">
+        <a href="cupoes.html" class="sidebar-link admin-only">
           <i class="bi bi-ticket-perforated"></i>
           <span>Cupões</span>
         </a>
 
-        <a href="banners.html" class="sidebar-link">
+        <a href="banners.html" class="sidebar-link admin-only">
           <i class="bi bi-image"></i>
           <span>Banners</span>
         </a>
 
-        <a href="avaliacoes.html" class="sidebar-link">
+        <a href="avaliacoes.html" class="sidebar-link admin-only">
           <i class="bi bi-star"></i>
           <span>Avaliações</span>
         </a>
 
-        <a href="relatorios.html" class="sidebar-link">
+        <a href="relatorios.html" class="sidebar-link admin-only">
           <i class="bi bi-graph-up"></i>
           <span>Relatórios</span>
         </a>
 
-        <a href="configuracoes.html" class="sidebar-link">
+        <a href="configuracoes.html" class="sidebar-link admin-only">
           <i class="bi bi-gear"></i>
           <span>Configurações</span>
         </a>
@@ -90,9 +89,7 @@
       </div>
     </aside>
 
-    <!-- Conteúdo -->
     <main class="admin-main">
-      <!-- Topbar -->
       <header class="admin-topbar">
         <button class="btn btn-light d-lg-none" id="sidebar-toggle">
           <i class="bi bi-list"></i>
@@ -126,7 +123,6 @@
         </div>
       </header>
 
-      <!-- Dashboard -->
       <div class="admin-content">
         <div id="admin-loading" class="text-center py-5">
           <div class="spinner-border text-primary" role="status">
@@ -137,7 +133,6 @@
         </div>
 
         <div id="admin-content" class="d-none">
-          <!-- Indicadores -->
           <div class="row g-4 mb-4">
             <div class="col-sm-6 col-xl-3">
               <div class="stat-card">
@@ -192,7 +187,6 @@
             </div>
           </div>
 
-          <!-- Gráfico e pedidos -->
           <div class="row g-4">
             <div class="col-lg-8">
               <div class="admin-card">
@@ -219,7 +213,6 @@
             </div>
           </div>
 
-          <!-- Stock baixo -->
           <div class="row g-4 mt-4">
             <div class="col-12">
               <div class="admin-card">
@@ -254,7 +247,6 @@
     </main>
   </div>
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -265,6 +257,7 @@
   <script src="../assets/js/utils.js"></script>
   <script src="../assets/js/i18n.js"></script>
   <script src="../assets/js/admin/admin-auth.js"></script>
+  <script src="../assets/js/admin-role.js"></script>
   <script src="../assets/js/admin/dashboard.js"></script>
 </body>
 </html>

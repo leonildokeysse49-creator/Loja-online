@@ -1,6 +1,9 @@
+
 /* ==========================================================
    Loja MZ — Gestão administrativa de produtos
-   Tabela desktop + cartões mobile
+
+   Administrador: gere todos os produtos.
+   Vendedor: cria produtos e gere apenas os que criou.
    ========================================================== */
 
 (function productsAdmin() {
@@ -53,8 +56,6 @@
 
     if (value) {
       try {
-        // URLs relativas são resolvidas a partir da raiz da loja,
-        // não da pasta admin.
         const storeRoot = new URL("../", window.location.href);
         const url = new URL(value, storeRoot);
 
@@ -110,7 +111,19 @@
     `;
   }
 
+  function canManage(product) {
+    return window.canManageItem(product);
+  }
+
   function actions(product, mobile = false) {
+    if (!canManage(product)) {
+      return `
+        <div class="product-actions text-muted small">
+          Criado pelo administrador
+        </div>
+      `;
+    }
+
     const id = escapeHtml(product.id);
     const editUrl =
       `produto-form.html?id=${encodeURIComponent(product.id)}`;
@@ -336,6 +349,7 @@
           stock,
           is_active,
           created_at,
+          created_by,
           categories (
             name_pt
           ),
@@ -346,8 +360,6 @@
         `, { count: "exact" });
 
       if (search) {
-        // A expressão OR usa sintaxe PostgREST.
-        // Escapa os caracteres especiais da expressão.
         const term = `%${search
           .replace(/\\/g, "\\\\")
           .replace(/"/g, '\\"')}%`;
@@ -372,7 +384,6 @@
         .order("id", { ascending: false })
         .range(from, from + PAGE_SIZE - 1);
 
-      // Ignora respostas antigas de pesquisas anteriores.
       if (version !== requestVersion) return;
 
       if (error) throw error;
@@ -474,6 +485,16 @@
 
     if (!product) return;
 
+    if (!canManage(product)) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Ação não permitida",
+        text: "Só podes alterar ou apagar produtos que criaste."
+      });
+
+      return;
+    }
+
     const action = button.dataset.action;
 
     const result = await Swal.fire({
@@ -563,8 +584,6 @@
 
     el("product-search").addEventListener("input", () => {
       clearTimeout(searchTimer);
-
-      // Invalida qualquer consulta anterior.
       requestVersion++;
 
       searchTimer = setTimeout(() => {

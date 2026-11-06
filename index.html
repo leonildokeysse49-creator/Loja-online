@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -157,8 +156,8 @@
         href="tel:+258853217149"
         class="text-white text-decoration-none"
       >
-        <i class="bi b" aria-hidden="true"></i>
-
+        <i class="bi bi-telephone me-1" aria-hidden="true"></i>
+        +258 85 321 7149
       </a>
 
       <div class="d-flex align-items-center gap-3">
@@ -394,7 +393,7 @@
               data-home-copy="hero_title"
               data-i18n="hero_title"
             >
-             roupas, Malas, telemóveis e acessórios para o seu dia a dia
+              Roupas, malas, telemóveis e acessórios para o seu dia a dia
             </h1>
 
             <p
@@ -430,21 +429,25 @@
       </div>
     </section>
 
-    <!-- Categorias -->
+    <!-- Categorias dinâmicas -->
     <section
-      class="section"
-      aria-labelledby="categories-title"
+      class="section category-section"
+      aria-labelledby="home-categories-title"
     >
       <div class="container">
         <div class="home-section-heading">
-          <h2
-            class="section-title mb-0"
-            id="categories-title"
-            data-home-copy="shop_by_category"
-            data-i18n="shop_by_category"
-          >
-            Encontre o que procura
-          </h2>
+          <div>
+            <h2
+              class="section-title mb-1"
+              id="home-categories-title"
+            >
+              Explora por categoria
+            </h2>
+
+            <p class="text-muted mb-0">
+              Encontra facilmente produtos por categoria e subcategoria.
+            </p>
+          </div>
 
           <a
             href="produtos.html"
@@ -455,21 +458,16 @@
           </a>
         </div>
 
-        <p
-          class="home-section-description"
-          data-home-copy="home_categories_text"
-          data-i18n="home_categories_text"
+        <div
+          id="home-categories"
+          class="row g-4"
         >
-          Explore as nossas categorias e descubra os produtos disponíveis
-          para si.
-        </p>
-
-        <div class="row g-4" id="categories-grid">
-          <div
-            class="col-12 text-center text-muted"
-            data-i18n="loading"
-          >
-            A carregar...
+          <div class="col-12 text-center text-muted py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">
+                A carregar categorias...
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -688,6 +686,7 @@
   <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Scripts do projeto -->
   <script src="assets/js/config.js"></script>
@@ -695,6 +694,7 @@
   <script src="assets/js/utils.js"></script>
   <script src="assets/js/i18n.js"></script>
   <script src="assets/js/ui.js"></script>
+  <script src="assets/js/home-categories.js"></script>
   <script src="assets/js/products.js"></script>
   <script src="assets/js/home.js"></script>
 </body>

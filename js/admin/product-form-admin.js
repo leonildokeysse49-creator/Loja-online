@@ -1,7 +1,9 @@
 
 /* =========================================
    Loja MZ — Formulário de produtos
-   URL + upload de imagens
+
+   Administrador: cria e edita qualquer produto.
+   Vendedor: cria produtos e edita apenas os que criou.
    ========================================= */
 
 (function productFormAdmin() {
@@ -80,6 +82,10 @@
     }
 
     return url.href;
+  }
+
+  function canEditThisProduct(product) {
+    return window.canManageItem(product);
   }
 
   async function initialize() {
@@ -185,6 +191,28 @@
 
     if (!data) {
       throw new Error("Produto não encontrado.");
+    }
+
+    if (!canEditThisProduct(data)) {
+      element("product-fields").disabled = true;
+
+      setStatus(
+        "Este produto foi criado pelo administrador. " +
+        "Como vendedor, não podes editá-lo.",
+        true
+      );
+
+      await showMessage(
+        "warning",
+        "Ação não permitida",
+        "Só podes editar produtos que criaste."
+      );
+
+      setTimeout(() => {
+        window.location.assign("produtos.html");
+      }, 2200);
+
+      return;
     }
 
     element("form-title").textContent = "Editar produto";
@@ -634,6 +662,9 @@
 
         if (error) throw error;
       } else {
+        // O criador fica registado automaticamente.
+        productData.created_by = window.currentAdmin.id;
+
         const { data, error } = await client()
           .from("products")
           .insert(productData)

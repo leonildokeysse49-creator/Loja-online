@@ -1,30 +1,19 @@
+
 <!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Produto — Administração Loja MZ</title>
 
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  >
-
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css"
-    rel="stylesheet"
-  >
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css" rel="stylesheet">
 
   <link href="../assets/css/style.css" rel="stylesheet">
   <link href="../assets/css/admin.css" rel="stylesheet">
 
   <style>
-    /* Ajustes específicos deste formulário. */
-
     #product-form,
     #product-fields {
       min-width: 0;
@@ -146,8 +135,6 @@
 
 <body>
   <div class="admin-wrapper">
-
-    <!-- Menu administrativo -->
     <aside class="admin-sidebar" id="admin-sidebar">
       <div class="sidebar-brand">
         <i class="bi bi-bag-heart-fill" aria-hidden="true"></i>
@@ -160,11 +147,7 @@
           <span>Dashboard</span>
         </a>
 
-        <a
-          href="produtos.html"
-          class="sidebar-link active"
-          aria-current="page"
-        >
+        <a href="produtos.html" class="sidebar-link active" aria-current="page">
           <i class="bi bi-box-seam" aria-hidden="true"></i>
           <span>Produtos</span>
         </a>
@@ -174,71 +157,58 @@
           <span>Categorias</span>
         </a>
 
-        <a href="marcas.html" class="sidebar-link">
-          <i class="bi bi-award" aria-hidden="true"></i>
-          <span>Marcas</span>
-        </a>
-
         <a href="pedidos.html" class="sidebar-link">
           <i class="bi bi-receipt" aria-hidden="true"></i>
           <span>Pedidos</span>
         </a>
 
-        <a href="clientes.html" class="sidebar-link">
+        <a href="utilizadores.html" class="sidebar-link admin-only">
+          <i class="bi bi-person-gear" aria-hidden="true"></i>
+          <span>Utilizadores</span>
+        </a>
+
+        <a href="clientes.html" class="sidebar-link admin-only">
           <i class="bi bi-people" aria-hidden="true"></i>
           <span>Clientes</span>
         </a>
 
-        <a href="cupoes.html" class="sidebar-link">
+        <a href="cupoes.html" class="sidebar-link admin-only">
           <i class="bi bi-ticket-perforated" aria-hidden="true"></i>
           <span>Cupões</span>
         </a>
 
-        <a href="banners.html" class="sidebar-link">
+        <a href="banners.html" class="sidebar-link admin-only">
           <i class="bi bi-image" aria-hidden="true"></i>
           <span>Banners</span>
         </a>
 
-        <a href="avaliacoes.html" class="sidebar-link">
+        <a href="avaliacoes.html" class="sidebar-link admin-only">
           <i class="bi bi-star" aria-hidden="true"></i>
           <span>Avaliações</span>
         </a>
 
-        <a href="relatorios.html" class="sidebar-link">
+        <a href="relatorios.html" class="sidebar-link admin-only">
           <i class="bi bi-graph-up" aria-hidden="true"></i>
           <span>Relatórios</span>
         </a>
 
-        <a href="configuracoes.html" class="sidebar-link">
+        <a href="configuracoes.html" class="sidebar-link admin-only">
           <i class="bi bi-gear" aria-hidden="true"></i>
           <span>Configurações</span>
         </a>
       </nav>
 
       <div class="sidebar-footer">
-        <button
-          type="button"
-          class="btn btn-outline-light w-100"
-          id="admin-logout-button"
-        >
+        <button type="button" class="btn btn-outline-light w-100" id="admin-logout-button">
           <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>
           Terminar sessão
         </button>
       </div>
     </aside>
 
-    <!-- Conteúdo principal -->
     <main class="admin-main">
-
       <header class="admin-topbar">
-        <button
-          type="button"
-          class="btn btn-light d-lg-none"
-          id="sidebar-toggle"
-          aria-label="Abrir menu"
-          aria-controls="admin-sidebar"
-          aria-expanded="false"
-        >
+        <button type="button" class="btn btn-light d-lg-none" id="sidebar-toggle" aria-label="Abrir menu" aria-controls="admin-sidebar" aria-expanded="false">
           <i class="bi bi-list" aria-hidden="true"></i>
         </button>
 
@@ -253,20 +223,11 @@
       </header>
 
       <div class="admin-content">
-
-        <div
-          id="product-form-status"
-          class="alert alert-info"
-          role="status"
-        >
+        <div id="product-form-status" class="alert alert-info" role="status">
           A preparar formulário...
         </div>
 
-        <!-- Atalhos para não depender de uma rolagem longa -->
-        <nav
-          class="product-section-links"
-          aria-label="Secções do produto"
-        >
+        <nav class="product-section-links" aria-label="Secções do produto">
           <a href="#product-basic-section">Dados básicos</a>
           <a href="#product-pricing-section">Preço e stock</a>
           <a href="#product-images-section">Imagens</a>
@@ -276,21 +237,11 @@
 
         <form id="product-form">
           <fieldset id="product-fields" disabled>
-            <legend class="visually-hidden">
-              Dados do produto
-            </legend>
+            <legend class="visually-hidden">Dados do produto</legend>
 
             <div class="row g-4">
-
-              <!-- Coluna principal -->
               <div class="col-12 col-lg-8">
-
-                <!-- Dados básicos -->
-                <section
-                  id="product-basic-section"
-                  class="admin-card product-section"
-                  aria-labelledby="product-basic-title"
-                >
+                <section id="product-basic-section" class="admin-card product-section" aria-labelledby="product-basic-title">
                   <div class="product-section-heading">
                     <i class="bi bi-box-seam" aria-hidden="true"></i>
                     <h2 id="product-basic-title">Dados básicos</h2>
@@ -298,66 +249,32 @@
 
                   <div class="row g-3">
                     <div class="col-12 col-md-6">
-                      <label for="name-pt" class="form-label">
-                        Nome em português *
-                      </label>
+                      <label for="name-pt" class="form-label">Nome em português *</label>
 
-                      <input
-                        id="name-pt"
-                        class="form-control"
-                        type="text"
-                        maxlength="200"
-                        required
-                      >
+                      <input id="name-pt" class="form-control" type="text" maxlength="200" required>
                     </div>
 
                     <div class="col-12 col-md-6">
-                      <label for="name-en" class="form-label">
-                        Nome em inglês
-                      </label>
+                      <label for="name-en" class="form-label">Nome em inglês</label>
 
-                      <input
-                        id="name-en"
-                        class="form-control"
-                        type="text"
-                        maxlength="200"
-                      >
+                      <input id="name-en" class="form-control" type="text" maxlength="200">
                     </div>
 
                     <div class="col-12 col-sm-6">
-                      <label for="slug" class="form-label">
-                        Slug *
-                      </label>
+                      <label for="slug" class="form-label">Slug *</label>
 
-                      <input
-                        id="slug"
-                        class="form-control"
-                        type="text"
-                        pattern="[a-z0-9]+(-[a-z0-9]+)*"
-                        title="Usa letras minúsculas, números e hífen."
-                        required
-                      >
+                      <input id="slug" class="form-control" type="text" pattern="[a-z0-9]+(-[a-z0-9]+)*" title="Usa letras minúsculas, números e hífen." required>
                     </div>
 
                     <div class="col-12 col-sm-6">
                       <label for="sku" class="form-label">SKU</label>
 
-                      <input
-                        id="sku"
-                        class="form-control"
-                        type="text"
-                        maxlength="100"
-                      >
+                      <input id="sku" class="form-control" type="text" maxlength="100">
                     </div>
                   </div>
                 </section>
 
-                <!-- Preço e stock: agora antes das descrições -->
-                <section
-                  id="product-pricing-section"
-                  class="admin-card product-section"
-                  aria-labelledby="product-pricing-title"
-                >
+                <section id="product-pricing-section" class="admin-card product-section" aria-labelledby="product-pricing-title">
                   <div class="product-section-heading">
                     <i class="bi bi-cash-stack" aria-hidden="true"></i>
                     <h2 id="product-pricing-title">Preço e stock</h2>
@@ -365,63 +282,26 @@
 
                   <div class="row g-3">
                     <div class="col-12 col-sm-6 col-xl-4">
-                      <label for="price" class="form-label">
-                        Preço normal (MT) *
-                      </label>
+                      <label for="price" class="form-label">Preço normal (MT) *</label>
 
-                      <input
-                        id="price"
-                        class="form-control"
-                        type="number"
-                        inputmode="decimal"
-                        step="0.01"
-                        min="0"
-                        placeholder="0,00"
-                        required
-                      >
+                      <input id="price" class="form-control" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00" required>
                     </div>
 
                     <div class="col-12 col-sm-6 col-xl-4">
-                      <label for="promotional-price" class="form-label">
-                        Preço promocional (MT)
-                      </label>
+                      <label for="promotional-price" class="form-label">Preço promocional (MT)</label>
 
-                      <input
-                        id="promotional-price"
-                        class="form-control"
-                        type="number"
-                        inputmode="decimal"
-                        step="0.01"
-                        min="0"
-                        placeholder="Opcional"
-                      >
+                      <input id="promotional-price" class="form-control" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Opcional">
                     </div>
 
                     <div class="col-12 col-xl-4">
-                      <label for="stock" class="form-label">
-                        Stock disponível *
-                      </label>
+                      <label for="stock" class="form-label">Stock disponível *</label>
 
-                      <input
-                        id="stock"
-                        class="form-control"
-                        type="number"
-                        inputmode="numeric"
-                        step="1"
-                        min="0"
-                        value="0"
-                        required
-                      >
+                      <input id="stock" class="form-control" type="number" inputmode="numeric" step="1" min="0" value="0" required>
                     </div>
                   </div>
                 </section>
 
-                <!-- Imagens -->
-                <section
-                  id="product-images-section"
-                  class="admin-card product-section"
-                  aria-labelledby="product-images-title"
-                >
+                <section id="product-images-section" class="admin-card product-section" aria-labelledby="product-images-title">
                   <div class="product-section-heading">
                     <i class="bi bi-images" aria-hidden="true"></i>
                     <h2 id="product-images-title">Imagens do produto</h2>
@@ -433,22 +313,12 @@
                   </p>
 
                   <div class="image-source-box">
-                    <label
-                      for="image-files"
-                      class="form-label fw-semibold"
-                    >
+                    <label for="image-files" class="form-label fw-semibold">
                       <i class="bi bi-upload me-1" aria-hidden="true"></i>
                       Upload de imagens
                     </label>
 
-                    <input
-                      id="image-files"
-                      class="form-control"
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      multiple
-                      aria-describedby="image-upload-help"
-                    >
+                    <input id="image-files" class="form-control" type="file" accept="image/jpeg,image/png,image/webp" multiple aria-describedby="image-upload-help">
 
                     <div id="image-upload-help" class="form-text">
                       JPEG, PNG ou WebP. Até 5 MB por imagem.
@@ -457,28 +327,15 @@
                   </div>
 
                   <div class="image-source-box">
-                    <label
-                      for="main-image"
-                      class="form-label fw-semibold"
-                    >
+                    <label for="main-image" class="form-label fw-semibold">
                       <i class="bi bi-link-45deg me-1" aria-hidden="true"></i>
                       Imagem por URL
                     </label>
 
                     <div class="input-group">
-                      <input
-                        id="main-image"
-                        class="form-control"
-                        type="url"
-                        placeholder="https://exemplo.com/imagem.jpg"
-                        aria-describedby="image-url-help"
-                      >
+                      <input id="main-image" class="form-control" type="url" placeholder="https://exemplo.com/imagem.jpg" aria-describedby="image-url-help">
 
-                      <button
-                        id="add-image-button"
-                        class="btn btn-outline-primary"
-                        type="button"
-                      >
+                      <button id="add-image-button" class="btn btn-outline-primary" type="button">
                         Adicionar
                       </button>
                     </div>
@@ -488,24 +345,12 @@
                     </div>
                   </div>
 
-                  <p
-                    id="images-count"
-                    class="small text-muted mt-3"
-                  ></p>
+                  <p id="images-count" class="small text-muted mt-3"></p>
 
-                  <div
-                    id="images-preview"
-                    class="row g-3"
-                    aria-live="polite"
-                  ></div>
+                  <div id="images-preview" class="row g-3" aria-live="polite"></div>
                 </section>
 
-                <!-- Descrições separadas dos dados principais -->
-                <section
-                  id="product-description-section"
-                  class="admin-card product-section"
-                  aria-labelledby="product-description-title"
-                >
+                <section id="product-description-section" class="admin-card product-section" aria-labelledby="product-description-title">
                   <div class="product-section-heading">
                     <i class="bi bi-text-paragraph" aria-hidden="true"></i>
                     <h2 id="product-description-title">Descrições</h2>
@@ -513,152 +358,82 @@
 
                   <div class="row g-3">
                     <div class="col-12">
-                      <label for="description-pt" class="form-label">
-                        Descrição em português
-                      </label>
+                      <label for="description-pt" class="form-label">Descrição em português</label>
 
-                      <textarea
-                        id="description-pt"
-                        class="form-control"
-                        rows="3"
-                      ></textarea>
+                      <textarea id="description-pt" class="form-control" rows="3"></textarea>
                     </div>
 
                     <div class="col-12">
-                      <label for="description-en" class="form-label">
-                        Descrição em inglês
-                      </label>
+                      <label for="description-en" class="form-label">Descrição em inglês</label>
 
-                      <textarea
-                        id="description-en"
-                        class="form-control"
-                        rows="3"
-                      ></textarea>
+                      <textarea id="description-en" class="form-control" rows="3"></textarea>
                     </div>
 
                     <div class="col-12">
-                      <label
-                        for="long-description-pt"
-                        class="form-label"
-                      >
-                        Descrição longa em português
-                      </label>
+                      <label for="long-description-pt" class="form-label">Descrição longa em português</label>
 
-                      <textarea
-                        id="long-description-pt"
-                        class="form-control description-long"
-                        rows="4"
-                      ></textarea>
+                      <textarea id="long-description-pt" class="form-control description-long" rows="4"></textarea>
                     </div>
 
                     <div class="col-12">
-                      <label
-                        for="long-description-en"
-                        class="form-label"
-                      >
-                        Descrição longa em inglês
-                      </label>
+                      <label for="long-description-en" class="form-label">Descrição longa em inglês</label>
 
-                      <textarea
-                        id="long-description-en"
-                        class="form-control description-long"
-                        rows="4"
-                      ></textarea>
+                      <textarea id="long-description-en" class="form-control description-long" rows="4"></textarea>
                     </div>
                   </div>
                 </section>
               </div>
 
-              <!-- Organização e publicação -->
               <div class="col-12 col-lg-4">
-                <section
-                  id="product-organization-section"
-                  class="admin-card product-section"
-                  aria-labelledby="product-organization-title"
-                >
+                <section id="product-organization-section" class="admin-card product-section" aria-labelledby="product-organization-title">
                   <div class="product-section-heading">
                     <i class="bi bi-tags" aria-hidden="true"></i>
                     <h2 id="product-organization-title">Organização</h2>
                   </div>
 
-                  <label for="category" class="form-label">
-                    Categoria *
-                  </label>
+                  <label for="category" class="form-label">Categoria *</label>
 
-                  <select
-                    id="category"
-                    class="form-select mb-3"
-                    required
-                  >
+                  <select id="category" class="form-select mb-3" required>
                     <option value="">Seleciona</option>
                   </select>
 
-                  <label for="brand" class="form-label">
-                    Marca
-                  </label>
+                  <label for="brand" class="form-label">Marca</label>
 
                   <select id="brand" class="form-select">
                     <option value="">Sem marca</option>
                   </select>
                 </section>
 
-                <section
-                  class="admin-card product-section"
-                  aria-labelledby="product-publication-title"
-                >
+                <section class="admin-card product-section" aria-labelledby="product-publication-title">
                   <div class="product-section-heading">
                     <i class="bi bi-eye" aria-hidden="true"></i>
                     <h2 id="product-publication-title">Publicação</h2>
                   </div>
 
                   <div class="form-check form-switch mb-3">
-                    <input
-                      id="is-active"
-                      class="form-check-input"
-                      type="checkbox"
-                      checked
-                    >
+                    <input id="is-active" class="form-check-input" type="checkbox" checked>
 
-                    <label
-                      for="is-active"
-                      class="form-check-label"
-                    >
+                    <label for="is-active" class="form-check-label">
                       Produto ativo
                     </label>
                   </div>
 
                   <div class="form-check form-switch">
-                    <input
-                      id="is-featured"
-                      class="form-check-input"
-                      type="checkbox"
-                    >
+                    <input id="is-featured" class="form-check-input" type="checkbox">
 
-                    <label
-                      for="is-featured"
-                      class="form-check-label"
-                    >
+                    <label for="is-featured" class="form-check-label">
                       Produto destacado
                     </label>
                   </div>
                 </section>
 
                 <div class="product-save-panel">
-                  <button
-                    id="save-product-button"
-                    class="btn btn-primary btn-lg w-100"
-                    type="submit"
-                  >
+                  <button id="save-product-button" class="btn btn-primary btn-lg w-100" type="submit">
                     <i class="bi bi-check2 me-1" aria-hidden="true"></i>
                     Guardar produto
                   </button>
 
-                  <p
-                    id="upload-status"
-                    class="small text-muted mt-3 mb-0"
-                    role="status"
-                    aria-live="polite"
-                  ></p>
+                  <p id="upload-status" class="small text-muted mt-3 mb-0" role="status" aria-live="polite"></p>
                 </div>
               </div>
             </div>
