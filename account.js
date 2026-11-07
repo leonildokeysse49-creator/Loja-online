@@ -1,3 +1,4 @@
+
 /* =========================================
    Loja MZ — Conta do cliente
    ========================================= */
@@ -49,6 +50,26 @@
     }
   }
 
+  async function loadRoleAndPanelLink(user) {
+    const panelLink = getElement("open-panel-link");
+
+    if (!panelLink) return;
+
+    const { data, error } = await getClient()
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    const role = data?.role;
+
+    if (role === "admin" || role === "vendedor") {
+      panelLink.classList.remove("d-none");
+    }
+  }
+
   async function initializeAccount() {
     if (!getElement("account-content")) return;
 
@@ -87,6 +108,7 @@
       );
 
       await loadProfile();
+      await loadRoleAndPanelLink(user);
 
       const results = await Promise.allSettled([
         loadAddress(),

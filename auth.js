@@ -1,197 +1,377 @@
+
 /* =========================================
-   Loja MZ — Autenticação
+   Loja — Login, registo e sessão existente
+
+   Administrador e vendedor entram no painel.
+   Cliente entra na área da conta.
    ========================================= */
 
-document.addEventListener("DOMContentLoaded", () => {
-  const loginForm = document.getElementById("login-form");
-  const registerForm = document.getElementById("register-form");
+(function authenticationPage() {
+  "use strict";
 
-  if (loginForm) {
-    loginForm.addEventListener("submit", event => {
-      event.preventDefault();
-      loginUser();
-    });
+  let loginBusy = false;
+  let registerBusy = false;
+  let checkingSession = false;
+
+  const el = id => document.getElementById(id);
+
+  const scriptElement = document.currentScript;
+
+  const storeRoot = scriptElement?.src
+    ? new URL("../../", scriptElement.src)
+    : new URL("./", window.location.href);
+
+  function pageUrl(path) {
+    return new URL(path, storeRoot).href;
   }
 
-  if (registerForm) {
-    registerForm.addEventListener("submit", event => {
-      event.preventDefault();
-      registerUser();
-    });
-  }
-});
+  function client() {
+    const db = window.lojaMzSupabaseClient;
 
-async function loginUser() {
-  const email = document.getElementById("login-email").value.trim();
-  const password = document.getElementById("login-password").value;
-  const button = document.getElementById("login-button");
+    if (!db || typeof db.from !== "function") {
+      throw new Error(
+        "O cliente Supabase não está disponível."
+      );
+    }
 
-  if (!email || !password) {
-    Swal.fire({
-      icon: "warning",
-      title: "Dados incompletos",
-      text: "Preencha o e-mail e a palavra-passe."
-    });
-
-    return;
+    return db;
   }
 
-  button.disabled = true;
-  button.innerHTML = `
-    <span class="spinner-border spinner-border-sm me-2"></span>
-    A entrar...
-  `;
+  function missingSession(error) {
+    return (
+      error?.name === "AuthSessionMissingError" ||
+      error?.status === 401
+    );
+  }
 
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+  async function message(icon, title, text) {
+    if (window.Swal) {
+      await window.Swal.fire({
+        icon,
+        title,
+        text,
+        confirmButtonText: "Entendido"
+      });
+    } else {
+      window.alert(`${title}\n${text}`);
+    }
+  }
 
-    if (error) throw error;
+  function setLoginStatus(text, error = false) {
+    const status = el("login-session-status");
 
-    const { data: profile, error: profileError } = await supabase
+    if (!status) return;
+
+    status.textContent = text;
+    status.className = error
+      ? "alert alert-warning small"
+      : "alert alert-info small";
+
+    status.hidden = !text;
+  }
+
+  function disableLogin(disabled) {
+    const fields = el("login-fields");
+
+    if (fields) {
+      fields.disabled = disabled;
+    } else {
+      el("login-form")?.querySelectorAll(
+        "input, button"
+      ).forEach(node => {
+        node.disabled = disabled;
+      });
+    }
+  }
+
+  async function destinationFor(user) {
+    const { data: profile, error } = await client()
       .from("profiles")
       .select("role")
-      .eq("id", data.user.id)
+      .eq("id", user.id)
       .maybeSingle();
-
-    if (profileError) throw profileError;
-
-    Swal.fire({
-      icon: "success",
-      title: "Bem-vindo",
-      text: "Sessão iniciada com sucesso.",
-      timer: 1500,
-      showConfirmButton: false
-    }).then(() => {
-      if (profile?.role === "admin") {
-        window.location.href = "admin/index.html";
-      } else {
-        window.location.href = "conta.html";
-      }
-    });
-
-  } catch (error) {
-    console.error(error);
-
-    Swal.fire({
-      icon: "error",
-      title: "Erro ao entrar",
-      text: "Verifique o e-mail e a palavra-passe."
-    });
-
-  } finally {
-    button.disabled = false;
-    button.innerHTML = `
-      <i class="bi bi-box-arrow-in-right me-2"></i>
-      Entrar
-    `;
-  }
-}
-
-async function registerUser() {
-  const fullName = document.getElementById("register-name").value.trim();
-  const email = document.getElementById("register-email").value.trim();
-  const phone = document.getElementById("register-phone").value.trim();
-  const password = document.getElementById("register-password").value;
-  const confirmPassword = document.getElementById("register-confirm-password").value;
-  const button = document.getElementById("register-button");
-
-  if (!fullName || !email || !phone || !password) {
-    Swal.fire({
-      icon: "warning",
-      title: "Dados incompletos",
-      text: "Preencha todos os campos obrigatórios."
-    });
-
-    return;
-  }
-
-  if (password !== confirmPassword) {
-    Swal.fire({
-      icon: "warning",
-      title: "Palavras-passe diferentes",
-      text: "As palavras-passe não coincidem."
-    });
-
-    return;
-  }
-
-  button.disabled = true;
-  button.innerHTML = `
-    <span class="spinner-border spinner-border-sm me-2"></span>
-    A criar conta...
-  `;
-
-  try {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          phone: phone
-        }
-      }
-    });
 
     if (error) throw error;
 
-    if (data.session) {
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          full_name: fullName,
-          phone: phone
-        })
-        .eq("id", data.user.id);
-
-      if (profileError) throw profileError;
+    if (!profile) {
+      throw new Error(
+        "A conta está autenticada, mas o perfil não foi encontrado. " +
+        "Verifica o registo em profiles e as permissões."
+      );
     }
 
-    Swal.fire({
-      icon: "success",
-      title: "Conta criada",
-      text: data.session
-        ? "A sua conta foi criada com sucesso."
-        : "Verifique o seu e-mail para confirmar a conta.",
-      timer: 2500,
-      showConfirmButton: false
-    }).then(() => {
-      if (data.session) {
-        window.location.href = "conta.html";
-      } else {
-        window.location.href = "login.html";
-      }
-    });
-
-  } catch (error) {
-    console.error(error);
-
-    let message = "Não foi possível criar a conta.";
-
-    if (error.message?.includes("already registered")) {
-      message = "Este e-mail já está registado.";
+    if (
+      profile.role === "admin" ||
+      profile.role === "vendedor"
+    ) {
+      return "admin/index.html";
     }
 
-    Swal.fire({
-      icon: "error",
-      title: "Erro ao registar",
-      text: message
-    });
-
-  } finally {
-    button.disabled = false;
-    button.innerHTML = `
-      <i class="bi bi-person-plus me-2"></i>
-      Criar conta
-    `;
+    return "conta.html";
   }
-}
 
-async function logoutUser() {
-  await supabase.auth.signOut();
+  async function checkExistingSession() {
+    if (checkingSession || !el("login-form")) return;
 
-  window.location.href = "index.html";
-}
+    checkingSession = true;
+    disableLogin(true);
+
+    setLoginStatus(
+      "A verificar se já tens sessão iniciada..."
+    );
+
+    try {
+      const {
+        data: { user },
+        error
+      } = await client().auth.getUser();
+
+      if (error && !missingSession(error)) {
+        throw error;
+      }
+
+      if (!user || missingSession(error)) {
+        setLoginStatus("");
+        return;
+      }
+
+      const destination = await destinationFor(user);
+
+      setLoginStatus(
+        "Sessão reconhecida. A abrir a tua área..."
+      );
+
+      window.location.replace(
+        pageUrl(destination)
+      );
+    } catch (error) {
+      console.error(
+        "[Loja] Verificação da sessão:",
+        error
+      );
+
+      setLoginStatus(
+        "Não foi possível confirmar o acesso: " +
+        error.message +
+        " Nenhum logout foi executado.",
+        true
+      );
+    } finally {
+      checkingSession = false;
+      disableLogin(false);
+    }
+  }
+
+  async function loginUser() {
+    if (loginBusy || checkingSession) return;
+
+    const form = el("login-form");
+
+    if (!form || !form.reportValidity()) return;
+
+    const email = el("login-email").value.trim();
+    const password = el("login-password").value;
+    const button = el("login-button");
+    const original = button.innerHTML;
+
+    loginBusy = true;
+    disableLogin(true);
+    button.textContent = "A entrar...";
+
+    try {
+      const { data, error } = await client()
+        .auth.signInWithPassword({
+          email,
+          password
+        });
+
+      if (error) throw error;
+
+      if (!data.user) {
+        throw new Error(
+          "Não foi possível identificar a conta."
+        );
+      }
+
+      const destination =
+        await destinationFor(data.user);
+
+      window.location.replace(
+        pageUrl(destination)
+      );
+    } catch (error) {
+      console.error("[Loja] Login:", error);
+
+      await message(
+        "error",
+        "Não foi possível entrar",
+        error.message ||
+        "Verifica os dados e tenta novamente."
+      );
+    } finally {
+      loginBusy = false;
+      disableLogin(false);
+      button.innerHTML = original;
+    }
+  }
+
+  async function registerUser() {
+    if (registerBusy) return;
+
+    const form = el("register-form");
+
+    if (!form || !form.reportValidity()) return;
+
+    const fullName = el("register-name").value.trim();
+    const email = el("register-email").value.trim();
+    const phone = el("register-phone").value.trim();
+    const password = el("register-password").value;
+    const confirmation =
+      el("register-confirm-password").value;
+    const button = el("register-button");
+
+    if (!fullName || !email || !phone || !password) {
+      await message(
+        "warning",
+        "Dados incompletos",
+        "Preenche todos os campos obrigatórios."
+      );
+
+      return;
+    }
+
+    if (password !== confirmation) {
+      await message(
+        "warning",
+        "Palavras-passe diferentes",
+        "As palavras-passe não coincidem."
+      );
+
+      return;
+    }
+
+    const original = button.innerHTML;
+
+    registerBusy = true;
+    button.disabled = true;
+    button.textContent = "A criar conta...";
+
+    try {
+      const { data, error } = await client().auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            phone
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.session && data.user) {
+        const { error: profileError } = await client()
+          .from("profiles")
+          .update({
+            full_name: fullName,
+            phone
+          })
+          .eq("id", data.user.id);
+
+        if (profileError) {
+          console.warn(
+            "[Loja] Conta criada; atualização do perfil:",
+            profileError
+          );
+        }
+      }
+
+      await message(
+        "success",
+        "Verifica a tua conta",
+        data.session
+          ? "A tua conta foi criada com sucesso."
+          : "Se o registo estiver disponível, receberás as instruções de confirmação por e-mail."
+      );
+
+      window.location.replace(
+        pageUrl(
+          data.session ? "conta.html" : "login.html"
+        )
+      );
+    } catch (error) {
+      console.error("[Loja] Registo:", error);
+
+      await message(
+        "error",
+        "Não foi possível criar a conta",
+        error.message || "Tenta novamente."
+      );
+    } finally {
+      registerBusy = false;
+      button.disabled = false;
+      button.innerHTML = original;
+    }
+  }
+
+  async function logoutUser() {
+    try {
+      const { error } = await client().auth.signOut();
+
+      if (error) throw error;
+
+      window.location.replace(
+        pageUrl("index.html")
+      );
+    } catch (error) {
+      await message(
+        "error",
+        "Não foi possível terminar a sessão",
+        error.message || "Tenta novamente."
+      );
+    }
+  }
+
+  window.loginUser = loginUser;
+  window.registerUser = registerUser;
+  window.logoutUser = logoutUser;
+
+  function initialize() {
+    el("login-form")?.addEventListener(
+      "submit",
+      event => {
+        event.preventDefault();
+        loginUser();
+      }
+    );
+
+    el("register-form")?.addEventListener(
+      "submit",
+      event => {
+        event.preventDefault();
+        registerUser();
+      }
+    );
+
+    if (el("login-form")) {
+      checkExistingSession();
+    }
+  }
+
+  window.addEventListener("pageshow", event => {
+    if (event.persisted && el("login-form")) {
+      checkExistingSession();
+    }
+  });
+
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      initialize,
+      { once: true }
+    );
+  } else {
+    initialize();
+  }
+})();
