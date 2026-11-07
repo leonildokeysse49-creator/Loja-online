@@ -1,3 +1,4 @@
+
 /* =========================================
    Loja MZ — Categorias na homepage
    ========================================= */
@@ -21,16 +22,6 @@
     return client;
   }
 
-  function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>"']/g, char => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[char]);
-  }
-
   function categoryLink(category) {
     return `produtos.html?categoria=${encodeURIComponent(category.slug)}`;
   }
@@ -39,11 +30,10 @@
     return `produtos.html?categoria=${encodeURIComponent(category.slug)}&subcategoria=${encodeURIComponent(subcategory.slug)}`;
   }
 
-  function createIcon(name, className = "") {
+  function createIcon(name) {
     const icon = document.createElement("i");
 
     icon.setAttribute("data-lucide", name || "package");
-    icon.className = className;
 
     return icon;
   }
@@ -89,7 +79,12 @@
       const links = document.createElement("div");
       links.className = "category-links";
 
-      items.slice(0, 6).forEach(subcategory => {
+      const visibleItems = items.filter(
+        item => item.product_count === null ||
+        Number(item.product_count) > 0
+      );
+
+      visibleItems.slice(0, 6).forEach(subcategory => {
         const link = document.createElement("a");
         link.className = "category-link";
         link.href = subcategoryLink(category, subcategory);
@@ -102,18 +97,28 @@
         links.append(link);
       });
 
-      if (items.length > 6) {
+      if (visibleItems.length > 6) {
         const more = document.createElement("a");
         more.className = "category-link";
         more.href = categoryLink(category);
+
         more.append(
           createIcon("more-horizontal"),
           document.createTextNode(
-            `Ver mais ${items.length - 6} subcategorias`
+            `Ver mais ${visibleItems.length - 6} subcategorias`
           )
         );
 
         links.append(more);
+      }
+
+      if (!visibleItems.length) {
+        const empty = document.createElement("p");
+        empty.className = "text-muted small mb-0";
+        empty.textContent =
+          "Produtos desta categoria serão publicados em breve.";
+
+        links.append(empty);
       }
 
       const viewAll = document.createElement("a");
@@ -141,53 +146,113 @@
     }
   }
 
+  async function loadCategoriesAndSubcategories() {
+    const client = getClient();
+
+    const [
+      categoriesResponse,
+      subcategoriesResponse
+    ] = await Promise.all([
+      client
+        .from("categories")
+        .select(`
+          id,
+          name_pt,
+          description_pt,
+          slug,
+          icon,
+          sort_order
+        `)
+        .eq("is_active", true)
+        .is("parent_id", null)
+        .order("sort_order", { ascending: true }),
+
+      client
+        .from("subcategories")
+        .select(`
+          id,
+          category_id,
+          name,
+          slug,
+          icon,
+          sort_order
+        `)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true })
+    ]);
+
+    if (categoriesResponse.error) {
+      throw categoriesResponse.error;
+    }
+
+    if (subcategoriesResponse.error) {
+      throw subcategoriesResponse.error;
+    }
+
+    return {
+      categories: categoriesResponse.data || [],
+      subcategories: (subcategoriesResponse.data || []).map(
+        subcategory => ({
+          ...subcategory,
+          product_count: null
+        })
+      )
+    };
+  }
+
+  async function loadProductCounts() {
+    const client = getClient();
+
+    const { data, error } = await client
+      .from("products")
+      .select("subcategory_id")
+      .eq("is_active", true);
+
+    if (error) {
+      console.warn(
+        "[Loja MZ] Não foi possível contar produtos por subcategoria:",
+        error
+      );
+
+      return null;
+    }
+
+    const productCounts = new Map();
+
+    (data || []).forEach(product => {
+      if (!product.subcategory_id) return;
+
+      const current =
+        productCounts.get(product.subcategory_id) || 0;
+
+      productCounts.set(
+        product.subcategory_id,
+        current + 1
+      );
+    });
+
+    return productCounts;
+  }
+
   async function loadHomeCategories() {
     try {
-      const client = getClient();
+      const result = await loadCategoriesAndSubcategories();
 
-      const [
-        categoriesResponse,
-        subcategoriesResponse
-      ] = await Promise.all([
-        client
-          .from("categories")
-          .select(`
-            id,
-            name_pt,
-            description_pt,
-            slug,
-            icon,
-            sort_order
-          `)
-          .eq("is_active", true)
-          .is("parent_id", null)
-          .order("sort_order", { ascending: true }),
+      const productCounts = await loadProductCounts();
 
-        client
-          .from("subcategories")
-          .select(`
-            id,
-            category_id,
-            name,
-            slug,
-            icon,
-            sort_order
-          `)
-          .eq("is_active", true)
-          .order("sort_order", { ascending: true })
-      ]);
-
-      if (categoriesResponse.error) {
-        throw categoriesResponse.error;
-      }
-
-      if (subcategoriesResponse.error) {
-        throw subcategoriesResponse.error;
+      if (productCounts) {
+        result.subcategories = result.subcategories.map(
+          subcategory => ({
+            ...subcategory,
+            product_count:
+              productCounts.get(subcategory.id) || 0
+          })
+        );
       }
 
       renderCategories(
-        categoriesResponse.data || [],
-        subcategoriesResponse.data || []
+        result.categories,
+        result.subcategories
       );
     } catch (error) {
       console.error(
