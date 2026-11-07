@@ -5,70 +5,65 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Loja MZ — Malas, roupas, telemóveis e acessórios</title>
+  <title>Loja MZ — Tudo o que procuras, num só lugar</title>
 
   <meta
     name="description"
-    content="Explore malas, roupas, telemóveis e acessórios. Preços em meticais e entrega nas zonas disponíveis."
+    content="Descobre moda, calçados, telemóveis, beleza, electrónica e muito mais na Loja MZ. Preços em meticais e entregas nas zonas disponíveis."
   >
-
   <meta name="author" content="Leonildo Keysse">
 
   <link rel="icon" href="assets/img/favicon.png">
 
-  <!-- Bootstrap -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     rel="stylesheet"
   >
-
-  <!-- Bootstrap Icons -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css"
     rel="stylesheet"
   >
-
-  <!-- Swiper -->
   <link
     href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
     rel="stylesheet"
   >
-
-  <!-- AOS -->
   <link
     href="https://unpkg.com/aos@2.3.4/dist/aos.css"
     rel="stylesheet"
   >
 
-  <!-- Estilos do projeto -->
   <link href="assets/css/style.css" rel="stylesheet">
 
-  <!-- Ajustes da página inicial -->
   <style>
     .topbar {
       position: relative;
       z-index: 1031;
+      background: #0f172a;
+      color: #fff;
+    }
+
+    .topbar .btn-language {
+      color: #fff;
     }
 
     .topbar .dropdown-menu {
       min-width: 160px;
       color: #111827;
-      background-color: #ffffff;
+      background: #fff;
       border: 1px solid #e5e7eb;
       border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      box-shadow: 0 10px 30px rgba(15, 23, 42, .12);
     }
 
-    .topbar .dropdown-menu .dropdown-item {
+    .topbar .dropdown-item {
       padding: 10px 16px;
       color: #111827;
-      background-color: transparent;
     }
 
-    .topbar .dropdown-menu .dropdown-item:hover,
-    .topbar .dropdown-menu .dropdown-item:focus {
+    .topbar .dropdown-item:hover,
+    .topbar .dropdown-item:focus {
       color: #084298;
-      background-color: #eff6ff;
+      background: #eff6ff;
     }
 
     .home-section-heading {
@@ -87,145 +82,192 @@
     .home-section-description {
       max-width: 720px;
       margin-bottom: 24px;
-      color: var(--gray);
+      color: var(--gray, #6b7280);
       line-height: 1.7;
     }
 
-    .category-section {
-      background-color: #f8fafc;
+    .hero-image {
+      width: 100%;
+      max-width: 560px;
+      aspect-ratio: 1 / 1;
+      object-fit: contain;
     }
 
-    .category-card {
-      background: #ffffff;
+    .category-section {
+      background: #f8fafc;
+    }
+
+    #home-categories .category-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 1.5rem;
+      background: #fff;
       border: 1px solid #e5e7eb;
       border-radius: 16px;
-      padding: 1.5rem;
-      height: 100%;
       transition: box-shadow .2s ease, transform .2s ease;
     }
 
-    .category-card:hover {
+    #home-categories .category-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 12px 30px rgba(37, 99, 235, .10);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, .1);
     }
 
-    .category-icon {
-      width: 52px;
-      height: 52px;
-      border-radius: 14px;
-      background: rgba(37, 99, 235, .10);
-      color: #2563eb;
+    #home-categories .category-icon {
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 52px;
+      height: 52px;
       margin-bottom: 1rem;
+      border-radius: 14px;
+      background: #eff6ff;
+      color: #2563eb;
     }
 
-    .category-icon svg {
+    #home-categories .category-icon svg {
       width: 26px;
       height: 26px;
     }
 
-    .category-title {
+    #home-categories .category-title {
+      color: #111827;
       font-size: 1.05rem;
       font-weight: 700;
-      color: #111827;
-      margin-bottom: .35rem;
+      margin-bottom: .5rem;
     }
 
-    .category-description {
+    #home-categories .category-description {
       color: #6b7280;
       font-size: .875rem;
+      line-height: 1.6;
       margin-bottom: 1rem;
     }
 
-    .category-links {
+    #home-categories .category-links {
       display: flex;
       flex-direction: column;
-      gap: .45rem;
+      gap: .35rem;
+      margin-bottom: 1rem;
     }
 
-    .category-link {
+    #home-categories .category-link {
       display: flex;
       align-items: center;
       gap: .5rem;
-      color: #374151;
-      text-decoration: none;
-      font-size: .9rem;
-      padding: .35rem .5rem;
+      padding: .4rem .5rem;
       border-radius: 8px;
-      transition: background .15s ease, color .15s ease;
+      color: #374151;
+      font-size: .9rem;
+      text-decoration: none;
     }
 
-    .category-link:hover {
-      background: rgba(37, 99, 235, .08);
+    #home-categories .category-link:hover,
+    #home-categories .category-link:focus-visible {
+      background: #eff6ff;
       color: #2563eb;
     }
 
-    .category-link svg {
+    #home-categories .category-link svg {
       width: 17px;
       height: 17px;
-      color: #2563eb;
       flex-shrink: 0;
     }
 
-    .category-view-all {
+    #home-categories .category-view-all {
       display: inline-flex;
       align-items: center;
       gap: .4rem;
-      margin-top: 1rem;
+      align-self: flex-start;
+      margin-top: auto;
+      padding-top: .5rem;
       color: #2563eb;
+      font-size: .9rem;
       font-weight: 600;
       text-decoration: none;
-      font-size: .9rem;
     }
 
-    .category-view-all:hover {
+    #home-categories .category-view-all:hover {
       text-decoration: underline;
     }
 
-    .store-images-link {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      margin-top: 12px;
-      margin-bottom: 8px;
+    .category-skeleton {
+      min-height: 300px;
+      padding: 1.5rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      background: #fff;
     }
 
     .footer-links a {
       overflow-wrap: anywhere;
     }
 
+    .skip-link {
+      position: fixed;
+      top: -100px;
+      left: 12px;
+      z-index: 2000;
+      padding: 12px 18px;
+      background: #fff;
+      color: #111827;
+      border-radius: 8px;
+    }
+
+    .skip-link:focus {
+      top: 12px;
+    }
+
+    @media (max-width: 991.98px) {
+      .search-form {
+        margin: 12px 0;
+      }
+
+      .navbar-collapse > .d-flex {
+        padding-bottom: 12px;
+      }
+    }
+
     @media (max-width: 575.98px) {
       .home-section-description {
-        font-size: 0.92rem;
+        font-size: .92rem;
+      }
+
+      .hero-image {
+        max-height: 320px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #home-categories .category-card {
+        transition: none;
+      }
+
+      #home-categories .category-card:hover {
+        transform: none;
+      }
+
+      [data-aos] {
+        opacity: 1 !important;
+        transform: none !important;
       }
     }
   </style>
 </head>
 
 <body data-page="home">
+  <a class="skip-link" href="#main-content">Saltar para o conteúdo</a>
+
   <!-- Topbar -->
   <div class="topbar py-2">
-    <div
-      class="container d-flex justify-content-between align-items-center small gap-2"
-    >
-      <a
-        href="tel:+258853217149"
-        class="text-white text-decoration-none"
-      >
-        <i class="bi bi-telephone me-1" aria-hidden="true"></i>
-        +258 85 321 7149
+    <div class="container d-flex justify-content-between align-items-center small gap-2">
+      <a href="tel:+258853217149" class="text-white text-decoration-none">
+        <i class="" aria-hidden=""></i>
+
       </a>
 
       <div class="d-flex align-items-center gap-3">
-        <span
-          class="d-none d-md-inline"
-          data-i18n="free_delivery"
-        >
-          Entregas em Maputo
-        </span>
+        <span class="d-none d-md-inline">Entregas nas zonas disponíveis</span>
 
         <div class="dropdown">
           <button
@@ -245,23 +287,12 @@
             aria-labelledby="language-menu-button"
           >
             <li>
-              <button
-                class="dropdown-item"
-                type="button"
-                data-language="pt"
-                lang="pt"
-              >
+              <button class="dropdown-item" type="button" data-language="pt" lang="pt">
                 Português
               </button>
             </li>
-
             <li>
-              <button
-                class="dropdown-item"
-                type="button"
-                data-language="en"
-                lang="en"
-              >
+              <button class="dropdown-item" type="button" data-language="en" lang="en">
                 English
               </button>
             </li>
@@ -271,24 +302,12 @@
     </div>
   </div>
 
-  <!-- Navbar -->
-  <nav
-    class="navbar navbar-expand-lg main-navbar sticky-top"
-    aria-label="Navegação principal"
-  >
+  <!-- Navegação -->
+  <nav class="navbar navbar-expand-lg main-navbar sticky-top" aria-label="Navegação principal">
     <div class="container">
-      <a
-        class="navbar-brand d-flex align-items-center gap-2"
-        href="index.html"
-      >
-        <i
-          class="bi bi-bag-heart-fill brand-icon"
-          aria-hidden="true"
-        ></i>
-
-        <span class="brand-name" data-store-name>
-          Loja MZ
-        </span>
+      <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">
+        <i class="bi bi-bag-heart-fill brand-icon" aria-hidden="true"></i>
+        <span class="brand-name" data-store-name>Loja MZ</span>
       </a>
 
       <button
@@ -306,93 +325,37 @@
       <div class="collapse navbar-collapse" id="mainMenu">
         <ul class="navbar-nav mx-auto">
           <li class="nav-item">
-            <a
-              class="nav-link active"
-              href="index.html"
-              aria-current="page"
-              data-i18n="home"
-            >
+            <a class="nav-link active" href="index.html" aria-current="page" data-i18n="home">
               Início
             </a>
           </li>
-
           <li class="nav-item">
-            <a
-              class="nav-link"
-              href="produtos.html"
-              data-i18n="products"
-            >
-              Produtos
-            </a>
+            <a class="nav-link" href="produtos.html" data-i18n="products">Produtos</a>
           </li>
-
-          <li class="nav-item dropdown">
-            <a
-              class="nav-link dropdown-toggle"
-              href="#"
-              id="categories-menu-button"
-              role="button"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-              data-i18n="categories"
-            >
-              Categorias
-            </a>
-
-            <ul
-              class="dropdown-menu"
-              id="categories-menu"
-              aria-labelledby="categories-menu-button"
-            >
-              <li>
-                <span
-                  class="dropdown-item-text text-muted"
-                  data-i18n="loading"
-                >
-                  A carregar...
-                </span>
-              </li>
-            </ul>
-          </li>
-
           <li class="nav-item">
-            <a
-              class="nav-link"
-              href="contacto.html"
-              data-i18n="contact"
-            >
-              Contacto
-            </a>
+            <a class="nav-link" href="categorias.html" data-i18n="categories">Categorias</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="contacto.html" data-i18n="contact">Contacto</a>
           </li>
         </ul>
 
-        <form
-          class="d-flex search-form"
-          role="search"
-          action="produtos.html"
-          method="get"
-        >
-          <label for="search-input" class="visually-hidden">
-            Pesquisar produtos
-          </label>
-
+        <form class="d-flex search-form" role="search" action="produtos.html" method="get">
+          <label for="search-input" class="visually-hidden">Pesquisar produtos</label>
           <input
             class="form-control"
             type="search"
             id="search-input"
             name="pesquisa"
-            data-i18n-placeholder="search_placeholder"
             placeholder="Pesquisar produtos..."
+            data-i18n-placeholder="search_placeholder"
           >
-
           <button
             class="btn btn-primary"
-            type="button"
+            type="submit"
             id="search-button"
             title="Pesquisar produtos"
             aria-label="Pesquisar produtos"
-            data-i18n-title="search_placeholder"
-            data-i18n-aria-label="search_placeholder"
           >
             <i class="bi bi-search" aria-hidden="true"></i>
           </button>
@@ -404,230 +367,147 @@
             class="btn btn-light btn-icon"
             title="A minha conta"
             aria-label="A minha conta"
-            data-i18n-title="my_account"
-            data-i18n-aria-label="my_account"
           >
             <i class="bi bi-person-circle" aria-hidden="true"></i>
           </a>
-
           <a
             href="carrinho.html"
             class="btn btn-light btn-icon position-relative"
             title="Carrinho"
             aria-label="Carrinho"
-            data-i18n-title="cart"
-            data-i18n-aria-label="cart"
           >
             <i class="bi bi-cart3" aria-hidden="true"></i>
-
             <span
-              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
               id="cart-count"
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
               aria-live="polite"
-            >
-              0
-            </span>
+            >0</span>
           </a>
         </div>
       </div>
     </div>
   </nav>
 
-  <main>
-    <!-- Apresentação -->
-    <section class="hero">
+  <main id="main-content">
+    <!-- Banner -->
+    <section class="hero" aria-labelledby="hero-title">
       <div class="container">
         <div class="row align-items-center g-5">
-          <div class="col-lg-6" data-aos="fade-right">
-            <span
-              class="hero-badge"
-              data-home-copy="hero_badge"
-              data-i18n="hero_badge"
-            >
-              Descubra a nossa seleção
-            </span>
+          <div class="col-lg-6">
+            <span class="hero-badge">LOJA ONLINE · MOÇAMBIQUE</span>
 
-            <h1
-              class="hero-title"
-              data-home-copy="hero_title"
-              data-i18n="hero_title"
-            >
-              Roupas, malas, telemóveis e acessórios para o seu dia a dia
+            <h1 class="hero-title" id="hero-title">
+              Tudo o que procuras, num só lugar.
             </h1>
 
-            <p
-              class="hero-text"
-              data-home-copy="hero_text"
-              data-i18n="hero_text"
-            >
-              Explore as categorias, veja as imagens e escolha os seus
-              favoritos, com preços em meticais e entrega nas zonas
-              disponíveis.
+            <p class="hero-text">
+              Descobre uma seleção de produtos de moda, tecnologia,
+              casa, beleza e muito mais. Compra com comodidade na Loja-MZ.
             </p>
 
-            <a
-              href="produtos.html"
-              class="btn btn-primary btn-lg"
-              data-i18n="shop_now"
-            >
-              Comprar agora
+            <a href="produtos.html" class="btn btn-primary btn-lg">
+              Explorar produtos
+              <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i>
             </a>
           </div>
 
-          <div
-            class="col-lg-6 text-center"
-            data-aos="fade-left"
-          >
+          <div class="col-lg-6 text-center">
             <img
               src="assets/img/placeholders/hero.png"
-              alt="Seleção de produtos da loja"
+              alt="Seleção de produtos da Loja MZ"
               class="img-fluid hero-image"
+              fetchpriority="high"
+              decoding="async"
             >
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Categorias dinâmicas -->
-    <section
-      class="section category-section"
-      aria-labelledby="home-categories-title"
-    >
+    <!-- Seis categorias em destaque -->
+    <section class="section category-section" aria-labelledby="home-categories-title">
       <div class="container">
         <div class="home-section-heading">
-          <div>
-            <h2
-              class="section-title mb-1"
-              id="home-categories-title"
-            >
-              Explora por categoria
-            </h2>
+          <h2 class="section-title mb-0" id="home-categories-title">
+            Explora por categoria
+          </h2>
 
-            <p class="text-muted mb-0">
-              Encontra facilmente produtos por categoria e subcategoria.
-            </p>
-          </div>
-
-          <a
-            href="produtos.html"
-            class="see-all"
-            data-i18n="see_all"
-          >
-            Ver tudo
+          <a href="categorias.html" class="see-all">
+            Ver todas
+            <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
           </a>
         </div>
+
+        <p class="home-section-description">Encontra rapidamente o que procuras.</p>
 
         <div
           id="home-categories"
           class="row g-4"
+          data-category-mode="featured"
+          aria-live="polite"
+          aria-busy="true"
         >
           <div class="col-12 text-center text-muted py-5">
             <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">
-                A carregar categorias...
-              </span>
+              <span class="visually-hidden">A carregar categorias...</span>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Produtos destacados -->
-    <section
-      class="section bg-light"
-      aria-labelledby="featured-title"
-    >
+    <!-- Produtos -->
+    <section class="section bg-light" aria-labelledby="featured-title">
       <div class="container">
         <div class="home-section-heading">
           <h2
             class="section-title mb-0"
             id="featured-title"
-            data-home-copy="featured_products"
             data-i18n="featured_products"
           >
-            Destaques da loja
+            Produtos em destaque
           </h2>
 
-          <a
-            href="produtos.html"
-            class="see-all"
-            data-i18n="see_all"
-          >
-            Ver tudo
-          </a>
+          <a href="produtos.html" class="see-all" data-i18n="see_all">Ver tudo</a>
         </div>
 
-        <p
-          class="home-section-description"
-          data-home-copy="home_featured_text"
-          data-i18n="home_featured_text"
-        >
-          Veja os produtos em destaque, consulte as imagens e adicione
-          os seus favoritos ao carrinho.
+        <p class="home-section-description">
+          Descobre os produtos selecionados pela loja e encontra os teus favoritos.
         </p>
 
-        <div class="row g-4" id="featured-products">
-          <div
-            class="col-12 text-center text-muted"
-            data-i18n="loading"
-          >
+        <div class="row g-4" id="featured-products" aria-live="polite">
+          <div class="col-12 text-center text-muted" data-i18n="loading">
             A carregar...
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Serviços -->
+    <!-- Benefícios -->
     <section class="section" aria-label="Serviços da loja">
       <div class="container">
         <div class="row g-4">
-          <div class="col-md-4" data-aos="fade-up">
-            <div class="feature-card text-center">
+          <div class="col-md-4">
+            <div class="feature-card text-center h-100">
               <i class="bi bi-truck" aria-hidden="true"></i>
-
-              <h5 class="mt-3" data-i18n="fast_delivery">
-                Entrega rápida
-              </h5>
-
-              <p class="mb-0" data-i18n="fast_delivery_text">
-                Entregas em Maputo e outras zonas.
-              </p>
+              <h3 class="h5 mt-3">Entregas</h3>
+              <p class="mb-0">Nas zonas disponíveis.</p>
             </div>
           </div>
 
-          <div
-            class="col-md-4"
-            data-aos="fade-up"
-            data-aos-delay="100"
-          >
-            <div class="feature-card text-center">
-              <i class="bi bi-shield-check" aria-hidden="true"></i>
-
-              <h5 class="mt-3" data-i18n="secure_payment">
-                Pagamento seguro
-              </h5>
-
-              <p class="mb-0" data-i18n="secure_payment_text">
-                Multicaixa Express, transferência ou pagamento na entrega.
-              </p>
+          <div class="col-md-4">
+            <div class="feature-card text-center h-100">
+              <i class="bi bi-credit-card" aria-hidden="true"></i>
+              <h3 class="h5 mt-3">Pagamentos</h3>
+              <p class="mb-0">Consulta os métodos disponíveis.</p>
             </div>
           </div>
 
-          <div
-            class="col-md-4"
-            data-aos="fade-up"
-            data-aos-delay="200"
-          >
-            <div class="feature-card text-center">
+          <div class="col-md-4">
+            <div class="feature-card text-center h-100">
               <i class="bi bi-headset" aria-hidden="true"></i>
-
-              <h5 class="mt-3" data-i18n="support">
-                Suporte
-              </h5>
-
-              <p class="mb-0" data-i18n="support_text">
-                Fale connosco por telefone, e-mail ou WhatsApp.
-              </p>
+              <h3 class="h5 mt-3">Suporte</h3>
+              <p class="mb-0">Por telefone, e-mail ou WhatsApp.</p>
             </div>
           </div>
         </div>
@@ -648,81 +528,47 @@
     <div class="container">
       <div class="row g-4">
         <div class="col-lg-4">
-          <h5 class="footer-title" data-store-name>
-            Loja MZ
-          </h5>
-
-          <p data-i18n="footer_about">
-            A sua loja online para malas, roupas, telemóveis e acessórios
-            em Moçambique.
+          <h2 class="h5 footer-title" data-store-name>Loja MZ</h2>
+          <p>
+            Moda, tecnologia, casa, beleza e muito mais.
+            Descobre a nossa seleção de produtos em Moçambique.
           </p>
         </div>
 
         <div class="col-lg-4">
-          <h5 class="footer-title" data-i18n="contact">
-            Contacto
-          </h5>
+          <h2 class="h5 footer-title" data-i18n="contact">Contacto</h2>
 
           <ul class="footer-links">
             <li>
               <i class="bi bi-envelope me-2" aria-hidden="true"></i>
-
               <a href="mailto:leonildokeysse49@gmail.com">
                 leonildokeysse49@gmail.com
               </a>
             </li>
-
             <li>
               <i class="bi bi-telephone me-2" aria-hidden="true"></i>
-
-              <a href="tel:+258853217149">
-                +258 85 321 7149
-              </a>
+              <a href="tel:+258853217149">+258 85 321 7149</a>
             </li>
-
             <li>
               <i class="bi bi-whatsapp me-2" aria-hidden="true"></i>
-
               <a
                 href="https://wa.me/258853217149"
                 target="_blank"
                 rel="noopener noreferrer"
-              >
-                +258 85 321 7149
-              </a>
+              >Falar pelo WhatsApp</a>
             </li>
           </ul>
         </div>
 
         <div class="col-lg-4">
-          <h5 class="footer-title" data-i18n="quick_links">
-            Links rápidos
-          </h5>
+          <h2 class="h5 footer-title" data-i18n="quick_links">Links rápidos</h2>
 
           <ul class="footer-links">
-            <li>
-              <a href="produtos.html" data-i18n="products">
-                Produtos
-              </a>
-            </li>
-
-            <li>
-              <a href="carrinho.html" data-i18n="cart">
-                Carrinho
-              </a>
-            </li>
-
-            <li>
-              <a href="conta.html" data-i18n="my_account">
-                A minha conta
-              </a>
-            </li>
-
-            <li>
-              <a href="contacto.html" data-i18n="contact">
-                Contacto
-              </a>
-            </li>
+            <li><a href="produtos.html" data-i18n="products">Produtos</a></li>
+            <li><a href="categorias.html" data-i18n="categories">Todas as categorias</a></li>
+            <li><a href="carrinho.html" data-i18n="cart">Carrinho</a></li>
+            <li><a href="conta.html" data-i18n="my_account">A minha conta</a></li>
+            <li><a href="contacto.html" data-i18n="contact">Contacto</a></li>
           </ul>
         </div>
       </div>
@@ -732,9 +578,7 @@
       <div class="text-center small">
         © <span id="year"></span>
         <span data-store-name>Loja MZ</span>.
-        <span data-i18n="rights">
-          Todos os direitos reservados.
-        </span>
+        <span data-i18n="rights">Todos os direitos reservados.</span>
       </div>
     </div>
   </footer>
@@ -756,5 +600,9 @@
   <script src="assets/js/home-categories.js"></script>
   <script src="assets/js/products.js"></script>
   <script src="assets/js/home.js"></script>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
