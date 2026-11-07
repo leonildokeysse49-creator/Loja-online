@@ -1,362 +1,604 @@
+
 /* =========================================
    Loja MZ — Gestão de categorias
    ========================================= */
 
-let editingCategoryId = null;
-let categoryModal = null;
+(function categoriesAdminPage() {
+  "use strict";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const checkAdminLoaded = setInterval(() => {
-    if (window.currentAdmin) {
-      clearInterval(checkAdminLoaded);
-      loadAdminCategories();
+  let categories = [];
+  let editingCategoryId = null;
+  let categoriesLoaded = false;
+
+  const el = id => document.getElementById(id);
+
+  function getClient() {
+    const client = window.lojaMzSupabaseClient;
+
+    if (!client || typeof client.from !== "function") {
+      throw new Error(
+        "O cliente Supabase não está disponível."
+      );
     }
-  }, 200);
 
-  const modalElement = document.getElementById("category-modal");
-
-  if (modalElement) {
-    categoryModal = new bootstrap.Modal(modalElement);
+    return client;
   }
 
-  document.getElementById("category-name-pt").addEventListener("input", event => {
-    if (!editingCategoryId) {
-      document.getElementById("category-slug").value = generateSlug(event.target.value);
+  async function showMessage(icon, title, text = "") {
+    if (window.Swal) {
+      return window.Swal.fire({
+        icon,
+        title,
+        text,
+        confirmButtonText: "Entendido"
+      });
     }
-  });
 
-  document.getElementById("save-category-button").addEventListener("click", () => {
-    saveCategory();
-  });
-});
-
-function generateSlug(text) {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-}
-
-async function loadAdminCategories() {
-  const table = document.getElementById("categories-table");
-
-  table.innerHTML = `
-    <tr>
-      <td colspan="6" class="text-center text-muted py-4">
-        A carregar categorias...
-      </td>
-    </tr>
-  `;
-
-  const { data, error } = await supabase
-    .from("categories")
-    .select(`
-      id,
-      name_pt,
-      name_en,
-      slug,
-      parent_id,
-      sort_order,
-      is_active,
-      parent:parent_id (
-        id,
-        name_pt
-      )
-    `)
-    .order("sort_order", { ascending: true });
-
-  if (error) {
-    console.error(error);
-
-    table.innerHTML = `
-      <tr>
-        <td colspan="6" class="text-center text-danger py-4">
-          Erro ao carregar categorias.
-        </td>
-      </tr>
-    `;
-    return;
+    window.alert(`${title}\n${text}`);
   }
 
-  if (!data || data.length === 0) {
-    table.innerHTML = `
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
+  }
+
+  function slugify(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function setButtonLoading(loading) {
+    const button = el("save-category-button");
+
+    if (!button) return;
+
+    button.disabled = loading;
+
+    if (loading) {
+      button.innerHTML = `
+        <span class="spinner-border spinner-border-sm me-1"></span>
+        A guardar...
+      `;
+    } else {
+      button.innerHTML = `
+        <i class="bi bi-check2 me-1"></i>
+        Guardar
+      `;
+    }
+  }
+
+  function resetForm() {
+    editingCategoryId = null;
+
+    el("category-modal-title").textContent = "Nova categoria";
+
+    el("category-name-pt").value = "";
+    el("category-name-en").value = "";
+    el("category-slug").value = "";
+    el("category-parent").value = "";
+    el("category-sort-order").value = "0";
+    el("category-image").value = "";
+    el("category-description-pt").value = "";
+    el("category-description-en").value = "";
+    el("category-active").checked = true;
+  }
+
+  function fillParentOptions(selectedParentId = "") {
+    const select = el("category-parent");
+
+    select.replaceChildren(
+      new Option("Nenhuma", "")
+    );
+
+    categories
+      .filter(category => !category.parent_id)
+      .forEach(category => {
+        select.add(
+          new Option(
+            category.name_pt,
+            category.id
+          )
+        );
+      });
+
+    select.value = selectedParentId || "";
+  }
+
+  function renderCategories() {
+    const tbody = el("categories-table");
+
+    if (!tbody) return;
+
+    tbody.replaceChildren();
+
+    if (!categories.length) {
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+
+      cell.colSpan = 6;
+      cell.className = "text-center text-muted py-4";
+      cell.textContent = "Nenhuma categoria encontrada.";
+
+      row.append(cell);
+      tbody.append(row);
+
+      return;
+    }
+
+    const mainCategories = categories.filter(
+      category => !category.parent_id
+    );
+
+    mainCategories.forEach(category => {
+      const children = categories.filter(
+        item => item.parent_id === category.id
+      );
+
+      tbody.append(createCategoryRow(category, false));
+      children.forEach(child => {
+        tbody.append(createCategoryRow(child, true));
+      });
+    });
+  }
+
+  function createCategoryRow(category, isChild) {
+    const row = document.createElement("tr");
+
+    if (isChild) {
+      row.classList.add("table-light");
+    }
+
+    const nameCell = document.createElement("td");
+
+    if (isChild) {
+      nameCell.innerHTML = `
+        <i class="bi bi-arrow-return-right me-2 text-muted"></i>
+        ${escapeHtml(category.name_pt)}
+      `;
+    } else {
+      nameCell.innerHTML = `
+        <strong>${escapeHtml(category.name_pt)}</strong>
+      `;
+    }
+
+    const slugCell = document.createElement("td");
+    slugCell.className = "text-muted small";
+    slugCell.textContent = category.slug || "";
+
+    const parentCell = document.createElement("td");
+    parentCell.className = "text-muted small";
+
+    const parent = categories.find(
+      item => item.id === category.parent_id
+    );
+
+    parentCell.textContent = parent?.name_pt || "—";
+
+    const orderCell = document.createElement("td");
+    orderCell.textContent = category.sort_order ?? 0;
+
+    const statusCell = document.createElement("td");
+
+    const badge = document.createElement("span");
+    badge.className = category.is_active
+      ? "badge bg-success"
+      : "badge bg-secondary";
+
+    badge.textContent = category.is_active
+      ? "Ativa"
+      : "Inativa";
+
+    statusCell.append(badge);
+
+    const actionsCell = document.createElement("td");
+    actionsCell.className = "text-end";
+
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "btn btn-sm btn-outline-primary me-1";
+    editButton.innerHTML = `<i class="bi bi-pencil"></i>`;
+    editButton.title = "Editar";
+
+    editButton.addEventListener("click", () => {
+      openEditCategoryModal(category);
+    });
+
+    const toggleButton = document.createElement("button");
+    toggleButton.type = "button";
+    toggleButton.className = `btn btn-sm ${
+      category.is_active
+        ? "btn-outline-warning"
+        : "btn-outline-success"
+    } me-1`;
+
+    toggleButton.innerHTML = category.is_active
+      ? `<i class="bi bi-pause"></i>`
+      : `<i class="bi bi-play"></i>`;
+
+    toggleButton.title = category.is_active
+      ? "Desativar"
+      : "Ativar";
+
+    toggleButton.addEventListener("click", () => {
+      toggleCategory(category);
+    });
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "btn btn-sm btn-outline-danger";
+    deleteButton.innerHTML = `<i class="bi bi-trash"></i>`;
+    deleteButton.title = "Apagar";
+
+    deleteButton.addEventListener("click", () => {
+      deleteCategory(category);
+    });
+
+    actionsCell.append(
+      editButton,
+      toggleButton,
+      deleteButton
+    );
+
+    row.append(
+      nameCell,
+      slugCell,
+      parentCell,
+      orderCell,
+      statusCell,
+      actionsCell
+    );
+
+    return row;
+  }
+
+  async function loadCategories() {
+    const tbody = el("categories-table");
+
+    if (!tbody) return;
+
+    tbody.innerHTML = `
       <tr>
         <td colspan="6" class="text-center text-muted py-4">
-          Nenhuma categoria registada.
+          A carregar categorias...
         </td>
       </tr>
     `;
-    return;
-  }
 
-  table.innerHTML = data.map(category => `
-    <tr>
-      <td>
-        <strong>${category.name_pt}</strong>
-        <small class="d-block text-muted">
-          ${category.name_en || ""}
-        </small>
-      </td>
-
-      <td>${category.slug}</td>
-
-      <td>${category.parent?.name_pt || "Nenhuma"}</td>
-
-      <td>${category.sort_order}</td>
-
-      <td>
-        <span class="badge ${category.is_active ? "bg-success" : "bg-secondary"}">
-          ${category.is_active ? "Ativa" : "Inativa"}
-        </span>
-      </td>
-
-      <td class="text-end">
-        <div class="d-flex justify-content-end gap-2">
-          <button class="btn btn-sm btn-outline-primary"
-            onclick="openEditCategoryModal('${category.id}')">
-            <i class="bi bi-pencil-square"></i>
-          </button>
-
-          <button class="btn btn-sm btn-outline-warning"
-            onclick="toggleCategoryStatus('${category.id}', ${category.is_active})">
-            <i class="bi ${category.is_active ? "bi-eye-slash" : "bi-eye"}"></i>
-          </button>
-
-          <button class="btn btn-sm btn-outline-danger"
-            onclick="deleteCategory('${category.id}', '${category.name_pt}')">
-            <i class="bi bi-trash"></i>
-          </button>
-        </div>
-      </td>
-    </tr>
-  `).join("");
-}
-
-function openCreateCategoryModal() {
-  editingCategoryId = null;
-
-  document.getElementById("category-modal-title").textContent = "Nova categoria";
-
-  document.getElementById("category-form").reset();
-  document.getElementById("category-sort-order").value = 0;
-  document.getElementById("category-active").checked = true;
-
-  loadParentCategoryOptions(null);
-}
-
-async function openEditCategoryModal(categoryId) {
-  editingCategoryId = categoryId;
-
-  document.getElementById("category-modal-title").textContent = "Editar categoria";
-
-  const { data, error } = await supabase
-    .from("categories")
-    .select("*")
-    .eq("id", categoryId)
-    .maybeSingle();
-
-  if (error || !data) {
-    Swal.fire({
-      icon: "error",
-      title: "Erro",
-      text: "Não foi possível carregar a categoria."
-    });
-
-    return;
-  }
-
-  await loadParentCategoryOptions(categoryId);
-
-  document.getElementById("category-name-pt").value = data.name_pt || "";
-  document.getElementById("category-name-en").value = data.name_en || "";
-  document.getElementById("category-slug").value = data.slug || "";
-  document.getElementById("category-parent").value = data.parent_id || "";
-  document.getElementById("category-sort-order").value = data.sort_order || 0;
-  document.getElementById("category-image").value = data.image_url || "";
-  document.getElementById("category-description-pt").value = data.description_pt || "";
-  document.getElementById("category-description-en").value = data.description_en || "";
-  document.getElementById("category-active").checked = Boolean(data.is_active);
-
-  categoryModal.show();
-}
-
-async function loadParentCategoryOptions(currentCategoryId) {
-  const select = document.getElementById("category-parent");
-
-  const { data, error } = await supabase
-    .from("categories")
-    .select("id, name_pt")
-    .order("name_pt", { ascending: true });
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  select.innerHTML = `
-    <option value="">Nenhuma</option>
-    ${data
-      .filter(category => category.id !== currentCategoryId)
-      .map(category => `
-        <option value="${category.id}">
-          ${category.name_pt}
-        </option>
-      `).join("")}
-  `;
-}
-
-async function saveCategory() {
-  const namePt = document.getElementById("category-name-pt").value.trim();
-  const slug = document.getElementById("category-slug").value.trim();
-
-  if (!namePt || !slug) {
-    Swal.fire({
-      icon: "warning",
-      title: "Dados incompletos",
-      text: "Preencha o nome e o slug da categoria."
-    });
-
-    return;
-  }
-
-  const categoryData = {
-    name_pt: namePt,
-    name_en: document.getElementById("category-name-en").value.trim() || null,
-    slug: slug,
-    parent_id: document.getElementById("category-parent").value || null,
-    sort_order: Number(document.getElementById("category-sort-order").value || 0),
-    image_url: document.getElementById("category-image").value.trim() || null,
-    description_pt: document.getElementById("category-description-pt").value.trim() || null,
-    description_en: document.getElementById("category-description-en").value.trim() || null,
-    is_active: document.getElementById("category-active").checked
-  };
-
-  const button = document.getElementById("save-category-button");
-  const originalText = button.innerHTML;
-
-  button.disabled = true;
-  button.innerHTML = `
-    <span class="spinner-border spinner-border-sm me-2"></span>
-    A guardar...
-  `;
-
-  try {
-    if (editingCategoryId) {
-      const { error } = await supabase
+    try {
+      const { data, error } = await getClient()
         .from("categories")
-        .update(categoryData)
-        .eq("id", editingCategoryId);
+        .select(`
+          id,
+          name_pt,
+          name_en,
+          slug,
+          description_pt,
+          description_en,
+          image_url,
+          parent_id,
+          sort_order,
+          is_active
+        `)
+        .order("sort_order", { ascending: true })
+        .order("name_pt", { ascending: true });
 
       if (error) throw error;
 
-    } else {
-      const { error } = await supabase
+      categories = data || [];
+      categoriesLoaded = true;
+
+      fillParentOptions();
+      renderCategories();
+    } catch (error) {
+      console.error(
+        "[Loja MZ] Erro ao carregar categorias:",
+        error
+      );
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="text-center text-danger py-4">
+            Não foi possível carregar as categorias.
+          </td>
+        </tr>
+      `;
+
+      await showMessage(
+        "error",
+        "Erro ao carregar categorias",
+        error.message || "Tenta novamente."
+      );
+    }
+  }
+
+  function openCreateCategoryModal() {
+    resetForm();
+
+    const modal = bootstrap.Modal.getOrCreateInstance(
+      el("category-modal")
+    );
+
+    modal.show();
+  }
+
+  function openEditCategoryModal(category) {
+    editingCategoryId = category.id;
+
+    el("category-modal-title").textContent =
+      "Editar categoria";
+
+    el("category-name-pt").value =
+      category.name_pt || "";
+
+    el("category-name-en").value =
+      category.name_en || "";
+
+    el("category-slug").value =
+      category.slug || "";
+
+    fillParentOptions(category.parent_id || "");
+
+    el("category-sort-order").value =
+      category.sort_order ?? 0;
+
+    el("category-image").value =
+      category.image_url || "";
+
+    el("category-description-pt").value =
+      category.description_pt || "";
+
+    el("category-description-en").value =
+      category.description_en || "";
+
+    el("category-active").checked =
+      Boolean(category.is_active);
+
+    const modal = bootstrap.Modal.getOrCreateInstance(
+      el("category-modal")
+    );
+
+    modal.show();
+  }
+
+  async function saveCategory() {
+    if (!categoriesLoaded) {
+      await showMessage(
+        "warning",
+        "Aguarda",
+        "As categorias ainda estão a carregar."
+      );
+
+      return;
+    }
+
+    const namePt = el("category-name-pt").value.trim();
+    const nameEn = el("category-name-en").value.trim();
+    const slugInput = el("category-slug").value.trim();
+    const parentId = el("category-parent").value || null;
+    const sortOrder = Number(
+      el("category-sort-order").value || 0
+    );
+    const imageUrl = el("category-image").value.trim();
+    const descriptionPt =
+      el("category-description-pt").value.trim();
+    const descriptionEn =
+      el("category-description-en").value.trim();
+    const isActive = el("category-active").checked;
+
+    if (!namePt) {
+      await showMessage(
+        "warning",
+        "Dados incompletos",
+        "Escreve o nome da categoria em português."
+      );
+
+      return;
+    }
+
+    const slug = slugify(
+      slugInput || namePt
+    );
+
+    if (!slug) {
+      await showMessage(
+        "warning",
+        "Slug inválido",
+        "Escreve um slug válido."
+      );
+
+      return;
+    }
+
+    const categoryData = {
+      name_pt: namePt,
+      name_en: nameEn || null,
+      slug,
+      parent_id: parentId,
+      sort_order: Number.isFinite(sortOrder)
+        ? sortOrder
+        : 0,
+      image_url: imageUrl || null,
+      description_pt: descriptionPt || null,
+      description_en: descriptionEn || null,
+      is_active: isActive
+    };
+
+    setButtonLoading(true);
+
+    try {
+      let response;
+
+      if (editingCategoryId) {
+        response = await getClient()
+          .from("categories")
+          .update(categoryData)
+          .eq("id", editingCategoryId)
+          .select("id")
+          .single();
+      } else {
+        response = await getClient()
+          .from("categories")
+          .insert(categoryData)
+          .select("id")
+          .single();
+      }
+
+      if (response.error) throw response.error;
+
+      bootstrap.Modal.getOrCreateInstance(
+        el("category-modal")
+      ).hide();
+
+      await showMessage(
+        "success",
+        editingCategoryId
+          ? "Categoria atualizada"
+          : "Categoria criada",
+        "As alterações foram guardadas."
+      );
+
+      editingCategoryId = null;
+      await loadCategories();
+    } catch (error) {
+      console.error(
+        "[Loja MZ] Erro ao guardar categoria:",
+        error
+      );
+
+      await showMessage(
+        "error",
+        "Erro ao guardar",
+        error.message || "Tenta novamente."
+      );
+    } finally {
+      setButtonLoading(false);
+    }
+  }
+
+  async function toggleCategory(category) {
+    const newState = !category.is_active;
+
+    const confirm = await showMessage(
+      "question",
+      newState
+        ? "Ativar categoria?"
+        : "Desativar categoria?",
+      `Pretendes ${
+        newState ? "ativar" : "desativar"
+      } "${category.name_pt}"?`
+    );
+
+    if (confirm?.isConfirmed === false) return;
+
+    try {
+      const { error } = await getClient()
         .from("categories")
-        .insert(categoryData);
+        .update({ is_active: newState })
+        .eq("id", category.id);
 
       if (error) throw error;
+
+      await loadCategories();
+    } catch (error) {
+      console.error(
+        "[Loja MZ] Erro ao alterar estado:",
+        error
+      );
+
+      await showMessage(
+        "error",
+        "Erro ao alterar estado",
+        error.message || "Tenta novamente."
+      );
     }
+  }
 
-    categoryModal.hide();
+  async function deleteCategory(category) {
+    const confirm = await showMessage(
+      "warning",
+      "Apagar categoria?",
+      `Pretendes apagar "${category.name_pt}"? Esta ação não pode ser revertida.`
+    );
 
-    Swal.fire({
-      icon: "success",
-      title: editingCategoryId ? "Categoria atualizada" : "Categoria criada",
-      timer: 1600,
-      showConfirmButton: false
-    });
+    if (confirm?.isConfirmed === false) return;
 
-    loadAdminCategories();
+    try {
+      const { error } = await getClient()
+        .from("categories")
+        .delete()
+        .eq("id", category.id);
 
-  } catch (error) {
-    console.error(error);
+      if (error) throw error;
 
-    let message = "Não foi possível guardar a categoria.";
+      await showMessage(
+        "success",
+        "Categoria apagada",
+        "A categoria foi removida."
+      );
 
-    if (error.code === "23505") {
-      message = "Já existe uma categoria com este slug.";
+      await loadCategories();
+    } catch (error) {
+      console.error(
+        "[Loja MZ] Erro ao apagar categoria:",
+        error
+      );
+
+      await showMessage(
+        "error",
+        "Erro ao apagar",
+        error.message || "Tenta novamente."
+      );
     }
-
-    Swal.fire({
-      icon: "error",
-      title: "Erro ao guardar",
-      text: message
-    });
-
-  } finally {
-    button.disabled = false;
-    button.innerHTML = originalText;
-  }
-}
-
-async function toggleCategoryStatus(categoryId, currentStatus) {
-  const { error } = await supabase
-    .from("categories")
-    .update({ is_active: !currentStatus })
-    .eq("id", categoryId);
-
-  if (error) {
-    console.error(error);
-
-    Swal.fire({
-      icon: "error",
-      title: "Erro",
-      text: "Não foi possível atualizar o estado da categoria."
-    });
-
-    return;
   }
 
-  Swal.fire({
-    icon: "success",
-    title: "Estado atualizado",
-    timer: 1400,
-    showConfirmButton: false
-  });
+  function initializeCategoriesAdmin() {
+    if (!el("categories-table")) return;
 
-  loadAdminCategories();
-}
+    el("category-slug")?.addEventListener(
+      "input",
+      () => {
+        const value = el("category-slug").value;
 
-async function deleteCategory(categoryId, categoryName) {
-  const result = await Swal.fire({
-    title: "Apagar categoria",
-    text: `Tem certeza de que deseja apagar "${categoryName}"?`,
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Sim, apagar",
-    cancelButtonText: "Cancelar",
-    confirmButtonColor: "#dc3545"
-  });
+        el("category-slug").value = slugify(value);
+      }
+    );
 
-  if (!result.isConfirmed) return;
+    el("save-category-button")?.addEventListener(
+      "click",
+      saveCategory
+    );
 
-  const { error } = await supabase
-    .from("categories")
-    .delete()
-    .eq("id", categoryId);
+    el("category-form")?.addEventListener(
+      "submit",
+      event => {
+        event.preventDefault();
+        saveCategory();
+      }
+    );
 
-  if (error) {
-    console.error(error);
-
-    Swal.fire({
-      icon: "error",
-      title: "Erro",
-      text: "Não foi possível apagar a categoria. Verifique se não existem produtos associados."
-    });
-
-    return;
+    loadCategories();
   }
 
-  Swal.fire({
-    icon: "success",
-    title: "Categoria apagada",
-    timer: 1500,
-    showConfirmButton: false
-  });
+  window.openCreateCategoryModal =
+    openCreateCategoryModal;
 
-  loadAdminCategories();
-}
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      initializeCategoriesAdmin,
+      { once: true }
+    );
+  } else {
+    initializeCategoriesAdmin();
+  }
+})();

@@ -1,5 +1,9 @@
+
 /* =========================================
    Loja — Login, registo e sessão existente
+
+   Administrador e vendedor entram no painel.
+   Cliente entra na área da conta.
    ========================================= */
 
 (function authenticationPage() {
@@ -25,7 +29,9 @@
     const db = window.lojaMzSupabaseClient;
 
     if (!db || typeof db.from !== "function") {
-      throw new Error("O cliente Supabase não está disponível.");
+      throw new Error(
+        "O cliente Supabase não está disponível."
+      );
     }
 
     return db;
@@ -53,6 +59,7 @@
 
   function setLoginStatus(text, error = false) {
     const status = el("login-session-status");
+
     if (!status) return;
 
     status.textContent = text;
@@ -93,9 +100,14 @@
       );
     }
 
-    return profile.role === "admin"
-      ? "admin/index.html"
-      : "conta.html";
+    if (
+      profile.role === "admin" ||
+      profile.role === "vendedor"
+    ) {
+      return "admin/index.html";
+    }
+
+    return "conta.html";
   }
 
   async function checkExistingSession() {
@@ -104,7 +116,9 @@
     checkingSession = true;
     disableLogin(true);
 
-    setLoginStatus("A verificar se já tens sessão iniciada...");
+    setLoginStatus(
+      "A verificar se já tens sessão iniciada..."
+    );
 
     try {
       const {
@@ -127,9 +141,14 @@
         "Sessão reconhecida. A abrir a tua área..."
       );
 
-      window.location.replace(pageUrl(destination));
+      window.location.replace(
+        pageUrl(destination)
+      );
     } catch (error) {
-      console.error("[Loja] Verificação da sessão:", error);
+      console.error(
+        "[Loja] Verificação da sessão:",
+        error
+      );
 
       setLoginStatus(
         "Não foi possível confirmar o acesso: " +
@@ -169,19 +188,25 @@
       if (error) throw error;
 
       if (!data.user) {
-        throw new Error("Não foi possível identificar a conta.");
+        throw new Error(
+          "Não foi possível identificar a conta."
+        );
       }
 
-      const destination = await destinationFor(data.user);
+      const destination =
+        await destinationFor(data.user);
 
-      window.location.replace(pageUrl(destination));
+      window.location.replace(
+        pageUrl(destination)
+      );
     } catch (error) {
       console.error("[Loja] Login:", error);
 
       await message(
         "error",
         "Não foi possível entrar",
-        error.message || "Verifica os dados e tenta novamente."
+        error.message ||
+        "Verifica os dados e tenta novamente."
       );
     } finally {
       loginBusy = false;
@@ -201,7 +226,8 @@
     const email = el("register-email").value.trim();
     const phone = el("register-phone").value.trim();
     const password = el("register-password").value;
-    const confirmation = el("register-confirm-password").value;
+    const confirmation =
+      el("register-confirm-password").value;
     const button = el("register-button");
 
     if (!fullName || !email || !phone || !password) {
@@ -210,6 +236,7 @@
         "Dados incompletos",
         "Preenche todos os campos obrigatórios."
       );
+
       return;
     }
 
@@ -219,6 +246,7 @@
         "Palavras-passe diferentes",
         "As palavras-passe não coincidem."
       );
+
       return;
     }
 
@@ -242,8 +270,6 @@
 
       if (error) throw error;
 
-      // Mantém a lógica existente: a criação do perfil
-      // deve continuar assegurada pela base de dados.
       if (data.session && data.user) {
         const { error: profileError } = await client()
           .from("profiles")
@@ -270,7 +296,9 @@
       );
 
       window.location.replace(
-        pageUrl(data.session ? "conta.html" : "login.html")
+        pageUrl(
+          data.session ? "conta.html" : "login.html"
+        )
       );
     } catch (error) {
       console.error("[Loja] Registo:", error);
@@ -293,7 +321,9 @@
 
       if (error) throw error;
 
-      window.location.replace(pageUrl("index.html"));
+      window.location.replace(
+        pageUrl("index.html")
+      );
     } catch (error) {
       await message(
         "error",
@@ -303,21 +333,26 @@
     }
   }
 
-  // Compatibilidade com chamadas existentes.
   window.loginUser = loginUser;
   window.registerUser = registerUser;
   window.logoutUser = logoutUser;
 
   function initialize() {
-    el("login-form")?.addEventListener("submit", event => {
-      event.preventDefault();
-      loginUser();
-    });
+    el("login-form")?.addEventListener(
+      "submit",
+      event => {
+        event.preventDefault();
+        loginUser();
+      }
+    );
 
-    el("register-form")?.addEventListener("submit", event => {
-      event.preventDefault();
-      registerUser();
-    });
+    el("register-form")?.addEventListener(
+      "submit",
+      event => {
+        event.preventDefault();
+        registerUser();
+      }
+    );
 
     if (el("login-form")) {
       checkExistingSession();

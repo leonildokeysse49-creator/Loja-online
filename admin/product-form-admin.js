@@ -1,6 +1,9 @@
+
 /* =========================================
    Loja MZ — Formulário de produtos
-   URL + upload de imagens
+
+   Administrador: cria e edita qualquer produto.
+   Vendedor: cria produtos e edita apenas os que criou.
    ========================================= */
 
 (function productFormAdmin() {
@@ -79,6 +82,10 @@
     }
 
     return url.href;
+  }
+
+  function canEditThisProduct(product) {
+    return window.canManageItem(product);
   }
 
   async function initialize() {
@@ -186,6 +193,28 @@
       throw new Error("Produto não encontrado.");
     }
 
+    if (!canEditThisProduct(data)) {
+      element("product-fields").disabled = true;
+
+      setStatus(
+        "Este produto foi criado pelo administrador. " +
+        "Como vendedor, não podes editá-lo.",
+        true
+      );
+
+      await showMessage(
+        "warning",
+        "Ação não permitida",
+        "Só podes editar produtos que criaste."
+      );
+
+      setTimeout(() => {
+        window.location.assign("produtos.html");
+      }, 2200);
+
+      return;
+    }
+
     element("form-title").textContent = "Editar produto";
     document.title = `Editar ${data.name_pt} — Loja MZ`;
 
@@ -213,7 +242,7 @@
     element("is-featured").checked = data.is_featured;
 
     images = (data.product_images || [])
-      .sort((a, b) => a.sort_order - b.sort_order)
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
       .map(image => ({
         key: crypto.randomUUID(),
         id: image.id,
@@ -277,7 +306,9 @@
       }
 
       if (file.size === 0 || file.size > MAX_SIZE) {
-        rejected.push(`${file.name}: usa um ficheiro entre 1 byte e 5 MB.`);
+        rejected.push(
+          `${file.name}: usa um ficheiro entre 1 byte e 5 MB.`
+        );
         return;
       }
 
@@ -429,11 +460,15 @@
       : Number(promotionalInput);
 
     if (!Number.isFinite(price) || price < 0) {
-      throw new Error("O preço deve ser um número igual ou superior a zero.");
+      throw new Error(
+        "O preço deve ser um número igual ou superior a zero."
+      );
     }
 
     if (!Number.isInteger(stock) || stock < 0) {
-      throw new Error("O stock deve ser um número inteiro não negativo.");
+      throw new Error(
+        "O stock deve ser um número inteiro não negativo."
+      );
     }
 
     if (
@@ -509,30 +544,50 @@
   }
 
   async function saveImages() {
-    /*
-     * Insere primeiro as novas imagens.
-     * Só depois remove associações antigas.
-     * Não apaga os ficheiros físicos do Storage.
-     */
+    const { data: existingImages, error: loadError } = await client()
+      .from("product_images")
+      .select("id, image_url, sort_order")
+      .eq("product_id", productId);
+
+    if (loadError) throw loadError;
+
+    const existingByUrl = new Map(
+      (existingImages || []).map(image => [image.image_url, image])
+    );
 
     for (let index = 0; index < images.length; index++) {
       const image = images[index];
 
-      if (!image.id) {
-        const { data, error } = await client()
-          .from("product_images")
-          .insert({
-            product_id: productId,
-            image_url: image.url,
-            sort_order: index
-          })
-          .select("id")
-          .single();
-
-        if (error) throw error;
-
-        image.id = data.id;
+      if (!image.url) {
+        throw new Error(
+          "Uma imagem ainda não foi enviada. Tenta guardar novamente."
+        );
       }
+
+      const existing = existingByUrl.get(image.url);
+
+      if (existing) {
+        image.id = existing.id;
+        continue;
+      }
+
+      const { data, error } = await client()
+        .from("product_images")
+        .insert({
+          product_id: productId,
+          image_url: image.url,
+          sort_order: index
+        })
+        .select("id")
+        .single();
+
+      if (error) throw error;
+
+      image.id = data.id;
+      existingByUrl.set(image.url, {
+        id: data.id,
+        image_url: image.url
+      });
     }
 
     for (let index = 0; index < images.length; index++) {
@@ -547,13 +602,11 @@
       if (error) throw error;
     }
 
-    const retainedIds = new Set(
-      images.map(image => image.id)
-    );
+    const retainedIds = new Set(images.map(image => image.id));
 
-    const removedIds = originalImageIds.filter(
-      id => !retainedIds.has(id)
-    );
+    const removedIds = (existingImages || [])
+      .map(image => image.id)
+      .filter(id => !retainedIds.has(id));
 
     if (removedIds.length) {
       const { error } = await client()
@@ -609,6 +662,9 @@
 
         if (error) throw error;
       } else {
+        // O criador fica registado automaticamente.
+        productData.created_by = window.currentAdmin.id;
+
         const { data, error } = await client()
           .from("products")
           .insert(productData)

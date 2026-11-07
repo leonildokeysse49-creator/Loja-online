@@ -1,12 +1,10 @@
 
 /* =========================================
-   Loja — Autenticação administrativa
+   Loja MZ — Autenticação administrativa
 
-   - Ver loja não termina a sessão.
-   - Só os botões de logout executam signOut.
-   - Nome do administrador separado da marca.
-   - Marca carregada de settings.store_name.
-   - Mantém currentAdmin e admin:ready.
+   Papéis suportados:
+   - admin: acesso total ao painel
+   - vendedor: produtos, categorias e pedidos
 
    Esta validação controla a interface.
    As permissões dos dados continuam dependentes de RLS.
@@ -19,6 +17,8 @@
 
   window.lojaMzAdminAuthInitialized = true;
   window.currentAdmin = null;
+
+  const ADMIN_PANEL_ROLES = ["admin", "vendedor"];
 
   let validating = false;
   let loggingOut = false;
@@ -62,8 +62,55 @@
   }
 
   /* =========================================
-     Estado do acesso
-     ========================================= */
+      Papéis e permissões
+      ========================================= */
+
+  window.isAdmin = () => {
+    return window.currentAdmin?.profile?.role === "admin";
+  };
+
+  window.isVendor = () => {
+    return window.currentAdmin?.profile?.role === "vendedor";
+  };
+
+  window.canAccessAdminPanel = () => {
+    return ADMIN_PANEL_ROLES.includes(
+      window.currentAdmin?.profile?.role
+    );
+  };
+
+  window.canManageItem = item => {
+    if (!window.currentAdmin || !item) return false;
+
+    if (window.isAdmin()) return true;
+
+    return (
+      window.isVendor() &&
+      item.created_by === window.currentAdmin.id
+    );
+  };
+
+  function applyRoleVisibility() {
+    const isAdmin = window.isAdmin();
+    const isVendor = window.isVendor();
+
+    console.log(
+      "[Admin] Papel detetado:",
+      window.currentAdmin?.profile?.role
+    );
+
+    document.querySelectorAll(".admin-only").forEach(node => {
+      node.classList.toggle("d-none", !isAdmin);
+    });
+
+    document.querySelectorAll(".vendor-only").forEach(node => {
+      node.classList.toggle("d-none", !isVendor);
+    });
+  }
+
+  /* =========================================
+      Estado do acesso
+      ========================================= */
 
   function hideAdminArea() {
     document.querySelectorAll(".admin-content").forEach(node => {
@@ -129,8 +176,8 @@
   }
 
   /* =========================================
-     Sidebar
-     ========================================= */
+      Sidebar
+      ========================================= */
 
   function initializeSidebar() {
     const sidebar = el("admin-sidebar");
@@ -150,10 +197,7 @@
     toggle.addEventListener("click", () => {
       const open = sidebar.classList.toggle("open");
 
-      toggle.setAttribute(
-        "aria-expanded",
-        String(open)
-      );
+      toggle.setAttribute("aria-expanded", String(open));
     });
 
     document.addEventListener("keydown", event => {
@@ -175,8 +219,8 @@
   }
 
   /* =========================================
-     Ver loja
-     ========================================= */
+      Ver loja
+      ========================================= */
 
   function initializeStoreLinks() {
     const storeUrl = publicUrl("index.html");
@@ -211,14 +255,12 @@
         "title",
         "Abrir a loja sem terminar a sessão"
       );
-
-      // Não associa signOut nem logoutUser a este link.
     });
   }
 
   /* =========================================
-     Nome e função do administrador
-     ========================================= */
+      Nome e função do utilizador
+      ========================================= */
 
   function renderAdminIdentity(profile) {
     const fullName =
@@ -226,10 +268,18 @@
         ? profile.full_name.trim()
         : "";
 
+    const roleLabels = {
+      admin: "Administrador",
+      vendedor: "Vendedor"
+    };
+
+    const roleLabel =
+      roleLabels[profile.role] || "Utilizador";
+
     const name = el("admin-name");
 
     if (name) {
-      name.textContent = fullName || "Administrador";
+      name.textContent = fullName || roleLabel;
     }
 
     let role = el("admin-role");
@@ -246,7 +296,7 @@
     }
 
     if (role) {
-      role.textContent = "Administrador";
+      role.textContent = roleLabel;
     }
 
     const dropdownButton = name?.closest("button");
@@ -257,15 +307,15 @@
       dropdownButton.setAttribute(
         "aria-label",
         fullName
-          ? `Conta de ${fullName}, administrador`
-          : "Conta de administrador"
+          ? `Conta de ${fullName}, ${roleLabel.toLowerCase()}`
+          : `Conta de ${roleLabel.toLowerCase()}`
       );
     }
   }
 
   /* =========================================
-     Nome configurado da loja
-     ========================================= */
+      Nome configurado da loja
+      ========================================= */
 
   async function loadStoreBrand() {
     try {
@@ -318,8 +368,8 @@
   }
 
   /* =========================================
-     Validar administrador
-     ========================================= */
+      Validar acesso ao painel
+      ========================================= */
 
   async function validateAdmin() {
     if (validating || loggingOut) return false;
@@ -392,15 +442,14 @@
         return false;
       }
 
-      if (profile.role !== "admin") {
+      if (!ADMIN_PANEL_ROLES.includes(profile.role)) {
         window.currentAdmin = null;
 
         await showError(
           "Acesso restrito",
-          "Esta conta não tem autorização de administrador."
+          "Esta conta não tem autorização para aceder ao painel."
         );
 
-        // Não termina a sessão do utilizador.
         window.location.replace(
           publicUrl("conta.html")
         );
@@ -415,6 +464,7 @@
       };
 
       renderAdminIdentity(profile);
+      applyRoleVisibility();
       showAdminArea();
 
       if (!adminReadyDispatched) {
@@ -457,8 +507,8 @@
   }
 
   /* =========================================
-     Terminar sessão explicitamente
-     ========================================= */
+      Terminar sessão
+      ========================================= */
 
   async function logoutAdmin(event) {
     event?.preventDefault();
@@ -524,8 +574,8 @@
   }
 
   /* =========================================
-     Inicialização
-     ========================================= */
+      Inicialização
+      ========================================= */
 
   function initializeAdminPage() {
     initializeSidebar();
@@ -546,8 +596,6 @@
     validateAdmin();
   }
 
-  // Ao regressar pela navegação do navegador,
-  // confirma novamente o acesso sem executar logout.
   window.addEventListener("pageshow", event => {
     if (event.persisted) {
       validateAdmin();
