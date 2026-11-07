@@ -1,6 +1,10 @@
+
 /* ==========================================================
    Loja MZ — Gestão administrativa de produtos
-   Tabela desktop + cartões mobile
+
+   Administrador: gere todos os produtos.
+   Vendedor: pode ver os produtos; edição será ativada
+   quando a coluna created_by for criada.
    ========================================================== */
 
 (function productsAdmin() {
@@ -53,8 +57,6 @@
 
     if (value) {
       try {
-        // URLs relativas são resolvidas a partir da raiz da loja,
-        // não da pasta admin.
         const storeRoot = new URL("../", window.location.href);
         const url = new URL(value, storeRoot);
 
@@ -110,7 +112,19 @@
     `;
   }
 
+  function canManage(product) {
+    return window.isAdmin();
+  }
+
   function actions(product, mobile = false) {
+    if (!canManage(product)) {
+      return `
+        <div class="product-actions text-muted small">
+          Sem permissão para editar
+        </div>
+      `;
+    }
+
     const id = escapeHtml(product.id);
     const editUrl =
       `produto-form.html?id=${encodeURIComponent(product.id)}`;
@@ -204,7 +218,7 @@
           </div>
         </td>
 
-        <td>${escapeHtml(product.categories?.name_pt || "Sem categoria")}</td>
+        <td>${escapeHtml(product.category_name || "Sem categoria")}</td>
 
         <td class="product-table-price">
           ${priceMarkup(product)}
@@ -238,7 +252,7 @@
             </h2>
 
             <p class="product-mobile-meta">
-              ${escapeHtml(product.categories?.name_pt || "Sem categoria")}
+              ${escapeHtml(product.category_name || "Sem categoria")}
               · ${escapeHtml(product.sku || "Sem SKU")}
             </p>
 
@@ -312,6 +326,82 @@
     }
   }
 
+  function buildBaseQuery() {
+    return client()
+      .from("products")
+      .select(`
+        id,
+        name_pt,
+        slug,
+        sku,
+        price,
+        promotional_price,
+        stock,
+        is_active,
+        created_at,
+        category_id,
+        product_images (
+          image_url,
+          sort_order
+        )
+      `, { count: "exact" });
+  }
+
+  function buildFullQuery() {
+    return client()
+      .from("products")
+      .select(`
+        id,
+        name_pt,
+        slug,
+        sku,
+        price,
+        promotional_price,
+        stock,
+        is_active,
+        created_at,
+        category_id,
+        categories (
+          name_pt
+        ),
+        product_images (
+          image_url,
+          sort_order
+        )
+      `, { count: "exact" });
+  }
+
+  function applyFilters(query) {
+    const search = el("product-search").value.trim();
+    const categoryId = el("product-category-filter").value;
+    const status = el("product-status-filter").value;
+
+    if (search) {
+      const term = `%${search
+        .replace(/\\/g, "\\\\")
+        .replace(/"/g, '\\"')}%`;
+
+      query = query.or(
+        `name_pt.ilike."${term}",sku.ilike."${term}"`
+      );
+    }
+
+    if (categoryId) {
+      query = query.eq("category_id", categoryId);
+    }
+
+    if (status) {
+      query = query.eq("is_active", status === "active");
+    }
+
+    const from = (currentPage - 1) * PAGE_SIZE;
+
+    return query
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+  }
+
   async function loadProducts() {
     const version = ++requestVersion;
 
@@ -320,60 +410,24 @@
     el("products-results").textContent = "A carregar...";
 
     try {
-      const search = el("product-search").value.trim();
-      const categoryId = el("product-category-filter").value;
-      const status = el("product-status-filter").value;
+      let response = await applyFilters(buildFullQuery());
 
-      let query = client()
-        .from("products")
-        .select(`
-          id,
-          name_pt,
-          slug,
-          sku,
-          price,
-          promotional_price,
-          stock,
-          is_active,
-          created_at,
-          categories (
-            name_pt
-          ),
-          product_images (
-            image_url,
-            sort_order
-          )
-        `, { count: "exact" });
-
-      if (search) {
-        // A expressão OR usa sintaxe PostgREST.
-        // Escapa os caracteres especiais da expressão.
-        const term = `%${search
-          .replace(/\\/g, "\\\\")
-          .replace(/"/g, '\\"')}%`;
-
-        query = query.or(
-          `name_pt.ilike."${term}",sku.ilike."${term}"`
+      if (response.error) {
+        console.warn(
+          "[Loja MZ] Consulta completa falhou:",
+          response.error
         );
+
+        console.warn(
+          "[Loja MZ] A usar consulta básica..."
+        );
+
+        response = await applyFilters(buildBaseQuery());
       }
 
-      if (categoryId) {
-        query = query.eq("category_id", categoryId);
-      }
-
-      if (status) {
-        query = query.eq("is_active", status === "active");
-      }
-
-      const from = (currentPage - 1) * PAGE_SIZE;
-
-      const { data, error, count } = await query
-        .order("created_at", { ascending: false })
-        .order("id", { ascending: false })
-        .range(from, from + PAGE_SIZE - 1);
-
-      // Ignora respostas antigas de pesquisas anteriores.
       if (version !== requestVersion) return;
+
+      const { data, error, count } = response;
 
       if (error) throw error;
 
@@ -386,7 +440,11 @@
         return;
       }
 
-      products = data || [];
+      products = (data || []).map(product => ({
+        ...product,
+        category_name:
+          product.categories?.name_pt || null
+      }));
 
       el("products-results").textContent =
         `${total} produto(s) encontrado(s)`;
@@ -402,10 +460,18 @@
       if (version !== requestVersion) return;
 
       console.error("[Loja MZ] Produtos:", error);
+      console.error("Mensagem:", error.message);
+      console.error("Detalhes:", error.details);
+      console.error("Sugestão:", error.hint);
+      console.error("Código:", error.code);
 
       products = [];
 
-      showMessage("Não foi possível carregar os produtos.", true);
+      showMessage(
+        "Não foi possível carregar os produtos: " +
+        (error.message || "erro desconhecido."),
+        true
+      );
 
       el("products-results").textContent =
         "Falha no carregamento. Atualiza a página para tentar novamente.";
@@ -473,6 +539,16 @@
     );
 
     if (!product) return;
+
+    if (!canManage(product)) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Ação não permitida",
+        text: "Não tens permissão para alterar este produto."
+      });
+
+      return;
+    }
 
     const action = button.dataset.action;
 
@@ -563,8 +639,6 @@
 
     el("product-search").addEventListener("input", () => {
       clearTimeout(searchTimer);
-
-      // Invalida qualquer consulta anterior.
       requestVersion++;
 
       searchTimer = setTimeout(() => {
