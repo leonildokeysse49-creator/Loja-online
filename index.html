@@ -144,6 +144,34 @@
     }
 
     /* =========================================
+       Fundo da secção principal — Hero
+       ========================================= */
+
+    .hero.hero-with-background {
+      /*
+        COLOCA A TUA IMAGEM NESTE CAMINHO:
+        assets/img/hero-fundo.jpg
+
+        Se o ficheiro tiver outro nome ou extensão,
+        altera apenas o caminho dentro de url(...).
+      */
+      --hero-background-image: url("assets/img/hero-fundo.jpg");
+
+      background-color: #f8fafc;
+      background-image:
+        linear-gradient(
+          90deg,
+          rgba(248, 250, 252, .96) 0%,
+          rgba(248, 250, 252, .86) 45%,
+          rgba(248, 250, 252, .35) 100%
+        ),
+        var(--hero-background-image);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    /* =========================================
        Secções
        ========================================= */
 
@@ -307,6 +335,16 @@
       .navbar-collapse > .d-flex {
         padding-bottom: 12px;
       }
+
+      /* Camada uniforme quando o banner fica empilhado */
+      .hero.hero-with-background {
+        background-image:
+          linear-gradient(
+            rgba(248, 250, 252, .88),
+            rgba(248, 250, 252, .88)
+          ),
+          var(--hero-background-image);
+      }
     }
 
     @media (max-width: 575.98px) {
@@ -412,7 +450,6 @@
     aria-label="Navegação principal"
   >
     <div class="container">
-
       <!-- Logotipo do cabeçalho -->
       <a
         class="navbar-brand store-brand"
@@ -558,8 +595,11 @@
   </nav>
 
   <main id="main-content">
-    <!-- Banner -->
-    <section class="hero" aria-labelledby="hero-title">
+    <!-- Banner com imagem de fundo definida no CSS -->
+    <section
+      class="hero hero-with-background"
+      aria-labelledby="hero-title"
+    >
       <div class="container">
         <div class="row align-items-center g-5">
           <div class="col-lg-6">
@@ -582,7 +622,7 @@
 
           <div class="col-lg-6 text-center">
             <img
-              src="assets/img/placeholders/hero.png"
+              src="assets/img/hero.png"
               alt="Seleção de produtos da Loja MZ"
               class="img-fluid hero-image"
               fetchpriority="high"
@@ -723,7 +763,6 @@
     <div class="container">
       <div class="row g-4">
         <div class="col-lg-4">
-
           <!-- Logotipo do rodapé -->
           <a
             class="store-brand footer-brand"
@@ -768,7 +807,7 @@
               <i class="bi bi-envelope me-2" aria-hidden="true"></i>
 
               <a href="mailto:leonildokeysse49@gmail.com">
-                leonildokeysse49@gmail.com
+                [leonildokeysse49@gmail.com](mailto:leonildokeysse49@gmail.com)
               </a>
             </li>
 
