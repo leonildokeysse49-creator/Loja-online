@@ -2,38 +2,68 @@
 /* =========================================
    Loja MZ — Gestão de utilizadores
 
-   Administrador: gere clientes, vendedores e administradores.
-   A ligação real ao Supabase será ativada na fase final.
+   Implementado:
+   - Listar perfis reais.
+   - Pesquisar por nome ou e-mail.
+   - Criar contas pela Edge Function.
+   - Papéis: customer, vendedor e admin.
+   - Contas administrativas criadas com
+     e-mail confirmado pelo administrador.
+
+   Ainda não implementado:
+   - Editar contas.
+   - Eliminar contas.
+   - Ativar/desativar contas.
    ========================================= */
 
 (function usersAdmin() {
   "use strict";
 
   let initialized = false;
+  let saving = false;
   let users = [];
-  let editingUserId = null;
 
   const el = id => document.getElementById(id);
 
   const roleLabels = {
-    cliente: "Cliente",
+    customer: "Cliente",
     vendedor: "Vendedor",
     admin: "Administrador"
   };
 
-  function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>"']/g, char => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[char]);
+  function getClient() {
+    const client = window.lojaMzSupabaseClient;
+
+    if (
+      !client ||
+      typeof client.from !== "function" ||
+      !client.functions ||
+      !client.auth
+    ) {
+      throw new Error(
+        "O cliente Supabase não está disponível."
+      );
+    }
+
+    return client;
   }
 
-  function showAlert(message, type = "info") {
+  function escapeHtml(value) {
+    return String(value ?? "").replace(
+      /[&<>"']/g,
+      character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[character]
+    );
+  }
+
+  async function showAlert(message, type = "info") {
     if (window.Swal) {
-      window.Swal.fire({
+      await window.Swal.fire({
         icon: type,
         title:
           type === "success"
@@ -42,8 +72,7 @@
               ? "Erro"
               : "Atenção",
         text: message,
-        timer: 2800,
-        showConfirmButton: false
+        confirmButtonText: "Entendido"
       });
 
       return;
@@ -52,22 +81,27 @@
     window.alert(message);
   }
 
-  function isValidEmail(value) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-  }
+  /* =========================================
+     Apresentar os utilizadores
+     ========================================= */
 
   function renderUsers() {
     const table = el("users-table-body");
-    const search = (el("user-search")?.value || "")
-      .trim()
-      .toLowerCase();
+
+    if (!table) return;
+
+    const search = (
+      el("user-search")?.value || ""
+    ).trim().toLowerCase();
 
     const filtered = users.filter(user => {
-      const name = (user.full_name || "")
-        .toLowerCase();
+      const name = String(
+        user.full_name || ""
+      ).toLowerCase();
 
-      const email = (user.email || "")
-        .toLowerCase();
+      const email = String(
+        user.email || ""
+      ).toLowerCase();
 
       return (
         name.includes(search) ||
@@ -78,7 +112,10 @@
     if (!filtered.length) {
       table.innerHTML = `
         <tr>
-          <td colspan="5" class="text-center text-muted py-4">
+          <td
+            colspan="5"
+            class="text-center text-muted py-4"
+          >
             Nenhum utilizador encontrado.
           </td>
         </tr>
@@ -88,15 +125,24 @@
     }
 
     table.innerHTML = filtered.map(user => {
-      const id = escapeHtml(user.id);
-      const name = escapeHtml(user.full_name || "Sem nome");
-      const email = escapeHtml(user.email || "Sem e-mail");
-      const role = roleLabels[user.role] || "Cliente";
-      const active = user.is_active !== false;
+      const name = escapeHtml(
+        user.full_name || "Sem nome"
+      );
+
+      const email = escapeHtml(
+        user.email || "Sem e-mail"
+      );
+
+      const role = escapeHtml(
+        roleLabels[user.role] ||
+        user.role ||
+        "Sem papel"
+      );
 
       return `
         <tr>
           <td>${name}</td>
+
           <td>${email}</td>
 
           <td>
@@ -106,259 +152,507 @@
           </td>
 
           <td>
-            <span class="badge ${active ? "bg-success" : "bg-danger"}">
-              ${active ? "Ativo" : "Inativo"}
+            <span
+              class="text-muted small"
+              title="Esta lista não consulta o estado de autenticação da conta."
+            >
+              Não consultado
             </span>
           </td>
 
           <td class="text-end">
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-primary me-1"
-              data-edit-user="${id}"
-              aria-label="Editar utilizador"
-            >
-              <i class="bi bi-pencil"></i>
-            </button>
-
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-danger"
-              data-delete-user="${id}"
-              aria-label="Apagar utilizador"
-            >
-              <i class="bi bi-trash"></i>
-            </button>
+            <span class="text-muted small">
+              Edição indisponível
+            </span>
           </td>
         </tr>
       `;
     }).join("");
   }
 
-  function openCreateModal() {
-    editingUserId = null;
+  /* =========================================
+     Carregar perfis da base de dados
+     ========================================= */
 
-    el("user-form").reset();
-    el("user-id").value = "";
-    el("user-role").value = "vendedor";
-    el("user-active").checked = true;
-    el("user-password").required = true;
+  async function loadUsers() {
+    const table = el("users-table-body");
 
-    el("user-modal-title").textContent = "Novo utilizador";
+    if (table) {
+      table.innerHTML = `
+        <tr>
+          <td
+            colspan="5"
+            class="text-center text-muted py-4"
+          >
+            A carregar utilizadores...
+          </td>
+        </tr>
+      `;
+    }
 
-    const modal = bootstrap.Modal.getOrCreateInstance(
-      el("user-modal")
-    );
+    try {
+      const client = getClient();
 
-    modal.show();
-  }
+      const pageSize = 500;
+      const records = [];
 
-  function openEditModal(user) {
-    editingUserId = user.id;
+      let offset = 0;
 
-    el("user-id").value = user.id;
-    el("user-name").value = user.full_name || "";
-    el("user-email").value = user.email || "";
-    el("user-role").value = user.role || "cliente";
-    el("user-active").checked = user.is_active !== false;
+      while (true) {
+        const { data, error } = await client
+          .from("profiles")
+          .select(
+            "id,full_name,email,role,created_at"
+          )
+          .order("id", { ascending: true })
+          .range(
+            offset,
+            offset + pageSize - 1
+          );
 
-    el("user-password").value = "";
-    el("user-password").required = false;
+        if (error) throw error;
 
-    el("user-modal-title").textContent = "Editar utilizador";
+        const page = data || [];
 
-    const modal = bootstrap.Modal.getOrCreateInstance(
-      el("user-modal")
-    );
+        if (!page.length) break;
 
-    modal.show();
-  }
-
-  function closeModal() {
-    const modal = bootstrap.Modal.getOrCreateInstance(
-      el("user-modal")
-    );
-
-    modal.hide();
-  }
-
-  async function handleTableClick(event) {
-    const editButton = event.target.closest("[data-edit-user]");
-    const deleteButton = event.target.closest("[data-delete-user]");
-
-    if (editButton) {
-      const user = users.find(
-        item => item.id === editButton.dataset.editUser
-      );
-
-      if (user) {
-        openEditModal(user);
+        records.push(...page);
+        offset += page.length;
       }
 
+      records.sort((first, second) => {
+        return String(
+          second.created_at || ""
+        ).localeCompare(
+          String(first.created_at || "")
+        );
+      });
+
+      users = records;
+
+      renderUsers();
+    } catch (error) {
+      console.error(
+        "[Utilizadores] Erro ao listar:",
+        error
+      );
+
+      if (table) {
+        table.innerHTML = `
+          <tr>
+            <td
+              colspan="5"
+              class="text-center text-danger py-4"
+            >
+              Não foi possível carregar os utilizadores.
+            </td>
+          </tr>
+        `;
+      }
+
+      await showAlert(
+        error.message ||
+        "Não foi possível carregar os utilizadores.",
+        "error"
+      );
+    }
+  }
+
+  /* =========================================
+     Configurar o formulário existente
+     ========================================= */
+
+  function configureForm() {
+    const roleSelect = el("user-role");
+
+    roleSelect.replaceChildren();
+
+    Object.entries(roleLabels).forEach(
+      ([value, label]) => {
+        const option = document.createElement("option");
+
+        option.value = value;
+        option.textContent = label;
+
+        roleSelect.append(option);
+      }
+    );
+
+    const name = el("user-name");
+    name.maxLength = 150;
+
+    const email = el("user-email");
+    email.maxLength = 254;
+    email.autocomplete = "off";
+
+    const password = el("user-password");
+
+    password.minLength = 8;
+    password.maxLength = 128;
+    password.required = true;
+    password.autocomplete = "new-password";
+
+    const passwordHelp =
+      password.parentElement.querySelector(
+        ".form-text"
+      );
+
+    if (passwordHelp) {
+      passwordHelp.textContent =
+        "Obrigatória. Usa entre 8 e 128 caracteres. " +
+        "O projeto pode exigir requisitos adicionais.";
+    }
+
+    /*
+     * A tabela profiles não tem is_active.
+     * Ocultar o controlo até existir um fluxo real.
+     */
+    const active = el("user-active");
+
+    if (active) {
+      active.disabled = true;
+
+      const wrapper = active.closest(
+        ".form-check"
+      );
+
+      if (wrapper) {
+        wrapper.hidden = true;
+      }
+    }
+
+    const formBody = document.querySelector(
+      "#user-form .modal-body"
+    );
+
+    if (
+      formBody &&
+      !el("user-creation-note")
+    ) {
+      const note = document.createElement("p");
+
+      note.id = "user-creation-note";
+      note.className =
+        "small text-muted mb-0";
+
+      note.textContent =
+        "A conta será criada com o e-mail confirmado pelo administrador. " +
+        "Confirma que o endereço pertence à pessoa antes de guardar. " +
+        "Este formulário não envia um convite por e-mail.";
+
+      formBody.append(note);
+    }
+  }
+
+  /* =========================================
+     Abrir o formulário
+     ========================================= */
+
+  function openCreateModal() {
+    if (
+      !window.isAdmin?.() ||
+      saving
+    ) {
       return;
     }
 
-    if (deleteButton) {
-      const user = users.find(
-        item => item.id === deleteButton.dataset.deleteUser
-      );
+    el("user-form").reset();
 
-      if (!user) return;
+    el("user-id").value = "";
+    el("user-role").value = "vendedor";
+    el("user-password").required = true;
 
-      const result = await Swal.fire({
-        icon: "warning",
-        title: "Remover utilizador?",
-        text: `Pretendes remover "${user.full_name || user.email}"?`,
-        showCancelButton: true,
-        confirmButtonText: "Remover",
-        cancelButtonText: "Cancelar",
-        confirmButtonColor: "#dc3545"
-      });
+    el("user-modal-title").textContent =
+      "Novo utilizador";
 
-      if (!result.isConfirmed) return;
-
-      users = users.filter(
-        item => item.id !== user.id
-      );
-
-      renderUsers();
-
-      showAlert(
-        "Utilizador removido apenas nesta página. A base de dados ainda não foi alterada."
-      );
-    }
+    window.bootstrap.Modal.getOrCreateInstance(
+      el("user-modal")
+    ).show();
   }
+
+  /* =========================================
+     Mensagens devolvidas pela função
+     ========================================= */
+
+  async function getFunctionErrorMessage(error) {
+    if (error?.context instanceof Response) {
+      try {
+        const body = await error.context
+          .clone()
+          .json();
+
+        if (
+          typeof body?.error === "string"
+        ) {
+          return body.error;
+        }
+
+        if (
+          typeof body?.message === "string"
+        ) {
+          return body.message;
+        }
+      } catch {
+        // Usar a mensagem original.
+      }
+    }
+
+    return (
+      error?.message ||
+      "Não foi possível criar o utilizador."
+    );
+  }
+
+  /* =========================================
+     Criar utilizador no servidor
+     ========================================= */
 
   async function handleFormSubmit(event) {
     event.preventDefault();
 
-    const id = el("user-id").value.trim();
-    const name = el("user-name").value.trim();
-    const email = el("user-email").value.trim().toLowerCase();
-    const password = el("user-password").value;
-    const role = el("user-role").value;
-    const active = el("user-active").checked;
+    if (saving) return;
 
-    if (!name) {
-      showAlert("Escreve o nome completo do utilizador.", "warning");
+    if (!window.isAdmin?.()) {
+      await showAlert(
+        "Apenas o administrador pode criar utilizadores.",
+        "error"
+      );
+
       return;
     }
 
-    if (!isValidEmail(email)) {
-      showAlert("Escreve um e-mail válido.", "warning");
-      return;
-    }
+    const form = el("user-form");
 
-    if (!editingUserId && password.length < 6) {
-      showAlert(
-        "A palavra-passe deve ter pelo menos 6 caracteres.",
+    if (!form.reportValidity()) return;
+
+    const fullName =
+      el("user-name").value.trim();
+
+    const email =
+      el("user-email").value
+        .trim()
+        .toLowerCase();
+
+    const password =
+      el("user-password").value;
+
+    const role =
+      el("user-role").value;
+
+    if (!fullName) {
+      await showAlert(
+        "Escreve o nome completo.",
         "warning"
       );
 
       return;
     }
 
-    if (!roleLabels[role]) {
-      showAlert("Escolhe um papel válido.", "warning");
+    if (
+      !Object.prototype.hasOwnProperty.call(
+        roleLabels,
+        role
+      )
+    ) {
+      await showAlert(
+        "Escolhe um papel válido.",
+        "warning"
+      );
+
       return;
     }
 
-    const emailAlreadyUsed = users.some(
-      user =>
-        user.email.toLowerCase() === email &&
-        user.id !== editingUserId
+    const submit = form.querySelector(
+      '[type="submit"]'
     );
 
-    if (emailAlreadyUsed) {
-      showAlert(
-        "Já existe um utilizador com este e-mail.",
-        "warning"
-      );
+    const originalText =
+      submit.textContent;
 
-      return;
-    }
+    let createdProfile = null;
 
-    if (editingUserId) {
-      const user = users.find(
-        item => item.id === editingUserId
-      );
+    saving = true;
+    submit.disabled = true;
+    submit.textContent = "A criar...";
 
-      if (user) {
-        user.full_name = name;
-        user.email = email;
-        user.role = role;
-        user.is_active = active;
+    try {
+      const client = getClient();
+
+      const {
+        data: { session },
+        error: sessionError
+      } = await client.auth.getSession();
+
+      if (sessionError) {
+        throw sessionError;
       }
 
-      renderUsers();
-      closeModal();
+      if (!session?.access_token) {
+        throw new Error(
+          "A sessão expirou. Inicia sessão novamente."
+        );
+      }
 
-      showAlert(
-        "Alterações guardadas apenas nesta página. A base de dados ainda não foi alterada.",
-        "success"
+      const { data, error } =
+        await client.functions.invoke(
+          "admin-create-user",
+          {
+            headers: {
+              Authorization:
+                `Bearer ${session.access_token}`
+            },
+            body: {
+              full_name: fullName,
+              email,
+              password,
+              role
+            }
+          }
+        );
+
+      if (error) {
+        throw new Error(
+          await getFunctionErrorMessage(error)
+        );
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      if (!data?.user?.id) {
+        throw new Error(
+          "O servidor não confirmou a criação. " +
+          "Verifica Authentication antes de tentar novamente."
+        );
+      }
+
+      createdProfile = data.user;
+    } catch (error) {
+      console.error(
+        "[Utilizadores] Erro ao criar:",
+        error
       );
 
-      return;
+      await showAlert(
+        error.message ||
+        "Não foi possível criar o utilizador.",
+        "error"
+      );
+    } finally {
+      saving = false;
+      submit.disabled = false;
+      submit.textContent = originalText;
     }
 
-    const newUser = {
-      id: `temp-${Date.now()}`,
-      full_name: name,
-      email: email,
-      role: role,
-      is_active: active
-    };
+    if (!createdProfile) return;
 
-    users.push(newUser);
+    /*
+     * O pedido já terminou.
+     * Agora o modal pode fechar normalmente.
+     */
+    window.bootstrap.Modal.getOrCreateInstance(
+      el("user-modal")
+    ).hide();
+
+    form.reset();
+
+    users = [
+      createdProfile,
+      ...users.filter(
+        user => user.id !== createdProfile.id
+      )
+    ];
 
     renderUsers();
-    closeModal();
 
-    showAlert(
-      `Utilizador "${name}" preparado como ${roleLabels[role]}. A criação real será feita na fase do Supabase.`,
+    await showAlert(
+      "Conta criada no servidor com o e-mail confirmado pelo administrador.",
       "success"
     );
   }
 
-  function initialize() {
-    if (initialized || !window.currentAdmin) return;
+  /* =========================================
+     Inicialização
+     ========================================= */
 
-    if (!window.isAdmin()) {
-      showAlert(
-        "Apenas o administrador pode gerir utilizadores.",
-        "error"
+  function initialize() {
+    if (
+      initialized ||
+      !window.currentAdmin
+    ) {
+      return;
+    }
+
+    if (!window.isAdmin?.()) return;
+
+    const requiredElements = [
+      "users-table-body",
+      "user-form",
+      "user-name",
+      "user-email",
+      "user-password",
+      "user-role",
+      "user-id",
+      "user-modal",
+      "user-modal-title",
+      "new-user-button"
+    ];
+
+    const missingElements =
+      requiredElements.filter(id => !el(id));
+
+    if (missingElements.length) {
+      console.error(
+        "[Utilizadores] Elementos em falta no HTML:",
+        missingElements
       );
 
-      window.location.replace("../conta.html");
       return;
     }
 
     initialized = true;
+
+    configureForm();
 
     el("user-search")?.addEventListener(
       "input",
       renderUsers
     );
 
-    el("users-table-body")?.addEventListener(
-      "click",
-      handleTableClick
-    );
-
-    el("user-form")?.addEventListener(
-      "submit",
-      handleFormSubmit
-    );
-
-    el("new-user-button")?.addEventListener(
+    el("new-user-button").addEventListener(
       "click",
       openCreateModal
     );
 
-    renderUsers();
+    el("user-form").addEventListener(
+      "submit",
+      handleFormSubmit
+    );
+
+    el("user-modal").addEventListener(
+      "hide.bs.modal",
+      event => {
+        if (saving) {
+          event.preventDefault();
+        }
+      }
+    );
+
+    el("user-modal").addEventListener(
+      "hidden.bs.modal",
+      () => {
+        el("user-password").value = "";
+      }
+    );
+
+    loadUsers();
   }
 
-  document.addEventListener("admin:ready", initialize);
+  document.addEventListener(
+    "admin:ready",
+    initialize
+  );
 
   if (document.readyState === "loading") {
     document.addEventListener(
