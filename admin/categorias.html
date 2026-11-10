@@ -1,88 +1,127 @@
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Categorias — Painel Administrativo</title>
 
   <link rel="icon" href="../assets/img/favicon.png">
 
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css"
+    rel="stylesheet"
+  >
 
   <link href="../assets/css/style.css" rel="stylesheet">
   <link href="../assets/css/admin.css" rel="stylesheet">
+
+  <style>
+    #categories-table td {
+      vertical-align: middle;
+    }
+
+    #categories-table .badge {
+      white-space: normal;
+      text-align: left;
+      line-height: 1.5;
+    }
+
+    .category-home-settings {
+      padding: 18px;
+      border: 1px solid #dbeafe;
+      border-radius: 12px;
+      background: #f8fbff;
+    }
+
+    .category-home-settings h3 {
+      color: #1d4ed8;
+    }
+  </style>
 </head>
 
 <body>
   <div class="admin-wrapper">
+    <!-- Sidebar -->
     <aside class="admin-sidebar" id="admin-sidebar">
       <div class="sidebar-brand">
-        <i class="bi bi-bag-heart-fill"></i>
+        <i class="bi bi-bag-heart-fill" aria-hidden="true"></i>
         <span>Loja MZ</span>
       </div>
 
       <nav class="sidebar-nav" aria-label="Administração">
         <a href="index.html" class="sidebar-link">
-          <i class="bi bi-speedometer2"></i>
+          <i class="bi bi-speedometer2" aria-hidden="true"></i>
           <span>Dashboard</span>
         </a>
 
         <a href="produtos.html" class="sidebar-link">
-          <i class="bi bi-box-seam"></i>
+          <i class="bi bi-box-seam" aria-hidden="true"></i>
           <span>Produtos</span>
         </a>
 
-        <a href="categorias.html" class="sidebar-link active">
-          <i class="bi bi-tags"></i>
+        <a
+          href="categorias.html"
+          class="sidebar-link active"
+          aria-current="page"
+        >
+          <i class="bi bi-tags" aria-hidden="true"></i>
           <span>Categorias</span>
         </a>
 
         <a href="pedidos.html" class="sidebar-link">
-          <i class="bi bi-receipt"></i>
+          <i class="bi bi-receipt" aria-hidden="true"></i>
           <span>Pedidos</span>
         </a>
 
         <a href="utilizadores.html" class="sidebar-link admin-only">
-          <i class="bi bi-person-gear"></i>
+          <i class="bi bi-person-gear" aria-hidden="true"></i>
           <span>Utilizadores</span>
         </a>
 
         <a href="clientes.html" class="sidebar-link admin-only">
-          <i class="bi bi-people"></i>
+          <i class="bi bi-people" aria-hidden="true"></i>
           <span>Clientes</span>
         </a>
 
         <a href="cupoes.html" class="sidebar-link admin-only">
-          <i class="bi bi-ticket-perforated"></i>
+          <i class="bi bi-ticket-perforated" aria-hidden="true"></i>
           <span>Cupões</span>
         </a>
 
         <a href="banners.html" class="sidebar-link admin-only">
-          <i class="bi bi-image"></i>
+          <i class="bi bi-image" aria-hidden="true"></i>
           <span>Banners</span>
         </a>
 
         <a href="avaliacoes.html" class="sidebar-link admin-only">
-          <i class="bi bi-star"></i>
+          <i class="bi bi-star" aria-hidden="true"></i>
           <span>Avaliações</span>
         </a>
 
         <a href="relatorios.html" class="sidebar-link admin-only">
-          <i class="bi bi-graph-up"></i>
+          <i class="bi bi-graph-up" aria-hidden="true"></i>
           <span>Relatórios</span>
         </a>
 
         <a href="configuracoes.html" class="sidebar-link admin-only">
-          <i class="bi bi-gear"></i>
+          <i class="bi bi-gear" aria-hidden="true"></i>
           <span>Configurações</span>
         </a>
       </nav>
 
       <div class="sidebar-footer">
-        <button class="btn btn-outline-light w-100" id="admin-logout-button">
-          <i class="bi bi-box-arrow-right me-2"></i>
+        <button
+          type="button"
+          class="btn btn-outline-light w-100"
+          id="admin-logout-button"
+        >
+          <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>
           Terminar sessão
         </button>
       </div>
@@ -90,37 +129,72 @@
 
     <main class="admin-main">
       <header class="admin-topbar">
-        <button class="btn btn-light d-lg-none" id="sidebar-toggle">
-          <i class="bi bi-list"></i>
+        <button
+          type="button"
+          class="btn btn-light d-lg-none"
+          id="sidebar-toggle"
+          aria-label="Abrir menu"
+        >
+          <i class="bi bi-list" aria-hidden="true"></i>
         </button>
 
         <h1 class="admin-title">Categorias</h1>
 
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#category-modal" onclick="openCreateCategoryModal()">
-          <i class="bi bi-plus-lg me-1"></i>
+        <button
+          type="button"
+          class="btn btn-primary"
+          id="new-category-button"
+        >
+          <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
           Nova categoria
         </button>
       </header>
 
       <div class="admin-content">
+        <div class="alert alert-info">
+          <h2 class="h6 mb-2">
+            Categorias da página inicial
+          </h2>
+
+          <p class="mb-1">
+            Edita uma categoria e ativa
+            “Mostrar em Explora por categoria”.
+            Define também a ordem de apresentação.
+          </p>
+
+          <p class="mb-0 small">
+            Só aparecem categorias principais e ativas.
+            Retirar do início não apaga a categoria nem os produtos.
+            Recarrega a página inicial para consultar as alterações.
+          </p>
+        </div>
+
         <div class="admin-card">
           <div class="table-responsive">
             <table class="table align-middle">
+              <caption class="visually-hidden">
+                Gestão das categorias e da sua apresentação na página inicial
+              </caption>
+
               <thead>
                 <tr>
-                  <th>Categoria</th>
-                  <th>Slug</th>
-                  <th>Categoria pai</th>
-                  <th>Ordem</th>
-                  <th>Estado</th>
-                  <th class="text-end">Ações</th>
+                  <th scope="col">Categoria</th>
+                  <th scope="col">Slug</th>
+                  <th scope="col">Categoria pai</th>
+                  <th scope="col">Ordem geral</th>
+                  <th scope="col">Página inicial</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col" class="text-end">Ações</th>
                 </tr>
               </thead>
 
               <tbody id="categories-table">
                 <tr>
-                  <td colspan="6" class="text-center text-muted py-4">
-                    A carregar categorias...
+                  <td
+                    colspan="7"
+                    class="text-center text-muted py-4"
+                  >
+                    A aguardar validação do administrador...
                   </td>
                 </tr>
               </tbody>
@@ -131,66 +205,252 @@
     </main>
   </div>
 
-  <div class="modal fade" id="category-modal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+  <!-- Modal -->
+  <div
+    class="modal fade"
+    id="category-modal"
+    tabindex="-1"
+    aria-labelledby="category-modal-title"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="category-modal-title">Nova categoria</h5>
+          <h2 class="modal-title fs-5" id="category-modal-title">
+            Nova categoria
+          </h2>
 
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Fechar"
+          ></button>
         </div>
 
         <div class="modal-body">
           <form id="category-form">
             <div class="row g-3">
               <div class="col-md-6">
-                <label class="form-label">Nome em português *</label>
-                <input type="text" class="form-control" id="category-name-pt" required>
+                <label for="category-name-pt" class="form-label">
+                  Nome em português *
+                </label>
+
+                <input
+                  type="text"
+                  class="form-control"
+                  id="category-name-pt"
+                  maxlength="150"
+                  required
+                >
               </div>
 
               <div class="col-md-6">
-                <label class="form-label">Nome em inglês</label>
-                <input type="text" class="form-control" id="category-name-en">
+                <label for="category-name-en" class="form-label">
+                  Nome em inglês
+                </label>
+
+                <input
+                  type="text"
+                  class="form-control"
+                  id="category-name-en"
+                  maxlength="150"
+                >
               </div>
 
               <div class="col-md-6">
-                <label class="form-label">Slug *</label>
-                <input type="text" class="form-control" id="category-slug" required>
+                <label for="category-slug" class="form-label">
+                  Slug *
+                </label>
+
+                <input
+                  type="text"
+                  class="form-control"
+                  id="category-slug"
+                  maxlength="180"
+                  placeholder="Ex.: telemoveis"
+                  required
+                >
+
+                <div class="form-text">
+                  Identificador usado no endereço dos produtos da categoria.
+                </div>
               </div>
 
               <div class="col-md-6">
-                <label class="form-label">Categoria pai</label>
+                <label for="category-parent" class="form-label">
+                  Categoria pai
+                </label>
+
                 <select class="form-select" id="category-parent">
                   <option value="">Nenhuma</option>
                 </select>
+
+                <div class="form-text">
+                  Deixa “Nenhuma” para criar uma categoria principal.
+                </div>
               </div>
 
               <div class="col-md-6">
-                <label class="form-label">Ordem</label>
-                <input type="number" class="form-control" id="category-sort-order" value="0" min="0">
+                <label for="category-sort-order" class="form-label">
+                  Ordem geral
+                </label>
+
+                <input
+                  type="number"
+                  class="form-control"
+                  id="category-sort-order"
+                  value="0"
+                  min="0"
+                  max="2147483647"
+                  step="1"
+                >
+
+                <div class="form-text">
+                  Ordem na listagem geral de categorias.
+                </div>
               </div>
 
               <div class="col-md-6">
-                <label class="form-label">Imagem (URL)</label>
-                <input type="url" class="form-control" id="category-image" placeholder="https://...">
+                <label for="category-image" class="form-label">
+                  Imagem da categoria — URL
+                </label>
+
+                <input
+                  type="url"
+                  class="form-control"
+                  id="category-image"
+                  placeholder="https://..."
+                >
+
+                <div class="form-text">
+                  Se a imagem carregar, será usada no lugar do ícone.
+                </div>
               </div>
 
               <div class="col-12">
-                <label class="form-label">Descrição em português</label>
-                <textarea class="form-control" id="category-description-pt" rows="2"></textarea>
+                <label for="category-description-pt" class="form-label">
+                  Descrição em português
+                </label>
+
+                <textarea
+                  class="form-control"
+                  id="category-description-pt"
+                  rows="2"
+                ></textarea>
               </div>
 
               <div class="col-12">
-                <label class="form-label">Descrição em inglês</label>
-                <textarea class="form-control" id="category-description-en" rows="2"></textarea>
+                <label for="category-description-en" class="form-label">
+                  Descrição em inglês
+                </label>
+
+                <textarea
+                  class="form-control"
+                  id="category-description-en"
+                  rows="2"
+                ></textarea>
+              </div>
+
+              <!-- Configuração da página inicial -->
+              <div class="col-12">
+                <section
+                  class="category-home-settings"
+                  aria-labelledby="category-home-settings-title"
+                >
+                  <h3 class="h6 mb-3" id="category-home-settings-title">
+                    <i class="bi bi-house me-1" aria-hidden="true"></i>
+                    Apresentação na página inicial
+                  </h3>
+
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label for="category-icon" class="form-label">
+                        Ícone Lucide
+                      </label>
+
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="category-icon"
+                        placeholder="Ex.: smartphone"
+                        maxlength="80"
+                        pattern="[a-z0-9-]+"
+                        aria-describedby="category-icon-help"
+                      >
+
+                      <div class="form-text" id="category-icon-help">
+                        Exemplos: smartphone, shirt, house, headphones,
+                        backpack, camera ou package.
+                        Não coloques HTML neste campo.
+                      </div>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label for="category-home-order" class="form-label">
+                        Ordem na página inicial
+                      </label>
+
+                      <input
+                        type="number"
+                        class="form-control"
+                        id="category-home-order"
+                        value="0"
+                        min="0"
+                        max="2147483647"
+                        step="1"
+                      >
+
+                      <div class="form-text">
+                        Os números menores aparecem primeiro.
+                      </div>
+                    </div>
+
+                    <div class="col-12">
+                      <div class="form-check form-switch">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          role="switch"
+                          id="category-show-home"
+                          aria-describedby="category-show-home-help"
+                        >
+
+                        <label
+                          class="form-check-label"
+                          for="category-show-home"
+                        >
+                          Mostrar em “Explora por categoria”
+                        </label>
+                      </div>
+
+                      <div class="form-text" id="category-show-home-help">
+                        Disponível para categorias principais.
+                        A categoria também precisa de estar ativa.
+                      </div>
+                    </div>
+                  </div>
+                </section>
               </div>
 
               <div class="col-12">
                 <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="category-active" checked>
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    id="category-active"
+                    checked
+                  >
+
                   <label class="form-check-label" for="category-active">
                     Categoria ativa
                   </label>
+                </div>
+
+                <div class="form-text">
+                  Uma categoria inativa não aparece na secção pública,
+                  mesmo que esteja selecionada para o início.
                 </div>
               </div>
             </div>
@@ -198,12 +458,20 @@
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-bs-dismiss="modal"
+          >
             Cancelar
           </button>
 
-          <button type="button" class="btn btn-primary" id="save-category-button">
-            <i class="bi bi-check2 me-1"></i>
+          <button
+            type="button"
+            class="btn btn-primary"
+            id="save-category-button"
+          >
+            <i class="bi bi-check2 me-1" aria-hidden="true"></i>
             Guardar
           </button>
         </div>
@@ -211,10 +479,12 @@
     </div>
   </div>
 
+  <!-- Bibliotecas -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  <!-- Projeto -->
   <script src="../assets/js/config.js"></script>
   <script src="../assets/js/supabase.js"></script>
   <script src="../assets/js/utils.js"></script>

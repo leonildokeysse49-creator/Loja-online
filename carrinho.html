@@ -27,8 +27,8 @@
   <div class="topbar py-2">
     <div class="container d-flex justify-content-between align-items-center small">
       <a href="contacto.html" class="text-white text-decoration-none">
-        <i class="bi bi-telephone me-1" aria-hidden="true"></i>
-        +258 85 321 7149
+        <i class="" aria-hidden="true"></i>
+
       </a>
 
       <div class="dropdown">
@@ -37,6 +37,7 @@
           type="button"
           data-bs-toggle="dropdown"
           aria-expanded="false"
+          aria-label="Escolher idioma"
         >
           <i class="bi bi-translate me-1" aria-hidden="true"></i>
           <span id="current-language">PT</span>
@@ -68,9 +69,15 @@
   </div>
 
   <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg main-navbar sticky-top">
+  <nav
+    class="navbar navbar-expand-lg main-navbar sticky-top"
+    aria-label="Navegação principal"
+  >
     <div class="container">
-      <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">
+      <a
+        class="navbar-brand d-flex align-items-center gap-2"
+        href="index.html"
+      >
         <i class="bi bi-bag-heart-fill brand-icon" aria-hidden="true"></i>
         <span class="brand-name">Loja MZ</span>
       </a>
@@ -102,7 +109,12 @@
           </li>
 
           <li class="nav-item">
-            <a class="nav-link active" href="carrinho.html" data-i18n="cart">
+            <a
+              class="nav-link active"
+              href="carrinho.html"
+              data-i18n="cart"
+              aria-current="page"
+            >
               Carrinho
             </a>
           </li>
@@ -118,6 +130,8 @@
           <a
             href="login.html"
             class="btn btn-light btn-icon"
+            title="A minha conta"
+            aria-label="A minha conta"
             data-i18n-title="my_account"
             data-i18n-aria-label="my_account"
           >
@@ -127,6 +141,8 @@
           <a
             href="carrinho.html"
             class="btn btn-light btn-icon position-relative"
+            title="Carrinho"
+            aria-label="Carrinho"
             data-i18n-title="cart"
             data-i18n-aria-label="cart"
           >
@@ -144,126 +160,213 @@
     </div>
   </nav>
 
-  <!-- Cabeçalho -->
-  <section class="page-header">
-    <div class="container">
-      <h1 data-i18n="shopping_cart">Carrinho de compras</h1>
+  <main>
+    <!-- Cabeçalho -->
+    <section class="page-header">
+      <div class="container">
+        <h1 data-i18n="shopping_cart">Carrinho de compras</h1>
 
-      <p class="mb-0" id="cart-subtitle"></p>
-    </div>
-  </section>
-
-  <!-- Carrinho -->
-  <section class="section">
-    <div class="container">
-      <!-- Carrinho vazio -->
-      <div id="cart-empty" class="text-center py-5 d-none">
-        <i class="bi bi-cart-x display-3 text-muted" aria-hidden="true"></i>
-
-        <h3 class="mt-3" data-i18n="cart_empty">
-          O seu carrinho está vazio
-        </h3>
-
-        <p class="text-muted" data-i18n="cart_empty_text">
-          Adicione produtos para continuar a compra.
-        </p>
-
-        <a
-          href="produtos.html"
-          class="btn btn-primary mt-2"
-          data-i18n="continue_shopping"
-        >
-          Continuar a comprar
-        </a>
+        <p
+          class="mb-0"
+          id="cart-subtitle"
+          role="status"
+          aria-live="polite"
+        ></p>
       </div>
+    </section>
 
-      <!-- Carrinho com produtos -->
-      <div id="cart-content" class="d-none">
-        <div class="row g-4">
-          <div class="col-lg-8">
-            <div class="cart-items-card">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="mb-0" data-i18n="shopping_cart">
-                  Carrinho de compras
-                </h5>
-
-                <button
-                  class="btn btn-outline-danger btn-sm"
-                  type="button"
-                  id="clear-cart-button"
-                >
-                  <i class="bi bi-trash me-1" aria-hidden="true"></i>
-                  <span data-i18n="clear_cart">Limpar carrinho</span>
-                </button>
-              </div>
-
-              <div id="cart-items"></div>
-            </div>
+    <!-- Carrinho -->
+    <section class="section" aria-label="Produtos e resumo do carrinho">
+      <div class="container">
+        <noscript>
+          <div class="alert alert-warning">
+            Ativa o JavaScript no navegador para utilizar o carrinho.
           </div>
+        </noscript>
 
-          <div class="col-lg-4">
-            <div class="cart-summary-card">
-              <h5 data-i18n="order_summary">Resumo do pedido</h5>
+        <!-- Carrinho vazio -->
+        <div id="cart-empty" class="text-center py-5 d-none">
+          <i
+            class="bi bi-cart-x display-3 text-muted"
+            aria-hidden="true"
+          ></i>
 
-              <div class="summary-row">
-                <span data-i18n="subtotal">Subtotal</span>
-                <strong id="cart-subtotal">MT 0,00</strong>
+          <h2 class="h3 mt-3" data-i18n="cart_empty">
+            O seu carrinho está vazio
+          </h2>
+
+          <p class="text-muted" data-i18n="cart_empty_text">
+            Adicione produtos para continuar a compra.
+          </p>
+
+          <a
+            href="produtos.html"
+            class="btn btn-primary mt-2"
+            data-i18n="continue_shopping"
+          >
+            Continuar a comprar
+          </a>
+        </div>
+
+        <!-- Carrinho com produtos -->
+        <div id="cart-content" class="d-none">
+          <div class="row g-4">
+            <div class="col-lg-8">
+              <div class="cart-items-card">
+                <div
+                  class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"
+                >
+                  <h2 class="h5 mb-0" data-i18n="shopping_cart">
+                    Carrinho de compras
+                  </h2>
+
+                  <button
+                    class="btn btn-outline-danger btn-sm"
+                    type="button"
+                    id="clear-cart-button"
+                  >
+                    <i class="bi bi-trash me-1" aria-hidden="true"></i>
+                    <span data-i18n="clear_cart">Limpar carrinho</span>
+                  </button>
+                </div>
+
+                <div id="cart-items"></div>
               </div>
+            </div>
 
-              <div class="summary-row">
-                <span data-i18n="delivery_fee">Taxa de entrega</span>
-                <span class="text-muted" data-i18n="calculated_at_checkout">
-                  Calculado no checkout
-                </span>
+            <!-- Resumo -->
+            <div class="col-lg-4">
+              <div class="cart-summary-card">
+                <h2 class="h5" data-i18n="order_summary">
+                  Resumo do pedido
+                </h2>
+
+                <div class="summary-row">
+                  <span data-i18n="subtotal">Subtotal</span>
+                  <strong id="cart-subtotal">MT 0,00</strong>
+                </div>
+
+                <div class="summary-row">
+                  <span data-i18n="delivery_fee">Taxa de entrega</span>
+
+                  <span
+                    class="text-muted"
+                    data-i18n="calculated_at_checkout"
+                  >
+                    Calculado no checkout
+                  </span>
+                </div>
+
+                <!-- Cupom -->
+                <div class="coupon-box mt-3">
+                  <label for="coupon-code" class="form-label">
+                    Código do cupom
+                  </label>
+
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      id="coupon-code"
+                      class="form-control"
+                      placeholder="Escreva o código"
+                      maxlength="64"
+                      autocomplete="off"
+                      autocapitalize="characters"
+                      spellcheck="false"
+                      aria-describedby="coupon-message"
+                    >
+
+                    <button
+                      type="button"
+                      class="btn btn-primary"
+                      id="apply-coupon-button"
+                    >
+                      Aplicar
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="btn btn-link btn-sm px-0 mt-1"
+                    id="remove-coupon-button"
+                  >
+                    Remover cupom
+                  </button>
+
+                  <p
+                    id="coupon-message"
+                    class="small mt-2 mb-0"
+                    role="status"
+                    aria-live="polite"
+                  ></p>
+                </div>
+
+                <div
+                  class="summary-row d-none mt-2"
+                  id="coupon-discount-row"
+                >
+                  <span>Desconto</span>
+
+                  <strong
+                    id="cart-discount"
+                    class="text-success"
+                  >
+                    MT 0,00
+                  </strong>
+                </div>
+
+                <hr>
+
+                <div class="summary-row total-row">
+                  <span data-i18n="total">Total</span>
+                  <strong id="cart-total">MT 0,00</strong>
+                </div>
+
+                <a
+                  href="checkout.html"
+                  class="btn btn-primary w-100 mt-3"
+                  data-i18n="proceed_to_checkout"
+                >
+                  Finalizar compra
+                </a>
+
+                <a
+                  href="produtos.html"
+                  class="btn btn-outline-secondary w-100 mt-2"
+                  data-i18n="continue_shopping"
+                >
+                  Continuar a comprar
+                </a>
               </div>
-
-              <hr>
-
-              <div class="summary-row total-row">
-                <span data-i18n="total">Total</span>
-                <strong id="cart-total">MT 0,00</strong>
-              </div>
-
-              <a
-                href="checkout.html"
-                class="btn btn-primary w-100 mt-3"
-                data-i18n="proceed_to_checkout"
-              >
-                Finalizar compra
-              </a>
-
-              <a
-                href="produtos.html"
-                class="btn btn-outline-secondary w-100 mt-2"
-                data-i18n="continue_shopping"
-              >
-                Continuar a comprar
-              </a>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </main>
 
   <!-- Footer -->
   <footer class="footer">
     <div class="container">
       <div class="row g-4">
         <div class="col-lg-4">
-          <h5 class="footer-title">Loja MZ</h5>
+          <h2 class="footer-title h5">Loja MZ</h2>
 
           <p data-i18n="footer_about">
-            A sua loja online para malas, roupas, telemóveis e acessórios em Moçambique.
+            A sua loja online para malas, roupas, telemóveis e acessórios
+            em Moçambique.
           </p>
         </div>
 
         <div class="col-lg-4">
-          <h5 class="footer-title" data-i18n="contact">Contacto</h5>
+          <h2 class="footer-title h5" data-i18n="contact">
+            Contacto
+          </h2>
 
           <ul class="footer-links">
             <li>
               <i class="bi bi-envelope me-2" aria-hidden="true"></i>
+
               <a href="mailto:leonildokeysse49@gmail.com">
                 leonildokeysse49@gmail.com
               </a>
@@ -282,19 +385,27 @@
         </div>
 
         <div class="col-lg-4">
-          <h5 class="footer-title" data-i18n="quick_links">Links rápidos</h5>
+          <h2 class="footer-title h5" data-i18n="quick_links">
+            Links rápidos
+          </h2>
 
           <ul class="footer-links">
             <li>
-              <a href="produtos.html" data-i18n="products">Produtos</a>
+              <a href="produtos.html" data-i18n="products">
+                Produtos
+              </a>
             </li>
 
             <li>
-              <a href="carrinho.html" data-i18n="cart">Carrinho</a>
+              <a href="carrinho.html" data-i18n="cart">
+                Carrinho
+              </a>
             </li>
 
             <li>
-              <a href="conta.html" data-i18n="my_account">A minha conta</a>
+              <a href="conta.html" data-i18n="my_account">
+                A minha conta
+              </a>
             </li>
           </ul>
         </div>
@@ -309,16 +420,20 @@
     </div>
   </footer>
 
-  <!-- Scripts -->
+  <!-- Bibliotecas -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  <!-- Configuração -->
   <script src="assets/js/config.js"></script>
   <script src="assets/js/supabase.js"></script>
   <script src="assets/js/utils.js"></script>
   <script src="assets/js/i18n.js"></script>
   <script src="assets/js/ui.js"></script>
+
+  <!-- Cupões antes do carrinho -->
+  <script src="assets/js/coupons.js"></script>
   <script src="assets/js/cart.js"></script>
 </body>
 </html>

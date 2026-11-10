@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Loja MZ — Tudo o que procuras, num só lugar</title>
+  <title>Loja online — Tudo o que procuras, num só lugar</title>
 
   <meta
     name="description"
@@ -15,31 +14,23 @@
 
   <link rel="icon" href="assets/img/favicon.png">
 
-  <!-- Bootstrap -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     rel="stylesheet"
   >
-
-  <!-- Bootstrap Icons -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css"
     rel="stylesheet"
   >
-
-  <!-- Swiper -->
   <link
     href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
     rel="stylesheet"
   >
-
-  <!-- AOS -->
   <link
     href="https://unpkg.com/aos@2.3.4/dist/aos.css"
     rel="stylesheet"
   >
 
-  <!-- Estilos do projeto -->
   <link href="assets/css/style.css" rel="stylesheet">
 
   <style>
@@ -73,10 +64,6 @@
       color: #084298;
       background: #eff6ff;
     }
-
-    /* =========================================
-       Logotipo
-       ========================================= */
 
     .store-brand {
       display: inline-flex;
@@ -143,18 +130,7 @@
       margin-bottom: 0;
     }
 
-    /* =========================================
-       Fundo da secção principal — Hero
-       ========================================= */
-
     .hero.hero-with-background {
-      /*
-        COLOCA A TUA IMAGEM NESTE CAMINHO:
-        assets/img/hero-fundo.jpg
-
-        Se o ficheiro tiver outro nome ou extensão,
-        altera apenas o caminho dentro de url(...).
-      */
       --hero-background-image: url("assets/img/hero-fundo.jpg");
 
       background-color: #f8fafc;
@@ -170,10 +146,6 @@
       background-position: center;
       background-repeat: no-repeat;
     }
-
-    /* =========================================
-       Secções
-       ========================================= */
 
     .home-section-heading {
       display: flex;
@@ -222,35 +194,50 @@
       box-shadow: 0 12px 30px rgba(37, 99, 235, .1);
     }
 
+    #home-categories .category-card:focus-within {
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .2);
+    }
+
     #home-categories .category-icon {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 52px;
-      height: 52px;
+      flex-shrink: 0;
+      width: 64px;
+      height: 64px;
       margin-bottom: 1rem;
+      overflow: hidden;
       border-radius: 14px;
       background: #eff6ff;
       color: #2563eb;
     }
 
     #home-categories .category-icon svg {
-      width: 26px;
-      height: 26px;
+      width: 28px;
+      height: 28px;
+    }
+
+    #home-categories .category-icon img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     #home-categories .category-title {
+      margin-bottom: .5rem;
       color: #111827;
       font-size: 1.05rem;
       font-weight: 700;
-      margin-bottom: .5rem;
+      overflow-wrap: anywhere;
     }
 
     #home-categories .category-description {
+      margin-bottom: 1rem;
       color: #6b7280;
       font-size: .875rem;
       line-height: 1.6;
-      margin-bottom: 1rem;
+      overflow-wrap: anywhere;
     }
 
     #home-categories .category-links {
@@ -318,9 +305,9 @@
       left: 12px;
       z-index: 2000;
       padding: 12px 18px;
+      border-radius: 8px;
       background: #fff;
       color: #111827;
-      border-radius: 8px;
     }
 
     .skip-link:focus {
@@ -336,7 +323,6 @@
         padding-bottom: 12px;
       }
 
-      /* Camada uniforme quando o banner fica empilhado */
       .hero.hero-with-background {
         background-image:
           linear-gradient(
@@ -427,7 +413,6 @@
                 Português
               </button>
             </li>
-
             <li>
               <button
                 class="dropdown-item"
@@ -450,13 +435,8 @@
     aria-label="Navegação principal"
   >
     <div class="container">
-      <!-- Logotipo do cabeçalho -->
-      <a
-        class="navbar-brand store-brand"
-        href="index.html"
-      >
+      <a class="navbar-brand store-brand" href="index.html">
         <span class="store-logo-frame" aria-hidden="true">
-          <!-- Altera o caminho abaixo quando tiveres o teu logotipo -->
           <img
             src="assets/img/logo.png"
             alt=""
@@ -468,15 +448,12 @@
             hidden
           >
 
-          <!-- Ícone temporário, mostrado enquanto o logo não carregar -->
           <span class="store-logo-fallback" data-logo-fallback>
             <i class="bi bi-bag-heart-fill" aria-hidden="true"></i>
           </span>
         </span>
 
-        <span class="brand-name" data-store-name>
-          Loja MZ
-        </span>
+        <span class="brand-name" data-store-name>Loja online</span>
       </a>
 
       <button
@@ -503,33 +480,18 @@
               Início
             </a>
           </li>
-
           <li class="nav-item">
-            <a
-              class="nav-link"
-              href="produtos.html"
-              data-i18n="products"
-            >
+            <a class="nav-link" href="produtos.html" data-i18n="products">
               Produtos
             </a>
           </li>
-
           <li class="nav-item">
-            <a
-              class="nav-link"
-              href="categorias.html"
-              data-i18n="categories"
-            >
+            <a class="nav-link" href="categorias.html" data-i18n="categories">
               Categorias
             </a>
           </li>
-
           <li class="nav-item">
-            <a
-              class="nav-link"
-              href="contacto.html"
-              data-i18n="contact"
-            >
+            <a class="nav-link" href="contacto.html" data-i18n="contact">
               Contacto
             </a>
           </li>
@@ -595,7 +557,7 @@
   </nav>
 
   <main id="main-content">
-    <!-- Banner com imagem de fundo definida no CSS -->
+    <!-- Hero -->
     <section
       class="hero hero-with-background"
       aria-labelledby="hero-title"
@@ -611,7 +573,7 @@
 
             <p class="hero-text">
               Descobre uma seleção de produtos de moda, tecnologia,
-              casa, beleza e muito mais. Compra com comodidade na Loja-MZ.
+              casa, beleza e muito mais. Compra com comodidade na Loja online.
             </p>
 
             <a href="produtos.html" class="btn btn-primary btn-lg">
@@ -622,18 +584,14 @@
 
           <div class="col-lg-6 text-center">
             <img
-              src="assets/img/hero.png"
-              alt="Seleção de produtos da Loja MZ"
-              class="img-fluid hero-image"
-              fetchpriority="high"
-              decoding="async"
+
             >
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Seis categorias em destaque -->
+    <!-- Categorias selecionadas pelo administrador -->
     <section
       class="section category-section"
       aria-labelledby="home-categories-title"
@@ -700,7 +658,8 @@
         </div>
 
         <p class="home-section-description">
-          Descobre os produtos selecionados pela loja e encontra os teus favoritos.
+          Descobre os produtos selecionados pela loja
+          e encontra os teus favoritos.
         </p>
 
         <div
@@ -763,13 +722,8 @@
     <div class="container">
       <div class="row g-4">
         <div class="col-lg-4">
-          <!-- Logotipo do rodapé -->
-          <a
-            class="store-brand footer-brand"
-            href="index.html"
-          >
+          <a class="store-brand footer-brand" href="index.html">
             <span class="store-logo-frame" aria-hidden="true">
-              <!-- Usa o mesmo logotipo do cabeçalho -->
               <img
                 src="assets/img/logo.png"
                 alt=""
@@ -805,15 +759,13 @@
           <ul class="footer-links">
             <li>
               <i class="bi bi-envelope me-2" aria-hidden="true"></i>
-
-              <a href="leonildokeysse49@gmail.com">
+              <a href="mailto:leonildokeysse49@gmail.com">
                 leonildokeysse49@gmail.com
               </a>
             </li>
 
             <li>
               <i class="bi bi-telephone me-2" aria-hidden="true"></i>
-
               <a href="tel:+258853217149">
                 +258 85 321 7149
               </a>
@@ -821,7 +773,6 @@
 
             <li>
               <i class="bi bi-whatsapp me-2" aria-hidden="true"></i>
-
               <a
                 href="https://wa.me/258853217149"
                 target="_blank"
@@ -844,25 +795,21 @@
                 Produtos
               </a>
             </li>
-
             <li>
               <a href="categorias.html" data-i18n="categories">
                 Todas as categorias
               </a>
             </li>
-
             <li>
               <a href="carrinho.html" data-i18n="cart">
                 Carrinho
               </a>
             </li>
-
             <li>
               <a href="conta.html" data-i18n="my_account">
                 A minha conta
               </a>
             </li>
-
             <li>
               <a href="contacto.html" data-i18n="contact">
                 Contacto
@@ -884,7 +831,6 @@
     </div>
   </footer>
 
-  <!-- Inicialização do logotipo -->
   <script>
     (function initStoreLogos() {
       "use strict";
@@ -920,18 +866,23 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Scripts do projeto -->
+  <!-- Projeto -->
   <script src="assets/js/config.js"></script>
   <script src="assets/js/supabase.js"></script>
   <script src="assets/js/utils.js"></script>
   <script src="assets/js/i18n.js"></script>
   <script src="assets/js/ui.js"></script>
+
+  <!-- Categorias públicas -->
   <script src="assets/js/home-categories.js"></script>
+
+  <!-- Produtos e restantes funcionalidades -->
   <script src="assets/js/products.js"></script>
   <script src="assets/js/home.js"></script>
 
   <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
+    document.getElementById("year").textContent =
+      new Date().getFullYear();
   </script>
 </body>
 </html>

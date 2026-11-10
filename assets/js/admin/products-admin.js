@@ -1,10 +1,8 @@
-
 /* ==========================================================
    Loja MZ — Gestão administrativa de produtos
 
    Administrador: gere todos os produtos.
-   Vendedor: pode ver os produtos; edição será ativada
-   quando a coluna created_by for criada.
+   Vendedor: gere apenas os produtos que criou.
    ========================================================== */
 
 (function productsAdmin() {
@@ -113,14 +111,23 @@
   }
 
   function canManage(product) {
-    return window.isAdmin();
+    const currentUserId =
+      window.currentAdmin?.id ||
+      window.currentAdmin?.user_id ||
+      window.currentAdmin?.profile?.id;
+
+    if (!currentUserId) return false;
+
+    if (window.isAdmin()) return true;
+
+    return product.created_by === currentUserId;
   }
 
   function actions(product, mobile = false) {
     if (!canManage(product)) {
       return `
         <div class="product-actions text-muted small">
-          Sem permissão para editar
+          Só podes editar produtos que criaste
         </div>
       `;
     }
@@ -339,6 +346,7 @@
         stock,
         is_active,
         created_at,
+        created_by,
         category_id,
         product_images (
           image_url,
@@ -360,6 +368,7 @@
         stock,
         is_active,
         created_at,
+        created_by,
         category_id,
         categories (
           name_pt
@@ -544,7 +553,7 @@
       await Swal.fire({
         icon: "warning",
         title: "Ação não permitida",
-        text: "Não tens permissão para alterar este produto."
+        text: "Só podes gerir produtos que criaste."
       });
 
       return;

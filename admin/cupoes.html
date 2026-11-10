@@ -3,12 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Cupões — Painel Administrativo</title>
 
   <link rel="icon" href="../assets/img/favicon.png">
 
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css"
+    rel="stylesheet"
+  >
 
   <link href="../assets/css/style.css" rel="stylesheet">
   <link href="../assets/css/admin.css" rel="stylesheet">
@@ -16,106 +23,151 @@
 
 <body>
   <div class="admin-wrapper">
-    <!-- Sidebar -->
     <aside class="admin-sidebar" id="admin-sidebar">
       <div class="sidebar-brand">
-        <i class="bi bi-bag-heart-fill"></i>
+        <i class="bi bi-bag-heart-fill" aria-hidden="true"></i>
         <span>Loja MZ</span>
       </div>
 
-      <nav class="sidebar-nav">
+      <nav class="sidebar-nav" aria-label="Administração">
         <a href="index.html" class="sidebar-link">
-          <i class="bi bi-speedometer2"></i>
+          <i class="bi bi-speedometer2" aria-hidden="true"></i>
           <span>Dashboard</span>
         </a>
 
         <a href="produtos.html" class="sidebar-link">
-          <i class="bi bi-box-seam"></i>
+          <i class="bi bi-box-seam" aria-hidden="true"></i>
           <span>Produtos</span>
         </a>
 
         <a href="categorias.html" class="sidebar-link">
-          <i class="bi bi-tags"></i>
+          <i class="bi bi-tags" aria-hidden="true"></i>
           <span>Categorias</span>
         </a>
 
         <a href="marcas.html" class="sidebar-link">
-          <i class="bi bi-award"></i>
+          <i class="bi bi-award" aria-hidden="true"></i>
           <span>Marcas</span>
         </a>
 
         <a href="pedidos.html" class="sidebar-link">
-          <i class="bi bi-receipt"></i>
+          <i class="bi bi-receipt" aria-hidden="true"></i>
           <span>Pedidos</span>
         </a>
 
-        <a href="clientes.html" class="sidebar-link">
-          <i class="bi bi-people"></i>
+        <a href="clientes.html" class="sidebar-link admin-only">
+          <i class="bi bi-people" aria-hidden="true"></i>
           <span>Clientes</span>
         </a>
 
-        <a href="cupoes.html" class="sidebar-link active">
-          <i class="bi bi-ticket-perforated"></i>
+        <a
+          href="cupoes.html"
+          class="sidebar-link active admin-only"
+          aria-current="page"
+        >
+          <i class="bi bi-ticket-perforated" aria-hidden="true"></i>
           <span>Cupões</span>
         </a>
 
-        <a href="banners.html" class="sidebar-link">
-          <i class="bi bi-image"></i>
+        <a href="banners.html" class="sidebar-link admin-only">
+          <i class="bi bi-image" aria-hidden="true"></i>
           <span>Banners</span>
         </a>
 
-        <a href="avaliacoes.html" class="sidebar-link">
-          <i class="bi bi-star"></i>
+        <a href="avaliacoes.html" class="sidebar-link admin-only">
+          <i class="bi bi-star" aria-hidden="true"></i>
           <span>Avaliações</span>
         </a>
 
-        <a href="relatorios.html" class="sidebar-link">
-          <i class="bi bi-graph-up"></i>
+        <a href="relatorios.html" class="sidebar-link admin-only">
+          <i class="bi bi-graph-up" aria-hidden="true"></i>
           <span>Relatórios</span>
         </a>
 
-        <a href="configuracoes.html" class="sidebar-link">
-          <i class="bi bi-gear"></i>
+        <a href="configuracoes.html" class="sidebar-link admin-only">
+          <i class="bi bi-gear" aria-hidden="true"></i>
           <span>Configurações</span>
         </a>
       </nav>
 
       <div class="sidebar-footer">
-        <button class="btn btn-outline-light w-100" id="admin-logout-button">
-          <i class="bi bi-box-arrow-right me-2"></i>
+        <button
+          type="button"
+          class="btn btn-outline-light w-100"
+          id="admin-logout-button"
+        >
+          <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>
           Terminar sessão
         </button>
       </div>
     </aside>
 
-    <!-- Conteúdo -->
     <main class="admin-main">
       <header class="admin-topbar">
-        <button class="btn btn-light d-lg-none" id="sidebar-toggle">
-          <i class="bi bi-list"></i>
+        <button
+          type="button"
+          class="btn btn-light d-lg-none"
+          id="sidebar-toggle"
+          aria-label="Abrir menu"
+        >
+          <i class="bi bi-list" aria-hidden="true"></i>
         </button>
 
         <h1 class="admin-title">Cupões</h1>
 
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#coupon-modal" onclick="openCreateCouponModal()">
-          <i class="bi bi-plus-lg me-1"></i>
-          Novo cupão
-        </button>
+        <div class="d-flex gap-2">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            id="refresh-coupons-button"
+          >
+            <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+            <span class="d-none d-sm-inline">Atualizar</span>
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-primary"
+            id="new-coupon-button"
+          >
+            <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+            Novo cupão
+          </button>
+        </div>
       </header>
 
       <div class="admin-content">
+        <div class="alert alert-info">
+          As datas são apresentadas no horário de Moçambique.
+          A disponibilidade é verificada com a hora do Supabase.
+          Um cupão ativo pode continuar agendado, expirado ou esgotado.
+        </div>
+
+        <p
+          id="coupon-server-time"
+          class="small text-muted mb-3"
+          role="status"
+          aria-live="polite"
+        >
+          A aguardar validação do administrador...
+        </p>
+
         <div class="admin-card">
           <div class="table-responsive">
             <table class="table align-middle">
+              <caption class="visually-hidden">
+                Cupões, descontos, validade e ações de gestão
+              </caption>
+
               <thead>
                 <tr>
-                  <th>Código</th>
-                  <th>Desconto</th>
-                  <th>Valor mínimo</th>
-                  <th>Utilizações</th>
-                  <th>Validade</th>
-                  <th>Estado</th>
-                  <th class="text-end">Ações</th>
+                  <th scope="col">Código</th>
+                  <th scope="col">Desconto</th>
+                  <th scope="col">Valor mínimo</th>
+                  <th scope="col">Utilizações</th>
+                  <th scope="col">Validade — Moçambique</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col" class="text-end">Ações</th>
                 </tr>
               </thead>
 
@@ -133,82 +185,182 @@
     </main>
   </div>
 
-  <!-- Modal -->
-  <div class="modal fade" id="coupon-modal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+  <div
+    class="modal fade"
+    id="coupon-modal"
+    tabindex="-1"
+    aria-labelledby="coupon-modal-title"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="coupon-modal-title">Novo cupão</h5>
+        <form id="coupon-form">
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="coupon-modal-title">
+              Novo cupão
+            </h2>
 
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Fechar"
+            ></button>
+          </div>
 
-        <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">Código *</label>
-              <input type="text" class="form-control text-uppercase" id="coupon-code" required>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">Tipo de desconto *</label>
-              <select class="form-select" id="coupon-discount-type" required>
-                <option value="percentage">Percentagem (%)</option>
-                <option value="fixed">Valor fixo (MT)</option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">Valor do desconto *</label>
-              <input type="number" step="0.01" min="0" class="form-control" id="coupon-discount-value" required>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">Valor mínimo do pedido (MT)</label>
-              <input type="number" step="0.01" min="0" class="form-control" id="coupon-min-order" value="0">
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">Limite de utilizações</label>
-              <input type="number" min="0" class="form-control" id="coupon-max-uses" placeholder="Deixe vazio para ilimitado">
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">Data de início</label>
-              <input type="datetime-local" class="form-control" id="coupon-starts-at">
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">Data de expiração</label>
-              <input type="datetime-local" class="form-control" id="coupon-expires-at">
-            </div>
-
-            <div class="col-md-6 d-flex align-items-end">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" id="coupon-active" checked>
-                <label class="form-check-label" for="coupon-active">
-                  Cupão ativo
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="coupon-code" class="form-label">
+                  Código *
                 </label>
+                <input
+                  type="text"
+                  class="form-control text-uppercase"
+                  id="coupon-code"
+                  maxlength="64"
+                  autocomplete="off"
+                  required
+                >
+              </div>
+
+              <div class="col-md-6">
+                <label for="coupon-discount-type" class="form-label">
+                  Tipo de desconto *
+                </label>
+                <select
+                  class="form-select"
+                  id="coupon-discount-type"
+                  required
+                >
+                  <option value="percentage">Percentagem (%)</option>
+                  <option value="fixed">Valor fixo (MT)</option>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label for="coupon-discount-value" class="form-label">
+                  Valor do desconto *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  class="form-control"
+                  id="coupon-discount-value"
+                  required
+                >
+              </div>
+
+              <div class="col-md-6">
+                <label for="coupon-min-order" class="form-label">
+                  Valor mínimo do pedido (MT)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="form-control"
+                  id="coupon-min-order"
+                  value="0"
+                >
+              </div>
+
+              <div class="col-md-6">
+                <label for="coupon-max-uses" class="form-label">
+                  Limite de utilizações
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  class="form-control"
+                  id="coupon-max-uses"
+                  placeholder="Vazio para ilimitado"
+                >
+              </div>
+
+              <div class="col-md-6">
+                <label for="coupon-starts-at" class="form-label">
+                  Data de início
+                </label>
+
+                <input
+                  type="datetime-local"
+                  class="form-control"
+                  id="coupon-starts-at"
+                  step="60"
+                  aria-describedby="coupon-start-help"
+                >
+
+                <div class="form-text" id="coupon-start-help">
+                  Horário de Moçambique. Vazio = sem restrição de início.
+                </div>
+
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm mt-2"
+                  id="coupon-start-now-button"
+                >
+                  Começar agora — limpar início
+                </button>
+              </div>
+
+              <div class="col-md-6">
+                <label for="coupon-expires-at" class="form-label">
+                  Data de expiração
+                </label>
+                <input
+                  type="datetime-local"
+                  class="form-control"
+                  id="coupon-expires-at"
+                  step="60"
+                  aria-describedby="coupon-expiration-help"
+                >
+                <div class="form-text" id="coupon-expiration-help">
+                  Horário de Moçambique. Vazio = sem expiração.
+                </div>
+              </div>
+
+              <div class="col-md-6 d-flex align-items-center">
+                <div class="form-check form-switch mt-3">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    id="coupon-active"
+                    checked
+                  >
+                  <label class="form-check-label" for="coupon-active">
+                    Cupão ativo
+                  </label>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-            Cancelar
-          </button>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
 
-          <button type="button" class="btn btn-primary" id="save-coupon-button">
-            <i class="bi bi-check2 me-1"></i>
-            Guardar
-          </button>
-        </div>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              id="save-coupon-button"
+            >
+              Guardar
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -218,6 +370,7 @@
   <script src="../assets/js/utils.js"></script>
   <script src="../assets/js/i18n.js"></script>
   <script src="../assets/js/admin/admin-auth.js"></script>
+  <script src="../assets/js/coupons.js"></script>
   <script src="../assets/js/admin/coupons-admin.js"></script>
 </body>
 </html>

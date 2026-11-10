@@ -1,40 +1,39 @@
-
 /* =========================================
    Loja MZ — Gestão de categorias
+   Administração da secção da página inicial
    ========================================= */
 
 (function categoriesAdminPage() {
   "use strict";
 
-  let categories = [];
-  let editingCategoryId = null;
-  let categoriesLoaded = false;
-
   const el = id => document.getElementById(id);
 
-  function getClient() {
-    const client = window.lojaMzSupabaseClient;
+  let initialized = false;
+  let loaded = false;
+  let busy = false;
+  let categories = [];
+  let editingCategoryId = null;
+  let modal = null;
 
-    if (!client || typeof client.from !== "function") {
-      throw new Error(
-        "O cliente Supabase não está disponível."
-      );
+  function client() {
+    const instance = window.lojaMzSupabaseClient;
+
+    if (!instance || typeof instance.from !== "function") {
+      throw new Error("O cliente Supabase não está disponível.");
     }
 
-    return client;
+    return instance;
   }
 
-  async function showMessage(icon, title, text = "") {
-    if (window.Swal) {
-      return window.Swal.fire({
-        icon,
-        title,
-        text,
-        confirmButtonText: "Entendido"
-      });
+  function requireAdmin() {
+    if (
+      typeof window.isAdmin !== "function" ||
+      !window.isAdmin()
+    ) {
+      throw new Error(
+        "Apenas administradores podem gerir categorias."
+      );
     }
-
-    window.alert(`${title}\n${text}`);
   }
 
   function escapeHtml(value) {
@@ -57,237 +56,360 @@
       .replace(/^-+|-+$/g, "");
   }
 
-  function setButtonLoading(loading) {
-    const button = el("save-category-button");
+  function message(icon, title, text = "") {
+    return Swal.fire({
+      icon,
+      title,
+      text,
+      confirmButtonText: "Entendido"
+    });
+  }
 
-    if (!button) return;
+  async function showError(error) {
+    console.error("[Loja MZ] Categorias:", error);
 
-    button.disabled = loading;
+    let text = error.message || "Tenta novamente.";
 
-    if (loading) {
-      button.innerHTML = `
-        <span class="spinner-border spinner-border-sm me-1"></span>
-        A guardar...
-      `;
-    } else {
-      button.innerHTML = `
-        <i class="bi bi-check2 me-1"></i>
-        Guardar
-      `;
+    if (error.code === "23505") {
+      text = "Já existe uma categoria com esses dados. Verifica o slug.";
+    }
+
+    if (error.code === "23503") {
+      text =
+        "A categoria está associada a outros registos. " +
+        "Desativa-a ou retira-a da página inicial.";
+    }
+
+    await message("error", "Não foi possível concluir", text);
+  }
+
+  function setBusy(value) {
+    busy = value;
+
+    document.querySelectorAll(
+      "#category-form input, #category-form select, " +
+      "#category-form textarea, #save-category-button, " +
+      "#new-category-button, #categories-table button, " +
+      "#category-modal [data-bs-dismiss]"
+    ).forEach(node => {
+      node.disabled = value;
+    });
+
+    el("save-category-button").textContent = value
+      ? "A processar..."
+      : "Guardar";
+
+    if (!value) updateHomeControl();
+  }
+
+  function updateHomeControl() {
+    const isChild = Boolean(el("category-parent").value);
+
+    el("category-show-home").disabled = busy || isChild;
+
+    if (isChild) {
+      el("category-show-home").checked = false;
     }
   }
 
-  function resetForm() {
-    editingCategoryId = null;
-
-    el("category-modal-title").textContent = "Nova categoria";
-
-    el("category-name-pt").value = "";
-    el("category-name-en").value = "";
-    el("category-slug").value = "";
-    el("category-parent").value = "";
-    el("category-sort-order").value = "0";
-    el("category-image").value = "";
-    el("category-description-pt").value = "";
-    el("category-description-en").value = "";
-    el("category-active").checked = true;
-  }
-
-  function fillParentOptions(selectedParentId = "") {
+  function fillParentOptions(selectedId = "") {
     const select = el("category-parent");
 
-    select.replaceChildren(
-      new Option("Nenhuma", "")
-    );
+    select.replaceChildren(new Option("Nenhuma", ""));
 
     categories
-      .filter(category => !category.parent_id)
+      .filter(category =>
+        !category.parent_id &&
+        category.id !== editingCategoryId
+      )
       .forEach(category => {
-        select.add(
-          new Option(
-            category.name_pt,
-            category.id
-          )
-        );
+        select.add(new Option(category.name_pt, category.id));
       });
 
-    select.value = selectedParentId || "";
+    select.value = selectedId || "";
+  }
+
+  function formValue(id) {
+    return el(id).value.trim();
+  }
+
+  function readOrder(id) {
+    const value = Number(el(id).value || 0);
+
+    if (
+      !Number.isInteger(value) ||
+      value < 0 ||
+      value > 2147483647
+    ) {
+      throw new Error("As ordens devem ser números inteiros positivos ou zero.");
+    }
+
+    return value;
+  }
+
+  function readForm() {
+    const name = formValue("category-name-pt");
+    const slug = slugify(formValue("category-slug") || name);
+    const parentId = el("category-parent").value || null;
+    const icon = formValue("category-icon");
+    const image = formValue("category-image");
+
+    if (!name || !slug) {
+      throw new Error("Preenche o nome em português e um slug válido.");
+    }
+
+    if (icon && !/^[a-z0-9-]+$/.test(icon)) {
+      throw new Error(
+        "O ícone deve conter apenas letras minúsculas, números e hífen."
+      );
+    }
+
+    if (image) {
+      let url;
+
+      try {
+        url = new URL(image);
+      } catch {
+        throw new Error("Escreve uma URL de imagem válida.");
+      }
+
+      if (!["http:", "https:"].includes(url.protocol)) {
+        throw new Error("A imagem deve usar HTTP ou HTTPS.");
+      }
+    }
+
+    if (parentId) {
+      const parent = categories.find(item => item.id === parentId);
+
+      if (
+        !parent ||
+        parent.parent_id ||
+        parentId === editingCategoryId
+      ) {
+        throw new Error("Seleciona uma categoria pai válida.");
+      }
+
+      const hasChildren = categories.some(
+        item => item.parent_id === editingCategoryId
+      );
+
+      if (editingCategoryId && hasChildren) {
+        throw new Error(
+          "Esta categoria tem categorias filhas. " +
+          "Reorganiza-as antes de alterar a categoria pai."
+        );
+      }
+    }
+
+    return {
+      name_pt: name,
+      name_en: formValue("category-name-en") || null,
+      slug,
+      parent_id: parentId,
+      sort_order: readOrder("category-sort-order"),
+      home_order: readOrder("category-home-order"),
+      image_url: image || null,
+      icon: icon || null,
+      description_pt: formValue("category-description-pt") || null,
+      description_en: formValue("category-description-en") || null,
+      is_active: el("category-active").checked,
+      show_on_home:
+        !parentId && el("category-show-home").checked
+    };
   }
 
   function renderCategories() {
     const tbody = el("categories-table");
 
-    if (!tbody) return;
-
-    tbody.replaceChildren();
-
     if (!categories.length) {
-      const row = document.createElement("tr");
-      const cell = document.createElement("td");
-
-      cell.colSpan = 6;
-      cell.className = "text-center text-muted py-4";
-      cell.textContent = "Nenhuma categoria encontrada.";
-
-      row.append(cell);
-      tbody.append(row);
-
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">
+            Nenhuma categoria encontrada.
+          </td>
+        </tr>
+      `;
       return;
     }
 
-    const mainCategories = categories.filter(
-      category => !category.parent_id
-    );
+    // Mostra todas as linhas, incluindo eventuais categorias
+    // cujo pai já não esteja na lista.
+    const ordered = [];
+    const added = new Set();
 
-    mainCategories.forEach(category => {
-      const children = categories.filter(
-        item => item.parent_id === category.id
+    function appendCategory(category, child = false) {
+      if (added.has(category.id)) return;
+
+      added.add(category.id);
+      ordered.push({ category, child });
+
+      categories
+        .filter(item => item.parent_id === category.id)
+        .forEach(item => appendCategory(item, true));
+    }
+
+    categories
+      .filter(item => !item.parent_id)
+      .forEach(item => appendCategory(item));
+
+    categories.forEach(item => {
+      appendCategory(item, Boolean(item.parent_id));
+    });
+
+    tbody.innerHTML = ordered.map(({ category, child }) => {
+      const parent = categories.find(
+        item => item.id === category.parent_id
       );
 
-      tbody.append(createCategoryRow(category, false));
-      children.forEach(child => {
-        tbody.append(createCategoryRow(child, true));
-      });
-    });
-  }
+      let homeStatus = "Não aparece";
 
-  function createCategoryRow(category, isChild) {
-    const row = document.createElement("tr");
+      if (category.show_on_home) {
+        homeStatus = category.parent_id
+          ? "Não aparece: categoria filha"
+          : category.is_active
+            ? `Visível · ordem ${category.home_order}`
+            : "Selecionada, mas inativa";
+      }
 
-    if (isChild) {
-      row.classList.add("table-light");
-    }
+      return `
+        <tr class="${child ? "table-light" : ""}">
+          <td>
+            ${
+              child
+                ? '<i class="bi bi-arrow-return-right me-2" aria-hidden="true"></i>'
+                : ""
+            }
+            <strong>${escapeHtml(category.name_pt)}</strong>
+            ${
+              category.icon
+                ? `<small class="d-block text-muted">
+                    Ícone: ${escapeHtml(category.icon)}
+                  </small>`
+                : ""
+            }
+          </td>
 
-    const nameCell = document.createElement("td");
+          <td class="small text-muted">
+            ${escapeHtml(category.slug)}
+          </td>
 
-    if (isChild) {
-      nameCell.innerHTML = `
-        <i class="bi bi-arrow-return-right me-2 text-muted"></i>
-        ${escapeHtml(category.name_pt)}
+          <td class="small">
+            ${escapeHtml(parent?.name_pt || "—")}
+          </td>
+
+          <td>${Number(category.sort_order) || 0}</td>
+
+          <td>
+            <span class="badge ${
+              category.show_on_home &&
+              category.is_active &&
+              !category.parent_id
+                ? "bg-primary"
+                : "bg-secondary"
+            }">
+              ${escapeHtml(homeStatus)}
+            </span>
+          </td>
+
+          <td>
+            <span class="badge ${
+              category.is_active ? "bg-success" : "bg-secondary"
+            }">
+              ${category.is_active ? "Ativa" : "Inativa"}
+            </span>
+          </td>
+
+          <td class="text-end">
+            <div class="d-flex flex-wrap justify-content-end gap-1">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary"
+                data-action="edit"
+                data-id="${escapeHtml(category.id)}"
+                title="Editar"
+                aria-label="Editar categoria"
+              >
+                <i class="bi bi-pencil" aria-hidden="true"></i>
+              </button>
+
+              ${
+                !category.parent_id
+                  ? `
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-info"
+                      data-action="home"
+                      data-id="${escapeHtml(category.id)}"
+                      title="${
+                        category.show_on_home
+                          ? "Retirar do início"
+                          : "Mostrar no início"
+                      }"
+                      aria-label="${
+                        category.show_on_home
+                          ? "Retirar do início"
+                          : "Mostrar no início"
+                      }"
+                    >
+                      <i class="bi ${
+                        category.show_on_home ? "bi-house-dash" : "bi-house-add"
+                      }" aria-hidden="true"></i>
+                    </button>
+                  `
+                  : ""
+              }
+
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-warning"
+                data-action="active"
+                data-id="${escapeHtml(category.id)}"
+                title="${category.is_active ? "Desativar" : "Ativar"}"
+                aria-label="${category.is_active ? "Desativar" : "Ativar"} categoria"
+              >
+                <i class="bi ${
+                  category.is_active ? "bi-pause" : "bi-play"
+                }" aria-hidden="true"></i>
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                data-action="delete"
+                data-id="${escapeHtml(category.id)}"
+                title="Apagar categoria"
+                aria-label="Apagar categoria"
+              >
+                <i class="bi bi-trash" aria-hidden="true"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
       `;
-    } else {
-      nameCell.innerHTML = `
-        <strong>${escapeHtml(category.name_pt)}</strong>
-      `;
-    }
-
-    const slugCell = document.createElement("td");
-    slugCell.className = "text-muted small";
-    slugCell.textContent = category.slug || "";
-
-    const parentCell = document.createElement("td");
-    parentCell.className = "text-muted small";
-
-    const parent = categories.find(
-      item => item.id === category.parent_id
-    );
-
-    parentCell.textContent = parent?.name_pt || "—";
-
-    const orderCell = document.createElement("td");
-    orderCell.textContent = category.sort_order ?? 0;
-
-    const statusCell = document.createElement("td");
-
-    const badge = document.createElement("span");
-    badge.className = category.is_active
-      ? "badge bg-success"
-      : "badge bg-secondary";
-
-    badge.textContent = category.is_active
-      ? "Ativa"
-      : "Inativa";
-
-    statusCell.append(badge);
-
-    const actionsCell = document.createElement("td");
-    actionsCell.className = "text-end";
-
-    const editButton = document.createElement("button");
-    editButton.type = "button";
-    editButton.className = "btn btn-sm btn-outline-primary me-1";
-    editButton.innerHTML = `<i class="bi bi-pencil"></i>`;
-    editButton.title = "Editar";
-
-    editButton.addEventListener("click", () => {
-      openEditCategoryModal(category);
-    });
-
-    const toggleButton = document.createElement("button");
-    toggleButton.type = "button";
-    toggleButton.className = `btn btn-sm ${
-      category.is_active
-        ? "btn-outline-warning"
-        : "btn-outline-success"
-    } me-1`;
-
-    toggleButton.innerHTML = category.is_active
-      ? `<i class="bi bi-pause"></i>`
-      : `<i class="bi bi-play"></i>`;
-
-    toggleButton.title = category.is_active
-      ? "Desativar"
-      : "Ativar";
-
-    toggleButton.addEventListener("click", () => {
-      toggleCategory(category);
-    });
-
-    const deleteButton = document.createElement("button");
-    deleteButton.type = "button";
-    deleteButton.className = "btn btn-sm btn-outline-danger";
-    deleteButton.innerHTML = `<i class="bi bi-trash"></i>`;
-    deleteButton.title = "Apagar";
-
-    deleteButton.addEventListener("click", () => {
-      deleteCategory(category);
-    });
-
-    actionsCell.append(
-      editButton,
-      toggleButton,
-      deleteButton
-    );
-
-    row.append(
-      nameCell,
-      slugCell,
-      parentCell,
-      orderCell,
-      statusCell,
-      actionsCell
-    );
-
-    return row;
+    }).join("");
   }
 
   async function loadCategories() {
-    const tbody = el("categories-table");
+    loaded = false;
 
-    if (!tbody) return;
-
-    tbody.innerHTML = `
+    el("categories-table").innerHTML = `
       <tr>
-        <td colspan="6" class="text-center text-muted py-4">
+        <td colspan="7" class="text-center text-muted py-4">
           A carregar categorias...
         </td>
       </tr>
     `;
 
     try {
-      const { data, error } = await getClient()
+      requireAdmin();
+
+      const { data, error } = await client()
         .from("categories")
         .select(`
-          id,
-          name_pt,
-          name_en,
-          slug,
-          description_pt,
-          description_en,
-          image_url,
-          parent_id,
-          sort_order,
-          is_active
+          id, name_pt, name_en, slug,
+          description_pt, description_en,
+          image_url, parent_id, sort_order,
+          is_active, icon, show_on_home, home_order
         `)
         .order("sort_order", { ascending: true })
         .order("name_pt", { ascending: true });
@@ -295,310 +417,306 @@
       if (error) throw error;
 
       categories = data || [];
-      categoriesLoaded = true;
-
-      fillParentOptions();
+      loaded = true;
       renderCategories();
     } catch (error) {
-      console.error(
-        "[Loja MZ] Erro ao carregar categorias:",
-        error
-      );
-
-      tbody.innerHTML = `
+      el("categories-table").innerHTML = `
         <tr>
-          <td colspan="6" class="text-center text-danger py-4">
-            Não foi possível carregar as categorias.
+          <td colspan="7" class="text-center text-danger py-4">
+            ${escapeHtml(error.message || "Erro ao carregar categorias.")}
           </td>
         </tr>
       `;
 
-      await showMessage(
-        "error",
-        "Erro ao carregar categorias",
-        error.message || "Tenta novamente."
-      );
+      console.error("[Loja MZ] Categorias:", error);
     }
   }
 
-  function openCreateCategoryModal() {
-    resetForm();
-
-    const modal = bootstrap.Modal.getOrCreateInstance(
-      el("category-modal")
-    );
-
-    modal.show();
-  }
-
-  function openEditCategoryModal(category) {
-    editingCategoryId = category.id;
-
-    el("category-modal-title").textContent =
-      "Editar categoria";
-
-    el("category-name-pt").value =
-      category.name_pt || "";
-
-    el("category-name-en").value =
-      category.name_en || "";
-
-    el("category-slug").value =
-      category.slug || "";
-
-    fillParentOptions(category.parent_id || "");
-
-    el("category-sort-order").value =
-      category.sort_order ?? 0;
-
-    el("category-image").value =
-      category.image_url || "";
-
-    el("category-description-pt").value =
-      category.description_pt || "";
-
-    el("category-description-en").value =
-      category.description_en || "";
-
-    el("category-active").checked =
-      Boolean(category.is_active);
-
-    const modal = bootstrap.Modal.getOrCreateInstance(
-      el("category-modal")
-    );
-
-    modal.show();
-  }
-
-  async function saveCategory() {
-    if (!categoriesLoaded) {
-      await showMessage(
-        "warning",
-        "Aguarda",
-        "As categorias ainda estão a carregar."
-      );
-
-      return;
-    }
-
-    const namePt = el("category-name-pt").value.trim();
-    const nameEn = el("category-name-en").value.trim();
-    const slugInput = el("category-slug").value.trim();
-    const parentId = el("category-parent").value || null;
-    const sortOrder = Number(
-      el("category-sort-order").value || 0
-    );
-    const imageUrl = el("category-image").value.trim();
-    const descriptionPt =
-      el("category-description-pt").value.trim();
-    const descriptionEn =
-      el("category-description-en").value.trim();
-    const isActive = el("category-active").checked;
-
-    if (!namePt) {
-      await showMessage(
-        "warning",
-        "Dados incompletos",
-        "Escreve o nome da categoria em português."
-      );
-
-      return;
-    }
-
-    const slug = slugify(
-      slugInput || namePt
-    );
-
-    if (!slug) {
-      await showMessage(
-        "warning",
-        "Slug inválido",
-        "Escreve um slug válido."
-      );
-
-      return;
-    }
-
-    const categoryData = {
-      name_pt: namePt,
-      name_en: nameEn || null,
-      slug,
-      parent_id: parentId,
-      sort_order: Number.isFinite(sortOrder)
-        ? sortOrder
-        : 0,
-      image_url: imageUrl || null,
-      description_pt: descriptionPt || null,
-      description_en: descriptionEn || null,
-      is_active: isActive
-    };
-
-    setButtonLoading(true);
+  function openModal(category = null) {
+    if (busy || !loaded) return;
 
     try {
-      let response;
+      requireAdmin();
 
-      if (editingCategoryId) {
-        response = await getClient()
-          .from("categories")
-          .update(categoryData)
-          .eq("id", editingCategoryId)
-          .select("id")
-          .single();
-      } else {
-        response = await getClient()
-          .from("categories")
-          .insert(categoryData)
-          .select("id")
-          .single();
-      }
+      editingCategoryId = category?.id || null;
+      el("category-form").reset();
 
-      if (response.error) throw response.error;
+      el("category-modal-title").textContent = category
+        ? "Editar categoria"
+        : "Nova categoria";
 
-      bootstrap.Modal.getOrCreateInstance(
-        el("category-modal")
-      ).hide();
+      fillParentOptions(category?.parent_id);
 
-      await showMessage(
-        "success",
-        editingCategoryId
-          ? "Categoria atualizada"
-          : "Categoria criada",
-        "As alterações foram guardadas."
-      );
+      const values = {
+        "category-name-pt": category?.name_pt || "",
+        "category-name-en": category?.name_en || "",
+        "category-slug": category?.slug || "",
+        "category-sort-order": category?.sort_order ?? 0,
+        "category-home-order": category?.home_order ?? 0,
+        "category-image": category?.image_url || "",
+        "category-icon": category?.icon || "",
+        "category-description-pt": category?.description_pt || "",
+        "category-description-en": category?.description_en || ""
+      };
 
-      editingCategoryId = null;
-      await loadCategories();
+      Object.entries(values).forEach(([id, value]) => {
+        el(id).value = value;
+      });
+
+      el("category-active").checked = category
+        ? Boolean(category.is_active)
+        : true;
+
+      el("category-show-home").checked =
+        Boolean(category?.show_on_home);
+
+      updateHomeControl();
+      modal.show();
     } catch (error) {
-      console.error(
-        "[Loja MZ] Erro ao guardar categoria:",
-        error
-      );
+      showError(error);
+    }
+  }
 
-      await showMessage(
-        "error",
-        "Erro ao guardar",
-        error.message || "Tenta novamente."
+  async function saveCategory(event) {
+    event?.preventDefault();
+
+    if (busy || !loaded) return;
+
+    // Preenche o slug se o administrador o deixou vazio.
+    if (!formValue("category-slug")) {
+      el("category-slug").value = slugify(
+        formValue("category-name-pt")
       );
+    }
+
+    if (!el("category-form").reportValidity()) return;
+
+    let payload;
+
+    try {
+      requireAdmin();
+      payload = readForm();
+    } catch (error) {
+      await showError(error);
+      return;
+    }
+
+    const id = editingCategoryId;
+    setBusy(true);
+
+    try {
+      let query = client().from("categories");
+
+      query = id
+        ? query.update(payload).eq("id", id)
+        : query.insert(payload);
+
+      const { error } = await query.select("id").single();
+
+      if (error) throw error;
+
+      setBusy(false);
+      modal.hide();
+
+      await loadCategories();
+
+      await message(
+        "success",
+        id ? "Categoria atualizada" : "Categoria criada",
+        "As alterações foram guardadas. Recarrega o início para as consultar."
+      );
+    } catch (error) {
+      await showError(error);
     } finally {
-      setButtonLoading(false);
+      setBusy(false);
     }
   }
 
-  async function toggleCategory(category) {
-    const newState = !category.is_active;
+  async function mutateCategory(category, action) {
+    if (busy) return;
 
-    const confirm = await showMessage(
-      "question",
-      newState
-        ? "Ativar categoria?"
-        : "Desativar categoria?",
-      `Pretendes ${
-        newState ? "ativar" : "desativar"
-      } "${category.name_pt}"?`
-    );
+    const home = action === "home";
+    const deleting = action === "delete";
 
-    if (confirm?.isConfirmed === false) return;
+    const title = deleting
+      ? "Apagar categoria?"
+      : home
+        ? category.show_on_home
+          ? "Retirar da página inicial?"
+          : "Mostrar na página inicial?"
+        : category.is_active
+          ? "Desativar categoria?"
+          : "Ativar categoria?";
+
+    const confirmation = await Swal.fire({
+      icon: deleting ? "warning" : "question",
+      title,
+      text: deleting
+        ? `"${category.name_pt}". Prefere retirar do início se só queres ocultar o cartão.`
+        : home
+          ? `"${category.name_pt}". Esta ação não apaga produtos. ` +
+            (!category.is_active
+              ? "A categoria continuará oculta enquanto estiver inativa."
+              : "")
+          : `"${category.name_pt}".`,
+      showCancelButton: true,
+      confirmButtonText: deleting ? "Apagar" : "Confirmar",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: deleting ? "#dc3545" : "#0d6efd"
+    });
+
+    if (!confirmation.isConfirmed || busy) return;
+
+    setBusy(true);
 
     try {
-      const { error } = await getClient()
-        .from("categories")
-        .update({ is_active: newState })
-        .eq("id", category.id);
+      requireAdmin();
 
-      if (error) throw error;
+      if (deleting) {
+        // Verificações preventivas; as relações da base de dados
+        // devem também proteger contra eliminações concorrentes.
+        const checks = await Promise.all([
+          client()
+            .from("categories")
+            .select("id", { count: "exact", head: true })
+            .eq("parent_id", category.id),
 
-      await loadCategories();
-    } catch (error) {
-      console.error(
-        "[Loja MZ] Erro ao alterar estado:",
-        error
-      );
+          client()
+            .from("subcategories")
+            .select("id", { count: "exact", head: true })
+            .eq("category_id", category.id),
 
-      await showMessage(
-        "error",
-        "Erro ao alterar estado",
-        error.message || "Tenta novamente."
-      );
-    }
-  }
+          client()
+            .from("products")
+            .select("id", { count: "exact", head: true })
+            .eq("category_id", category.id)
+        ]);
 
-  async function deleteCategory(category) {
-    const confirm = await showMessage(
-      "warning",
-      "Apagar categoria?",
-      `Pretendes apagar "${category.name_pt}"? Esta ação não pode ser revertida.`
-    );
+        for (const check of checks) {
+          if (check.error) throw check.error;
+        }
 
-    if (confirm?.isConfirmed === false) return;
-
-    try {
-      const { error } = await getClient()
-        .from("categories")
-        .delete()
-        .eq("id", category.id);
-
-      if (error) throw error;
-
-      await showMessage(
-        "success",
-        "Categoria apagada",
-        "A categoria foi removida."
-      );
-
-      await loadCategories();
-    } catch (error) {
-      console.error(
-        "[Loja MZ] Erro ao apagar categoria:",
-        error
-      );
-
-      await showMessage(
-        "error",
-        "Erro ao apagar",
-        error.message || "Tenta novamente."
-      );
-    }
-  }
-
-  function initializeCategoriesAdmin() {
-    if (!el("categories-table")) return;
-
-    el("category-slug")?.addEventListener(
-      "input",
-      () => {
-        const value = el("category-slug").value;
-
-        el("category-slug").value = slugify(value);
+        if (checks.some(check => Number(check.count) > 0)) {
+          throw new Error(
+            "A categoria tem produtos ou subcategorias associados. " +
+            "Retira-a do início ou desativa-a."
+          );
+        }
       }
+
+      const query = deleting
+        ? client().from("categories").delete()
+        : client().from("categories").update(
+            home
+              ? { show_on_home: !category.show_on_home }
+              : { is_active: !category.is_active }
+          );
+
+      const { error } = await query
+        .eq("id", category.id)
+        .select("id")
+        .single();
+
+      if (error) throw error;
+
+      await loadCategories();
+    } catch (error) {
+      await showError(error);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function initialize() {
+    if (
+      initialized ||
+      !window.currentAdmin ||
+      !el("categories-table")
+    ) {
+      return;
+    }
+
+    initialized = true;
+
+    try {
+      requireAdmin();
+    } catch (error) {
+      el("new-category-button").disabled = true;
+
+      el("categories-table").innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center text-danger py-4">
+            ${escapeHtml(error.message)}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    modal = bootstrap.Modal.getOrCreateInstance(
+      el("category-modal")
     );
 
-    el("save-category-button")?.addEventListener(
+    el("category-modal").addEventListener("hide.bs.modal", event => {
+      if (busy) event.preventDefault();
+    });
+
+    el("new-category-button").addEventListener(
+      "click",
+      () => openModal()
+    );
+
+    el("save-category-button").addEventListener(
       "click",
       saveCategory
     );
 
-    el("category-form")?.addEventListener(
+    el("category-form").addEventListener(
       "submit",
-      event => {
-        event.preventDefault();
-        saveCategory();
-      }
+      saveCategory
     );
+
+    el("category-parent").addEventListener(
+      "change",
+      updateHomeControl
+    );
+
+    el("category-slug").addEventListener("change", () => {
+      el("category-slug").value = slugify(
+        el("category-slug").value
+      );
+    });
+
+    el("categories-table").addEventListener("click", event => {
+      const button = event.target.closest("button[data-action]");
+
+      if (!button || busy) return;
+
+      const category = categories.find(
+        item => String(item.id) === button.dataset.id
+      );
+
+      if (!category) return;
+
+      const action = button.dataset.action;
+
+      if (action === "edit") {
+        openModal(category);
+      } else if (["home", "active", "delete"].includes(action)) {
+        mutateCategory(category, action);
+      }
+    });
 
     loadCategories();
   }
 
-  window.openCreateCategoryModal =
-    openCreateCategoryModal;
+  document.addEventListener("admin:ready", initialize);
 
   if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      initializeCategoriesAdmin,
-      { once: true }
-    );
+    document.addEventListener("DOMContentLoaded", initialize, {
+      once: true
+    });
   } else {
-    initializeCategoriesAdmin();
+    initialize();
   }
 })();
