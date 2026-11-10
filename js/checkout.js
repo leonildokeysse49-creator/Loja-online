@@ -1,10 +1,11 @@
-
 /* =========================================
    Loja MZ — Checkout e entrega configurada
    ========================================= */
 
 (function checkoutPage() {
   "use strict";
+
+  const COUPON_KEY = "loja_mz_coupon";
 
   const el = id => document.getElementById(id);
 
@@ -64,6 +65,48 @@
 
   function cents(value) {
     return Math.round(Number(value) * 100);
+  }
+
+  function getCoupon() {
+    try {
+      const value = JSON.parse(
+        localStorage.getItem(COUPON_KEY) || "null"
+      );
+
+      return value && typeof value === "object" ? value : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function saveCoupon(coupon) {
+    if (!coupon) {
+      localStorage.removeItem(COUPON_KEY);
+      return;
+    }
+
+    localStorage.setItem(COUPON_KEY, JSON.stringify(coupon));
+  }
+
+  function calculateDiscount(coupon, subtotalValue) {
+    if (!coupon) return 0;
+
+    if (Number(coupon.min_order_value) > subtotalValue) {
+      return 0;
+    }
+
+    if (coupon.discount_type === "percentage") {
+      return subtotalValue * (Number(coupon.discount_value) / 100);
+    }
+
+    if (coupon.discount_type === "fixed") {
+      return Math.min(
+        Number(coupon.discount_value),
+        subtotalValue
+      );
+    }
+
+    return 0;
   }
 
   function validateCart(items) {
@@ -193,10 +236,23 @@
   }
 
   function updateSummary() {
-    const subtotal = subtotalCents();
+    const subtotalValue = subtotalCents() / 100;
+    const coupon = getCoupon();
+    const discount = calculateDiscount(coupon, subtotalValue);
     const delivery = deliveryState();
 
-    el("checkout-subtotal").textContent = money(subtotal / 100);
+    const total = delivery.valid
+      ? Math.max(0, subtotalValue - discount + delivery.feeCents / 100)
+      : 0;
+
+    el("checkout-subtotal").textContent = money(subtotalValue);
+
+    const discountRow = el("coupon-discount-row");
+
+    if (discountRow) {
+      discountRow.classList.toggle("d-none", discount <= 0);
+      el("checkout-discount").textContent = `- ${money(discount)}`;
+    }
 
     el("checkout-delivery").textContent = delivery.valid
       ? delivery.feeCents === 0
@@ -205,7 +261,7 @@
       : delivery.message;
 
     el("checkout-total").textContent = delivery.valid
-      ? money((subtotal + delivery.feeCents) / 100)
+      ? money(total)
       : "—";
 
     el("place-order-button").disabled =
@@ -287,6 +343,109 @@
     }
   }
 
+  async function applyCoupon() {
+    const code = el("coupon-code").value.trim().toUpperCase();
+    const message = el("coupon-message");
+    const button = el("apply-coupon-button");
+
+    if (!code) {
+      message.className = "small mt-2 mb-0 text-danger";
+      message.textContent = text(
+        "Escreve o código do cupom.",
+        "Enter the coupon code."
+      );
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = text("A verificar...", "Checking...");
+
+    try {
+      const { data: coupon, error } = await client()
+        .from("coupons")
+        .select("*")
+        .eq("code", code)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!coupon) {
+        throw new Error(
+          text("Cupom inválido.", "Invalid coupon.")
+        );
+      }
+
+      const now = new Date();
+
+      if (coupon.starts_at && new Date(coupon.starts_at) > now) {
+        throw new Error(
+          text(
+            "Este cupom ainda não está disponível.",
+            "This coupon is not available yet."
+          )
+        );
+      }
+
+      if (coupon.expires_at && new Date(coupon.expires_at) < now) {
+        throw new Error(
+          text("Este cupom expirou.", "This coupon has expired.")
+        );
+      }
+
+      if (
+        coupon.max_uses !== null &&
+        coupon.used_count >= coupon.max_uses
+      ) {
+        throw new Error(
+          text(
+            "Limite de utilizações atingido.",
+            "Usage limit reached."
+          )
+        );
+      }
+
+      const subtotalValue = subtotalCents() / 100;
+
+      if (subtotalValue < Number(coupon.min_order_value)) {
+        throw new Error(
+          text(
+            `Compra mínima de ${money(coupon.min_order_value)}.`,
+            `Minimum order is ${money(coupon.min_order_value)}.`
+          )
+        );
+      }
+
+      saveCoupon(coupon);
+
+      message.className = "small mt-2 mb-0 text-success";
+      message.textContent =
+        coupon.discount_type === "percentage"
+          ? text(
+              `Cupom aplicado: ${coupon.discount_value}% de desconto.`,
+              `Coupon applied: ${coupon.discount_value}% discount.`
+            )
+          : text(
+              `Cupom aplicado: ${money(coupon.discount_value)} de desconto.`,
+              `Coupon applied: ${money(coupon.discount_value)} discount.`
+            );
+
+      updateSummary();
+
+    } catch (error) {
+      saveCoupon(null);
+
+      message.className = "small mt-2 mb-0 text-danger";
+      message.textContent = error.message;
+
+      updateSummary();
+
+    } finally {
+      button.disabled = false;
+      button.textContent = text("Aplicar", "Apply");
+    }
+  }
+
   async function placeOrder() {
     if (submitting || orderWriteStarted) return;
 
@@ -305,7 +464,6 @@
     button.textContent = text("A processar...", "Processing...");
 
     try {
-      // Não envia o pedido com um carrinho desatualizado.
       const latestCart = getCart();
       validateCart(latestCart);
 
@@ -321,7 +479,6 @@
         );
       }
 
-      // Relê as taxas antes de iniciar a gravação.
       try {
         await loadDeliverySettings();
       } catch (error) {
@@ -369,9 +526,11 @@
 
       const user = sessionData.session?.user || null;
 
+      const coupon = getCoupon();
       const subtotal = subtotalCents() / 100;
       const fee = delivery.feeCents / 100;
-      const total = (subtotalCents() + delivery.feeCents) / 100;
+      const discount = calculateDiscount(coupon, subtotal);
+      const total = Math.max(0, subtotal - discount + fee);
 
       const value = id => el(id).value.trim();
 
@@ -388,14 +547,15 @@
         reference: value("customer-reference") || null,
         notes: value("order-notes") || null,
         payment_method: paymentMethod,
+        coupon_id: coupon?.id || null,
+        coupon_code: coupon?.code || null,
+        coupon_discount: discount,
         subtotal,
         delivery_fee: fee,
         total,
         status: "pending"
       };
 
-      // As três gravações abaixo mantêm a estrutura atual do projeto.
-      // Após iniciar, não permite repetir automaticamente nesta página.
       orderWriteStarted = true;
 
       const { data: order, error: orderError } = await client()
@@ -438,10 +598,19 @@
 
       if (paymentError) throw paymentError;
 
-      // Não apaga alterações feitas noutra aba durante a gravação.
+      if (coupon) {
+        await client()
+          .from("coupons")
+          .update({
+            used_count: (Number(coupon.used_count) || 0) + 1
+          })
+          .eq("id", coupon.id);
+      }
+
       try {
         if (JSON.stringify(getCart()) === originalCart) {
-          clearCart();
+          localStorage.removeItem("loja_mz_cart");
+          localStorage.removeItem(COUPON_KEY);
         }
       } catch (storageError) {
         console.warn(
@@ -462,6 +631,7 @@
       window.location.assign(
         `pedido.html?id=${encodeURIComponent(order.id)}`
       );
+
     } catch (error) {
       console.error("[Loja MZ] Checkout:", error);
 
@@ -486,6 +656,7 @@
           orderWriteStarted ? error.message : ""
         ].filter(Boolean).join("\n")
       });
+
     } finally {
       submitting = false;
       button.innerHTML = originalText;
@@ -520,6 +691,17 @@
         updateSummary
       );
 
+      el("apply-coupon-button")?.addEventListener(
+        "click",
+        applyCoupon
+      );
+
+      el("coupon-code").addEventListener("input", () => {
+        saveCoupon(null);
+        el("coupon-message").textContent = "";
+        updateSummary();
+      });
+
       el("place-order-button").addEventListener(
         "click",
         placeOrder
@@ -544,6 +726,7 @@
       }
 
       updateSummary();
+
     } catch (error) {
       console.error("[Loja MZ] Preparação do checkout:", error);
 

@@ -1,13 +1,12 @@
-
 /* =========================================
-   Loja MZ — Categorias
-   Homepage e página de todas as categorias
+   Loja MZ — Categorias públicas
+   Página inicial e todas as categorias
    ========================================= */
 
 (function categoryPages() {
   "use strict";
 
-  function init() {
+  function initialize() {
     const container = document.getElementById("home-categories");
 
     if (!container) return;
@@ -16,6 +15,12 @@
       container.dataset.categoryMode === "featured";
 
     const counter = document.getElementById("categories-total");
+
+    let requestVersion = 0;
+    let cachedCategories = [];
+    let cachedSubcategories = [];
+    let cachedPopulatedIds = null;
+    let hasLoaded = false;
 
     const defaultIcons = {
       "roupas-e-moda": "shirt",
@@ -38,18 +43,45 @@
       "acessorios": "shopping-bag"
     };
 
-    function getClient() {
-      const client = window.lojaMzSupabaseClient;
+    function client() {
+      const instance = window.lojaMzSupabaseClient;
 
-      if (!client || typeof client.from !== "function") {
+      if (!instance || typeof instance.from !== "function") {
         throw new Error("O cliente Supabase não está disponível.");
       }
 
-      return client;
+      return instance;
     }
 
-    function productLink(category, subcategory) {
+    function english() {
+      return (
+        typeof getCurrentLanguage === "function" &&
+        getCurrentLanguage() === "en"
+      );
+    }
+
+    function text(pt, en) {
+      return english() ? en : pt;
+    }
+
+    function categoryName(category) {
+      return english()
+        ? category.name_en || category.name_pt
+        : category.name_pt;
+    }
+
+    function categoryDescription(category) {
+      return english()
+        ? category.description_en ||
+          category.description_pt ||
+          "Discover products in this category."
+        : category.description_pt ||
+          "Descobre os produtos desta categoria.";
+    }
+
+    function productLink(category, subcategory = null) {
       const params = new URLSearchParams();
+
       params.set("categoria", category.slug);
 
       if (subcategory) {
@@ -60,9 +92,17 @@
     }
 
     function createIcon(name) {
+      const value = String(name || "package").trim();
+
+      const safeName = /^[a-z0-9-]+$/.test(value)
+        ? value
+        : "package";
+
       const icon = document.createElement("i");
-      icon.setAttribute("data-lucide", name || "package");
+
+      icon.setAttribute("data-lucide", safeName);
       icon.setAttribute("aria-hidden", "true");
+
       return icon;
     }
 
@@ -70,8 +110,70 @@
       try {
         window.lucide?.createIcons();
       } catch (error) {
-        console.warn("[Loja MZ] Não foi possível criar os ícones:", error);
+        console.warn(
+          "[Loja MZ] Não foi possível criar os ícones:",
+          error
+        );
       }
+    }
+
+    function safeImageUrl(value) {
+      if (!value) return null;
+
+      try {
+        const url = new URL(value, window.location.href);
+
+        return ["http:", "https:"].includes(url.protocol)
+          ? url.href
+          : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function createCategoryVisual(category) {
+      const box = document.createElement("div");
+      box.className = "category-icon";
+
+      const iconName =
+        category.icon ||
+        defaultIcons[category.slug] ||
+        "package";
+
+      const imageUrl = safeImageUrl(category.image_url);
+
+      if (!imageUrl) {
+        box.append(createIcon(iconName));
+        return box;
+      }
+
+      box.classList.add("category-icon-with-image");
+
+      const image = document.createElement("img");
+
+      image.alt = "";
+      image.loading = "lazy";
+      image.decoding = "async";
+      image.width = 64;
+      image.height = 64;
+
+      // Mantém a imagem utilizável na página de todas
+      // as categorias, mesmo sem os estilos da homepage.
+      image.style.width = "100%";
+      image.style.height = "100%";
+      image.style.objectFit = "cover";
+      image.style.borderRadius = "inherit";
+
+      image.addEventListener("error", () => {
+        box.classList.remove("category-icon-with-image");
+        box.replaceChildren(createIcon(iconName));
+        refreshIcons();
+      }, { once: true });
+
+      image.src = imageUrl;
+      box.append(image);
+
+      return box;
     }
 
     function showLoading() {
@@ -80,23 +182,35 @@
       container.innerHTML = Array.from({ length: 6 }, () => `
         <div class="col-12 col-md-6 col-lg-4" aria-hidden="true">
           <div class="category-skeleton placeholder-glow">
-            <span class="placeholder col-3 mb-4" style="height:52px"></span>
-            <div><span class="placeholder col-9 mb-3"></span></div>
-            <div><span class="placeholder col-12 mb-2"></span></div>
-            <div><span class="placeholder col-8 mb-4"></span></div>
-            <div><span class="placeholder col-7"></span></div>
+            <span
+              class="placeholder col-3 mb-4"
+              style="height:52px"
+            ></span>
+            <div>
+              <span class="placeholder col-9 mb-3"></span>
+            </div>
+            <div>
+              <span class="placeholder col-12 mb-2"></span>
+            </div>
+            <div>
+              <span class="placeholder col-8 mb-4"></span>
+            </div>
+            <div>
+              <span class="placeholder col-7"></span>
+            </div>
           </div>
         </div>
       `).join("");
 
       if (counter) {
-        counter.textContent = "A carregar categorias...";
+        counter.textContent = text(
+          "A carregar categorias...",
+          "Loading categories..."
+        );
       }
     }
 
     function showError() {
-      container.replaceChildren();
-
       const column = document.createElement("div");
       column.className = "col-12";
 
@@ -106,30 +220,43 @@
 
       const message = document.createElement("p");
       message.className = "mb-3";
-      message.textContent = "Não foi possível carregar as categorias.";
+      message.textContent = text(
+        "Não foi possível carregar as categorias.",
+        "Could not load categories."
+      );
 
       const retry = document.createElement("button");
       retry.type = "button";
       retry.className = "btn btn-outline-primary btn-sm";
-      retry.textContent = "Tentar novamente";
+      retry.textContent = text(
+        "Tentar novamente",
+        "Try again"
+      );
+
       retry.addEventListener("click", loadCategories);
 
       alert.append(message, retry);
       column.append(alert);
-      container.append(column);
+      container.replaceChildren(column);
 
       if (counter) {
-        counter.textContent = "Categorias temporariamente indisponíveis.";
+        counter.textContent = text(
+          "Categorias temporariamente indisponíveis.",
+          "Categories are temporarily unavailable."
+        );
       }
     }
 
-    async function fetchCategories(client) {
-      let query = client
+    async function fetchCategories(instance) {
+      let query = instance
         .from("categories")
         .select(`
           id,
           name_pt,
+          name_en,
           description_pt,
+          description_en,
+          image_url,
           slug,
           icon,
           sort_order,
@@ -143,13 +270,13 @@
         query = query
           .eq("show_on_home", true)
           .order("home_order", { ascending: true })
-          .order("sort_order", { ascending: true })
-          .order("id", { ascending: true })
-          .limit(6);
+          .order("name_pt", { ascending: true })
+          .order("id", { ascending: true });
       } else {
         query = query
           .order("sort_order", { ascending: true })
-          .order("name_pt", { ascending: true });
+          .order("name_pt", { ascending: true })
+          .order("id", { ascending: true });
       }
 
       const { data, error } = await query;
@@ -159,31 +286,47 @@
       return data || [];
     }
 
-    async function fetchSubcategories(client, categoryIds) {
+    async function fetchSubcategories(instance, categoryIds) {
       if (!categoryIds.length) return [];
 
-      const { data, error } = await client
-        .from("subcategories")
-        .select("id,category_id,name,slug,icon,sort_order")
-        .eq("is_active", true)
-        .in("category_id", categoryIds)
-        .order("sort_order", { ascending: true })
-        .order("name", { ascending: true });
+      try {
+        const { data, error } = await instance
+          .from("subcategories")
+          .select("id,category_id,name,slug,icon,sort_order")
+          .eq("is_active", true)
+          .in("category_id", categoryIds)
+          .order("sort_order", { ascending: true })
+          .order("name", { ascending: true });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      return data || [];
+        return data || [];
+      } catch (error) {
+        console.warn(
+          "[Loja MZ] Subcategorias indisponíveis. " +
+          "As categorias principais continuarão visíveis.",
+          error
+        );
+
+        return [];
+      }
     }
 
-    async function fetchPopulatedSubcategoryIds(client, categories) {
+    async function fetchPopulatedSubcategoryIds(
+      instance,
+      categories
+    ) {
+      if (!categories.length) return new Set();
+
       const populatedIds = new Set();
+      const categoryIds = categories.map(item => item.id);
       const pageSize = 500;
-      const categoryIds = categories.map(category => category.id);
+
       let offset = 0;
 
       try {
         while (true) {
-          const { data, error } = await client
+          const { data, error } = await instance
             .from("products")
             .select("id,subcategory_id")
             .eq("is_active", true)
@@ -194,22 +337,22 @@
 
           if (error) throw error;
 
-          const products = data || [];
+          const items = data || [];
 
-          products.forEach(product => {
-            populatedIds.add(String(product.subcategory_id));
+          items.forEach(item => {
+            populatedIds.add(String(item.subcategory_id));
           });
 
-          if (!products.length) break;
+          if (!items.length) break;
 
-          offset += products.length;
+          offset += items.length;
         }
 
         return populatedIds;
       } catch (error) {
         console.warn(
-          "[Loja MZ] Verificação de produtos indisponível. " +
-          "Serão mostradas as subcategorias ativas.",
+          "[Loja MZ] Não foi possível verificar os produtos " +
+          "das subcategorias. Serão mostradas as subcategorias ativas.",
           error
         );
 
@@ -217,36 +360,66 @@
       }
     }
 
-    function renderCategories(categories, subcategories, populatedIds) {
-      const fragment = document.createDocumentFragment();
-
+    function renderCategories(
+      categories,
+      subcategories,
+      populatedIds
+    ) {
       if (!categories.length) {
         const empty = document.createElement("div");
+
         empty.className = "col-12 text-center text-muted py-5";
         empty.textContent = featuredMode
-          ? "Ainda não existem categorias em destaque."
-          : "Nenhuma categoria disponível.";
+          ? text(
+              "Ainda não existem categorias em destaque.",
+              "There are no featured categories yet."
+            )
+          : text(
+              "Nenhuma categoria disponível.",
+              "No categories available."
+            );
 
         container.replaceChildren(empty);
 
-        if (counter) counter.textContent = "0 categorias disponíveis.";
+        if (counter) {
+          counter.textContent = text(
+            "0 categorias disponíveis.",
+            "0 categories available."
+          );
+        }
 
         return;
       }
 
+      const fragment = document.createDocumentFragment();
+      const subcategoriesByCategory = new Map();
+
+      subcategories.forEach(item => {
+        const key = String(item.category_id);
+
+        if (!subcategoriesByCategory.has(key)) {
+          subcategoriesByCategory.set(key, []);
+        }
+
+        subcategoriesByCategory.get(key).push(item);
+      });
+
       categories.forEach(category => {
-        const items = subcategories.filter(
-          item => String(item.category_id) === String(category.id)
-        );
+        const items =
+          subcategoriesByCategory.get(String(category.id)) || [];
 
         const availableItems =
           featuredMode && populatedIds !== null
-            ? items.filter(item => populatedIds.has(String(item.id)))
+            ? items.filter(item =>
+                populatedIds.has(String(item.id))
+              )
             : items;
 
         const visibleItems = featuredMode
           ? availableItems.slice(0, 4)
           : availableItems;
+
+        const name = categoryName(category);
 
         const column = document.createElement("div");
         column.className = "col-12 col-md-6 col-lg-4";
@@ -254,25 +427,15 @@
         const card = document.createElement("article");
         card.className = "category-card";
 
-        const iconBox = document.createElement("div");
-        iconBox.className = "category-icon";
-        iconBox.append(
-          createIcon(
-            defaultIcons[category.slug] ||
-            category.icon ||
-            "package"
-          )
-        );
+        const visual = createCategoryVisual(category);
 
         const title = document.createElement("h3");
         title.className = "category-title";
-        title.textContent = category.name_pt;
+        title.textContent = name;
 
         const description = document.createElement("p");
         description.className = "category-description";
-        description.textContent =
-          category.description_pt ||
-          "Descobre os produtos desta categoria.";
+        description.textContent = categoryDescription(category);
 
         const links = document.createElement("div");
         links.className = "category-links";
@@ -284,7 +447,10 @@
 
           link.append(
             createIcon(subcategory.icon || "tag"),
-            document.createTextNode(subcategory.name || "Subcategoria")
+            document.createTextNode(
+              subcategory.name ||
+              text("Subcategoria", "Subcategory")
+            )
           );
 
           links.append(link);
@@ -293,11 +459,10 @@
         if (!visibleItems.length) {
           const message = document.createElement("p");
           message.className = "small text-muted mb-0";
-
-          message.textContent =
-            featuredMode && populatedIds !== null
-              ? "Novidades em breve."
-              : "Consulta os produtos desta categoria.";
+          message.textContent = text(
+            "Consulta os produtos desta categoria.",
+            "Browse products in this category."
+          );
 
           links.append(message);
         }
@@ -305,9 +470,13 @@
         const viewAll = document.createElement("a");
         viewAll.className = "category-view-all";
         viewAll.href = productLink(category);
+
         viewAll.setAttribute(
           "aria-label",
-          `Ver categoria: ${category.name_pt}`
+          text(
+            `Ver categoria: ${name}`,
+            `View category: ${name}`
+          )
         );
 
         const arrow = document.createElement("i");
@@ -315,11 +484,20 @@
         arrow.setAttribute("aria-hidden", "true");
 
         viewAll.append(
-          document.createTextNode("Ver categoria "),
+          document.createTextNode(
+            text("Ver categoria ", "View category ")
+          ),
           arrow
         );
 
-        card.append(iconBox, title, description, links, viewAll);
+        card.append(
+          visual,
+          title,
+          description,
+          links,
+          viewAll
+        );
+
         column.append(card);
         fragment.append(column);
       });
@@ -327,45 +505,91 @@
       container.replaceChildren(fragment);
 
       if (counter) {
-        counter.textContent =
-          `${categories.length} categorias disponíveis.`;
+        counter.textContent = text(
+          `${categories.length} categorias disponíveis.`,
+          `${categories.length} categories available.`
+        );
       }
 
       refreshIcons();
     }
 
     async function loadCategories() {
+      const version = ++requestVersion;
+
       showLoading();
 
       try {
-        const client = getClient();
-        const categories = await fetchCategories(client);
+        const instance = client();
+        const categories = await fetchCategories(instance);
+
+        if (version !== requestVersion) return;
 
         const [subcategories, populatedIds] = await Promise.all([
           fetchSubcategories(
-            client,
+            instance,
             categories.map(category => category.id)
           ),
           featuredMode && categories.length
-            ? fetchPopulatedSubcategoryIds(client, categories)
+            ? fetchPopulatedSubcategoryIds(instance, categories)
             : Promise.resolve(null)
         ]);
 
-        renderCategories(categories, subcategories, populatedIds);
+        if (version !== requestVersion) return;
+
+        cachedCategories = categories;
+        cachedSubcategories = subcategories;
+        cachedPopulatedIds = populatedIds;
+        hasLoaded = true;
+
+        renderCategories(
+          categories,
+          subcategories,
+          populatedIds
+        );
       } catch (error) {
-        console.error("[Loja online] Erro ao carregar categorias:", error);
+        if (version !== requestVersion) return;
+
+        console.error(
+          "[Loja MZ] Erro ao carregar categorias:",
+          error
+        );
+
         showError();
       } finally {
-        container.setAttribute("aria-busy", "false");
+        if (version === requestVersion) {
+          container.setAttribute("aria-busy", "false");
+        }
       }
     }
+
+    // Atualiza os textos dos cartões após a seleção do idioma.
+    document.addEventListener("click", event => {
+      if (!(event.target instanceof Element)) return;
+
+      if (!event.target.closest("[data-language]")) return;
+
+      window.setTimeout(() => {
+        if (!hasLoaded) return;
+
+        renderCategories(
+          cachedCategories,
+          cachedSubcategories,
+          cachedPopulatedIds
+        );
+      }, 0);
+    });
 
     loadCategories();
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init, { once: true });
+    document.addEventListener(
+      "DOMContentLoaded",
+      initialize,
+      { once: true }
+    );
   } else {
-    init();
+    initialize();
   }
 })();

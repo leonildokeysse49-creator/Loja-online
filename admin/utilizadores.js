@@ -1,79 +1,146 @@
-
-/* =========================================
-   Loja MZ — Gestão de utilizadores
-
-   Administrador: gere clientes, vendedores e administradores.
-   A ligação real ao Supabase será ativada na fase final.
-   ========================================= */
-
 (function usersAdmin() {
   "use strict";
 
   let initialized = false;
+  let busy = false;
   let users = [];
-  let editingUserId = null;
+  let editingId = null;
+  let editingAccount = null;
 
   const el = id => document.getElementById(id);
 
-  const roleLabels = {
-    cliente: "Cliente",
+  const roles = {
+    customer: "Cliente",
     vendedor: "Vendedor",
     admin: "Administrador"
   };
 
-  function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>"']/g, char => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[char]);
-  }
+  function client() {
+    const value = window.lojaMzSupabaseClient;
 
-  function showAlert(message, type = "info") {
-    if (window.Swal) {
-      window.Swal.fire({
-        icon: type,
-        title:
-          type === "success"
-            ? "Sucesso"
-            : type === "error"
-              ? "Erro"
-              : "Atenção",
-        text: message,
-        timer: 2800,
-        showConfirmButton: false
-      });
-
-      return;
+    if (!value?.auth || !value?.functions) {
+      throw new Error("O cliente Supabase não está disponível.");
     }
 
-    window.alert(message);
+    return value;
   }
 
-  function isValidEmail(value) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  function escapeHtml(value) {
+    return String(value ?? "").replace(
+      /[&<>"']/g,
+      char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]
+    );
+  }
+
+  async function alertMessage(message, type = "info") {
+    if (window.Swal) {
+      await window.Swal.fire({
+        icon: type,
+        title:
+          type === "error"
+            ? "Erro"
+            : type === "success"
+              ? "Sucesso"
+              : "Atenção",
+        text: message,
+        confirmButtonText: "Entendido"
+      });
+    } else {
+      window.alert(message);
+    }
+  }
+
+  async function confirmMessage(message) {
+    if (window.Swal) {
+      const result = await window.Swal.fire({
+        icon: "warning",
+        title: "Confirmar operação",
+        text: message,
+        showCancelButton: true,
+        confirmButtonText: "Confirmar",
+        cancelButtonText: "Cancelar"
+      });
+
+      return result.isConfirmed;
+    }
+
+    return window.confirm(message);
+  }
+
+  async function invoke(name, body) {
+    const supabase = client();
+
+    const {
+      data: { session },
+      error: sessionError
+    } = await supabase.auth.getSession();
+
+    if (sessionError) throw sessionError;
+
+    if (!session?.access_token) {
+      throw new Error(
+        "A sessão expirou. Inicia sessão novamente."
+      );
+    }
+
+    const { data, error } = await supabase.functions.invoke(name, {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      },
+      body
+    });
+
+    if (error) {
+      let message = error.message;
+
+      if (error.context instanceof Response) {
+        try {
+          const details = await error.context.clone().json();
+          message = details.error || details.message || message;
+        } catch {
+          // Manter a mensagem original.
+        }
+      }
+
+      throw new Error(message);
+    }
+
+    if (data?.error) throw new Error(data.error);
+
+    return data;
+  }
+
+  function setBusy(value) {
+    busy = value;
+
+    document.querySelectorAll(
+      '#user-form [type="submit"], #user-block-button, ' +
+      '#user-delete-button, #new-user-button, ' +
+      '#users-table-body button'
+    ).forEach(button => {
+      button.disabled = value;
+    });
   }
 
   function renderUsers() {
     const table = el("users-table-body");
+
     const search = (el("user-search")?.value || "")
       .trim()
       .toLowerCase();
 
-    const filtered = users.filter(user => {
-      const name = (user.full_name || "")
-        .toLowerCase();
-
-      const email = (user.email || "")
-        .toLowerCase();
-
-      return (
-        name.includes(search) ||
-        email.includes(search)
-      );
-    });
+    const filtered = users.filter(user =>
+      String(user.full_name || "").toLowerCase()
+        .includes(search) ||
+      String(user.email || "").toLowerCase()
+        .includes(search)
+    );
 
     if (!filtered.length) {
       table.innerHTML = `
@@ -83,282 +150,586 @@
           </td>
         </tr>
       `;
-
       return;
     }
 
-    table.innerHTML = filtered.map(user => {
-      const id = escapeHtml(user.id);
-      const name = escapeHtml(user.full_name || "Sem nome");
-      const email = escapeHtml(user.email || "Sem e-mail");
-      const role = roleLabels[user.role] || "Cliente";
-      const active = user.is_active !== false;
+    table.innerHTML = filtered.map(user => `
+      <tr>
+        <td>${escapeHtml(user.full_name || "Sem nome")}</td>
+        <td>${escapeHtml(user.email || "Sem e-mail")}</td>
+        <td>
+          <span class="badge bg-secondary">
+            ${escapeHtml(roles[user.role] || user.role)}
+          </span>
+        </td>
+        <td class="small text-muted">
+          Consultar na edição
+        </td>
+        <td class="text-end">
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-primary"
+            data-edit-user="${escapeHtml(user.id)}"
+            ${busy ? "disabled" : ""}
+          >
+            Editar
+          </button>
+        </td>
+      </tr>
+    `).join("");
+  }
 
-      return `
+  async function loadUsers() {
+    const table = el("users-table-body");
+
+    table.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center py-4">
+          A carregar utilizadores...
+        </td>
+      </tr>
+    `;
+
+    try {
+      const records = [];
+      let offset = 0;
+
+      while (true) {
+        const { data, error } = await client()
+          .from("profiles")
+          .select("id,full_name,email,role,created_at")
+          .order("id", { ascending: true })
+          .range(offset, offset + 499);
+
+        if (error) throw error;
+        if (!data?.length) break;
+
+        records.push(...data);
+        offset += data.length;
+      }
+
+      users = records.sort((a, b) =>
+        String(b.created_at || "").localeCompare(
+          String(a.created_at || "")
+        )
+      );
+
+      renderUsers();
+    } catch (error) {
+      table.innerHTML = `
         <tr>
-          <td>${name}</td>
-          <td>${email}</td>
-
-          <td>
-            <span class="badge bg-secondary">
-              ${role}
-            </span>
-          </td>
-
-          <td>
-            <span class="badge ${active ? "bg-success" : "bg-danger"}">
-              ${active ? "Ativo" : "Inativo"}
-            </span>
-          </td>
-
-          <td class="text-end">
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-primary me-1"
-              data-edit-user="${id}"
-              aria-label="Editar utilizador"
-            >
-              <i class="bi bi-pencil"></i>
-            </button>
-
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-danger"
-              data-delete-user="${id}"
-              aria-label="Apagar utilizador"
-            >
-              <i class="bi bi-trash"></i>
-            </button>
+          <td colspan="5" class="text-center text-danger py-4">
+            Não foi possível carregar os utilizadores.
           </td>
         </tr>
       `;
-    }).join("");
+
+      await alertMessage(error.message, "error");
+    }
   }
 
-  function openCreateModal() {
-    editingUserId = null;
+  function updateLocalUser(user) {
+    users = [
+      user,
+      ...users.filter(item => item.id !== user.id)
+    ];
+
+    renderUsers();
+  }
+
+  function updateModalState() {
+    const editing = Boolean(editingId);
+
+    el("user-modal-title").textContent = editing
+      ? "Editar utilizador"
+      : "Novo utilizador";
+
+    el("user-password").required = !editing;
+
+    el("user-password-help").textContent = editing
+      ? "Deixa vazio para manter a palavra-passe atual."
+      : "Obrigatória. Usa entre 8 e 128 caracteres.";
+
+    el("user-creation-note").textContent =
+      "O administrador deve verificar o endereço de e-mail. " +
+      "A criação ou alteração administrativa não envia um convite.";
+
+    const blockButton = el("user-block-button");
+    const deleteButton = el("user-delete-button");
+    const status = el("user-account-status");
+
+    blockButton.hidden = !editing;
+    deleteButton.hidden = !editing;
+    status.hidden = !editing;
+
+    if (!editing) return;
+
+    const blocked = Boolean(editingAccount?.blocked);
+
+    status.textContent = blocked
+      ? "Conta bloqueada."
+      : "Conta sem bloqueio administrativo.";
+
+    blockButton.textContent = blocked
+      ? "Desbloquear conta"
+      : "Bloquear conta";
+
+    blockButton.className = blocked
+      ? "btn btn-outline-success me-auto"
+      : "btn btn-outline-danger me-auto";
+  }
+
+  function showModal() {
+    window.bootstrap.Modal
+      .getOrCreateInstance(el("user-modal"))
+      .show();
+  }
+
+  function openCreate() {
+    if (busy || !window.isAdmin?.()) return;
+
+    editingId = null;
+    editingAccount = null;
 
     el("user-form").reset();
     el("user-id").value = "";
     el("user-role").value = "vendedor";
-    el("user-active").checked = true;
-    el("user-password").required = true;
 
-    el("user-modal-title").textContent = "Novo utilizador";
-
-    const modal = bootstrap.Modal.getOrCreateInstance(
-      el("user-modal")
-    );
-
-    modal.show();
+    updateModalState();
+    showModal();
   }
 
-  function openEditModal(user) {
-    editingUserId = user.id;
+  async function openEdit(id) {
+    if (busy || !window.isAdmin?.()) return;
 
-    el("user-id").value = user.id;
-    el("user-name").value = user.full_name || "";
-    el("user-email").value = user.email || "";
-    el("user-role").value = user.role || "cliente";
-    el("user-active").checked = user.is_active !== false;
+    setBusy(true);
 
-    el("user-password").value = "";
-    el("user-password").required = false;
-
-    el("user-modal-title").textContent = "Editar utilizador";
-
-    const modal = bootstrap.Modal.getOrCreateInstance(
-      el("user-modal")
-    );
-
-    modal.show();
-  }
-
-  function closeModal() {
-    const modal = bootstrap.Modal.getOrCreateInstance(
-      el("user-modal")
-    );
-
-    modal.hide();
-  }
-
-  async function handleTableClick(event) {
-    const editButton = event.target.closest("[data-edit-user]");
-    const deleteButton = event.target.closest("[data-delete-user]");
-
-    if (editButton) {
-      const user = users.find(
-        item => item.id === editButton.dataset.editUser
-      );
-
-      if (user) {
-        openEditModal(user);
-      }
-
-      return;
-    }
-
-    if (deleteButton) {
-      const user = users.find(
-        item => item.id === deleteButton.dataset.deleteUser
-      );
-
-      if (!user) return;
-
-      const result = await Swal.fire({
-        icon: "warning",
-        title: "Remover utilizador?",
-        text: `Pretendes remover "${user.full_name || user.email}"?`,
-        showCancelButton: true,
-        confirmButtonText: "Remover",
-        cancelButtonText: "Cancelar",
-        confirmButtonColor: "#dc3545"
+    try {
+      const data = await invoke("admin-manage-user", {
+        action: "inspect",
+        user_id: id
       });
 
-      if (!result.isConfirmed) return;
+      if (!data?.user?.id) {
+        throw new Error(
+          "O servidor não devolveu o utilizador."
+        );
+      }
 
-      users = users.filter(
-        item => item.id !== user.id
-      );
+      editingId = data.user.id;
+      editingAccount = data.account;
 
-      renderUsers();
+      el("user-form").reset();
+      el("user-id").value = editingId;
+      el("user-name").value = data.user.full_name || "";
+      el("user-email").value = data.user.email || "";
+      el("user-role").value = data.user.role;
+      el("user-password").value = "";
 
-      showAlert(
-        "Utilizador removido apenas nesta página. A base de dados ainda não foi alterada."
-      );
+      updateModalState();
+      showModal();
+    } catch (error) {
+      await alertMessage(error.message, "error");
+    } finally {
+      setBusy(false);
     }
   }
 
-  async function handleFormSubmit(event) {
+  async function saveUser(event) {
     event.preventDefault();
 
-    const id = el("user-id").value.trim();
-    const name = el("user-name").value.trim();
-    const email = el("user-email").value.trim().toLowerCase();
-    const password = el("user-password").value;
-    const role = el("user-role").value;
-    const active = el("user-active").checked;
+    if (busy) return;
 
-    if (!name) {
-      showAlert("Escreve o nome completo do utilizador.", "warning");
+    if (!window.isAdmin?.()) {
+      await alertMessage(
+        "Acesso reservado a administradores.",
+        "error"
+      );
       return;
     }
 
-    if (!isValidEmail(email)) {
-      showAlert("Escreve um e-mail válido.", "warning");
-      return;
-    }
+    const form = el("user-form");
 
-    if (!editingUserId && password.length < 6) {
-      showAlert(
-        "A palavra-passe deve ter pelo menos 6 caracteres.",
+    if (!form.reportValidity()) return;
+
+    const fullName = el("user-name").value.trim();
+
+    if (!fullName) {
+      await alertMessage(
+        "Escreve o nome completo.",
         "warning"
       );
-
       return;
     }
 
-    if (!roleLabels[role]) {
-      showAlert("Escolhe um papel válido.", "warning");
-      return;
-    }
+    const wasEditing = Boolean(editingId);
 
-    const emailAlreadyUsed = users.some(
-      user =>
-        user.email.toLowerCase() === email &&
-        user.id !== editingUserId
-    );
-
-    if (emailAlreadyUsed) {
-      showAlert(
-        "Já existe um utilizador com este e-mail.",
-        "warning"
-      );
-
-      return;
-    }
-
-    if (editingUserId) {
-      const user = users.find(
-        item => item.id === editingUserId
-      );
-
-      if (user) {
-        user.full_name = name;
-        user.email = email;
-        user.role = role;
-        user.is_active = active;
-      }
-
-      renderUsers();
-      closeModal();
-
-      showAlert(
-        "Alterações guardadas apenas nesta página. A base de dados ainda não foi alterada.",
-        "success"
-      );
-
-      return;
-    }
-
-    const newUser = {
-      id: `temp-${Date.now()}`,
-      full_name: name,
-      email: email,
-      role: role,
-      is_active: active
+    const payload = {
+      full_name: fullName,
+      email: el("user-email").value.trim().toLowerCase(),
+      password: el("user-password").value,
+      role: el("user-role").value
     };
 
-    users.push(newUser);
+    if (wasEditing) {
+      payload.action = "update";
+      payload.user_id = editingId;
+    }
 
-    renderUsers();
-    closeModal();
+    const submit = form.querySelector('[type="submit"]');
+    const oldText = submit.textContent;
+    let savedUser = null;
 
-    showAlert(
-      `Utilizador "${name}" preparado como ${roleLabels[role]}. A criação real será feita na fase do Supabase.`,
+    setBusy(true);
+    submit.textContent = "A guardar...";
+
+    try {
+      const data = await invoke(
+        wasEditing ? "admin-manage-user" : "admin-create-user",
+        payload
+      );
+
+      if (!data?.user?.id) {
+        throw new Error(
+          "O servidor não confirmou a operação. " +
+          "Verifica a conta antes de repetir."
+        );
+      }
+
+      savedUser = data.user;
+    } catch (error) {
+      console.error("[Utilizadores] Guardar:", error);
+      await alertMessage(error.message, "error");
+    } finally {
+      setBusy(false);
+      submit.textContent = oldText;
+    }
+
+    if (!savedUser) return;
+
+    window.bootstrap.Modal
+      .getOrCreateInstance(el("user-modal"))
+      .hide();
+
+    el("user-password").value = "";
+
+    updateLocalUser(savedUser);
+
+    await alertMessage(
+      wasEditing
+        ? "Utilizador atualizado."
+        : "Conta criada com o e-mail confirmado pelo administrador.",
       "success"
     );
   }
 
-  function initialize() {
-    if (initialized || !window.currentAdmin) return;
+  async function toggleBlock() {
+    if (busy || !editingId || !editingAccount) return;
 
-    if (!window.isAdmin()) {
-      showAlert(
-        "Apenas o administrador pode gerir utilizadores.",
-        "error"
+    const unblock = editingAccount.blocked;
+
+    const original = users.find(
+      user => user.id === editingId
+    );
+
+    if (!original) return;
+
+    const accepted = await confirmMessage(
+      `${unblock ? "Desbloquear" : "Bloquear"} ` +
+      `${original.full_name || "esta conta"}?`
+    );
+
+    if (!accepted) return;
+
+    setBusy(true);
+
+    try {
+      const data = await invoke("admin-manage-user", {
+        action: unblock ? "unblock" : "block",
+        user_id: editingId
+      });
+
+      if (!data?.account) {
+        throw new Error(
+          "O servidor não confirmou o estado da conta."
+        );
+      }
+
+      editingAccount = data.account;
+      updateModalState();
+
+      await alertMessage(
+        unblock
+          ? "Conta desbloqueada."
+          : "Conta bloqueada.",
+        "success"
+      );
+    } catch (error) {
+      await alertMessage(error.message, "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteAccount() {
+    if (busy || !editingId) return;
+
+    const original = users.find(
+      user => user.id === editingId
+    );
+
+    if (!original) return;
+
+    const isSelf = original.id === window.currentAdmin?.id;
+    const isAdmin = original.role === "admin";
+
+    let warning =
+      `Eliminar permanentemente ${original.full_name || "esta conta"}? ` +
+      "Isto remove o perfil, endereços, carrinhos e avaliações. " +
+      "Não pode ser desfeito.";
+
+    if (isSelf) {
+      warning =
+        "Estás a eliminar a tua própria conta. " +
+        "Vais perder o acesso a esta sessão e ao painel. " +
+        warning;
+    }
+
+    if (isAdmin) {
+      warning =
+        "Esta é uma conta de administrador. " +
+        "A eliminação pode remover o último administrador e impedir o acesso ao painel. " +
+        warning;
+    }
+
+    const accepted = await confirmMessage(warning);
+
+    if (!accepted) return;
+
+    setBusy(true);
+
+    try {
+      const data = await invoke("admin-manage-user", {
+        action: "delete",
+        user_id: editingId
+      });
+
+      if (!data?.deleted) {
+        throw new Error(
+          "O servidor não confirmou a eliminação."
+        );
+      }
+
+      window.bootstrap.Modal
+        .getOrCreateInstance(el("user-modal"))
+        .hide();
+
+      users = users.filter(
+        user => user.id !== editingId
       );
 
-      window.location.replace("../conta.html");
+      editingId = null;
+      editingAccount = null;
+
+      renderUsers();
+
+      await alertMessage(
+        "Conta eliminada permanentemente.",
+        "success"
+      );
+
+      if (isSelf) {
+        await client().auth.signOut();
+        window.location.href = "/index.html";
+      }
+    } catch (error) {
+      await alertMessage(error.message, "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function configureForm() {
+    const roleSelect = el("user-role");
+    roleSelect.replaceChildren();
+
+    Object.entries(roles).forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      roleSelect.append(option);
+    });
+
+    el("user-name").maxLength = 150;
+    el("user-email").maxLength = 254;
+
+    const password = el("user-password");
+    password.minLength = 8;
+    password.maxLength = 128;
+    password.autocomplete = "new-password";
+
+    let help = password.parentElement.querySelector(".form-text");
+
+    if (!help) {
+      help = document.createElement("div");
+      help.className = "form-text";
+      password.insertAdjacentElement("afterend", help);
+    }
+
+    help.id = "user-password-help";
+
+    const active = el("user-active");
+
+    if (active) {
+      active.disabled = true;
+
+      const wrapper = active.closest(".form-check");
+
+      if (wrapper) wrapper.hidden = true;
+    }
+
+    const body = document.querySelector(
+      "#user-form .modal-body"
+    );
+
+    let note = el("user-creation-note");
+
+    if (!note) {
+      note = document.createElement("p");
+      note.id = "user-creation-note";
+      note.className = "small text-muted mb-2";
+      body.append(note);
+    }
+
+    if (!el("user-account-status")) {
+      const status = document.createElement("p");
+      status.id = "user-account-status";
+      status.className = "small mt-3 mb-0";
+      body.append(status);
+    }
+
+    const footer = document.querySelector(
+      "#user-form .modal-footer"
+    );
+
+    if (!el("user-block-button")) {
+      const button = document.createElement("button");
+      button.id = "user-block-button";
+      button.type = "button";
+      button.hidden = true;
+
+      footer.prepend(button);
+    }
+
+    if (!el("user-delete-button")) {
+      const button = document.createElement("button");
+      button.id = "user-delete-button";
+      button.type = "button";
+      button.className = "btn btn-outline-danger";
+      button.textContent = "Eliminar conta";
+      button.hidden = true;
+
+      footer.append(button);
+    }
+  }
+
+  function initialize() {
+    if (
+      initialized ||
+      !window.currentAdmin ||
+      !window.isAdmin?.()
+    ) return;
+
+    const required = [
+      "users-table-body",
+      "user-form",
+      "user-name",
+      "user-email",
+      "user-password",
+      "user-role",
+      "user-id",
+      "user-modal",
+      "user-modal-title",
+      "new-user-button"
+    ];
+
+    const missing = required.filter(id => !el(id));
+
+    if (
+      missing.length ||
+      !document.querySelector("#user-form .modal-body") ||
+      !document.querySelector("#user-form .modal-footer") ||
+      !document.querySelector('#user-form [type="submit"]') ||
+      !window.bootstrap?.Modal
+    ) {
+      console.error(
+        "[Utilizadores] HTML ou Bootstrap indisponível:",
+        missing
+      );
       return;
     }
 
     initialized = true;
+
+    configureForm();
+
+    el("new-user-button").addEventListener(
+      "click",
+      openCreate
+    );
 
     el("user-search")?.addEventListener(
       "input",
       renderUsers
     );
 
-    el("users-table-body")?.addEventListener(
+    el("users-table-body").addEventListener(
       "click",
-      handleTableClick
+      event => {
+        const button = event.target.closest(
+          "[data-edit-user]"
+        );
+
+        if (button) openEdit(button.dataset.editUser);
+      }
     );
 
-    el("user-form")?.addEventListener(
+    el("user-form").addEventListener(
       "submit",
-      handleFormSubmit
+      saveUser
     );
 
-    el("new-user-button")?.addEventListener(
+    el("user-block-button").addEventListener(
       "click",
-      openCreateModal
+      toggleBlock
     );
 
-    renderUsers();
+    el("user-delete-button").addEventListener(
+      "click",
+      deleteAccount
+    );
+
+    el("user-modal").addEventListener(
+      "hide.bs.modal",
+      event => {
+        if (busy) event.preventDefault();
+      }
+    );
+
+    el("user-modal").addEventListener(
+      "hidden.bs.modal",
+      () => {
+        el("user-password").value = "";
+      }
+    );
+
+    loadUsers();
   }
 
-  document.addEventListener("admin:ready", initialize);
+  document.addEventListener(
+    "admin:ready",
+    initialize
+  );
 
   if (document.readyState === "loading") {
     document.addEventListener(

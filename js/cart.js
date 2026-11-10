@@ -1,13 +1,17 @@
 /* =========================================
-   Loja MZ — Página do carrinho
+   Loja MZ — Carrinho com cupões
+   Validação de disponibilidade no Supabase.
    ========================================= */
 
 (function cartPage() {
   "use strict";
 
   const CART_KEY = "loja_mz_cart";
-
   const el = id => document.getElementById(id);
+
+  let validatedCoupon = null;
+  let couponVersion = 0;
+  let couponBusy = false;
 
   function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -17,6 +21,16 @@
       '"': "&quot;",
       "'": "&#39;"
     })[char]);
+  }
+
+  function couponsApi() {
+    if (!window.LojaMZCoupons) {
+      throw new Error(
+        "O ficheiro assets/js/coupons.js não foi carregado."
+      );
+    }
+
+    return window.LojaMZCoupons;
   }
 
   function getCart() {
@@ -33,21 +47,37 @@
   }
 
   function saveCart(cart) {
-    localStorage.setItem(CART_KEY, JSON.stringify(cart));
-    updateCartCount(cart);
+    try {
+      localStorage.setItem(CART_KEY, JSON.stringify(cart));
+      updateCartCount(cart);
+      return true;
+    } catch (error) {
+      console.error("[Loja MZ] Guardar carrinho:", error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Não foi possível guardar",
+        text: "Verifica se o navegador permite armazenamento local."
+      });
+
+      return false;
+    }
   }
 
-  function updateCartCount(cart = getCart()) {
-    const badge = el("cart-count");
+  function quantity(value) {
+    const number = Number(value);
 
-    if (!badge) return;
+    return Number.isSafeInteger(number) && number > 0
+      ? number
+      : 1;
+  }
 
-    const total = cart.reduce(
-      (sum, item) => sum + (Number(item.quantity) || 0),
-      0
-    );
+  function priceCents(value) {
+    const number = Number(value);
 
-    badge.textContent = String(total);
+    return Number.isFinite(number) && number >= 0
+      ? Math.round(number * 100)
+      : 0;
   }
 
   function money(value) {
@@ -57,62 +87,179 @@
     }).format(Number(value) || 0);
   }
 
+  function productId(item) {
+    return item.id || item.product_id || "";
+  }
+
+  function subtotalCents(cart = getCart()) {
+    return cart.reduce(
+      (sum, item) =>
+        sum + priceCents(item.price) * quantity(item.quantity),
+      0
+    );
+  }
+
+  function cartSignature(cart = getCart()) {
+    return JSON.stringify(cart);
+  }
+
   function productImage(item) {
-    return item.image || "assets/img/placeholders/product.svg";
+    const fallback = new URL(
+      "assets/img/placeholders/product.svg",
+      window.location.href
+    ).href;
+
+    if (!item.image) return fallback;
+
+    try {
+      const url = new URL(item.image, window.location.href);
+
+      return ["https:", "http:"].includes(url.protocol)
+        ? url.href
+        : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  function updateCartCount(cart = getCart()) {
+    const badge = el("cart-count");
+
+    if (!badge) return;
+
+    badge.textContent = String(
+      cart.reduce(
+        (sum, item) => sum + quantity(item.quantity),
+        0
+      )
+    );
+  }
+
+  function setCouponMessage(message, error = false) {
+    const node = el("coupon-message");
+
+    if (!node) return;
+
+    node.textContent = message;
+    node.className =
+      `small mt-2 mb-0 ${error ? "text-danger" : "text-success"}`;
+  }
+
+  function setCouponBusy(value) {
+    couponBusy = value;
+
+    const button = el("apply-coupon-button");
+
+    if (button) {
+      button.disabled = value;
+      button.textContent = value ? "A verificar..." : "Aplicar";
+    }
+
+    el("coupon-message")?.setAttribute(
+      "aria-busy",
+      String(value)
+    );
+  }
+
+  function updateTotals(cart = getCart()) {
+    const subtotal = subtotalCents(cart);
+
+    const discount = validatedCoupon
+      ? Math.min(
+          subtotal,
+          Math.max(
+            0,
+            Math.round(validatedCoupon.discount_amount * 100)
+          )
+        )
+      : 0;
+
+    el("cart-subtotal").textContent = money(subtotal / 100);
+    el("cart-total").textContent = money(
+      (subtotal - discount) / 100
+    );
+
+    el("coupon-discount-row")?.classList.toggle(
+      "d-none",
+      discount <= 0
+    );
+
+    if (el("cart-discount")) {
+      el("cart-discount").textContent =
+        `- ${money(discount / 100)}`;
+    }
+  }
+
+  function invalidateCoupon() {
+    couponVersion++;
+    validatedCoupon = null;
+    setCouponBusy(false);
+  }
+
+  function removeCoupon(clearInput = true) {
+    invalidateCoupon();
+
+    if (window.LojaMZCoupons) {
+      window.LojaMZCoupons.saveCode("");
+    }
+
+    if (clearInput && el("coupon-code")) {
+      el("coupon-code").value = "";
+    }
+
+    setCouponMessage("");
+    updateTotals();
   }
 
   function renderCart() {
     const cart = getCart();
-    const empty = el("cart-empty");
-    const content = el("cart-content");
-    const items = el("cart-items");
-    const subtitle = el("cart-subtitle");
 
     updateCartCount(cart);
 
     if (!cart.length) {
-      empty.classList.remove("d-none");
-      content.classList.add("d-none");
-      items.innerHTML = "";
-      subtitle.textContent = "";
+      el("cart-empty").classList.remove("d-none");
+      el("cart-content").classList.add("d-none");
+      el("cart-items").innerHTML = "";
+      el("cart-subtitle").textContent = "";
+
+      removeCoupon();
       return;
     }
 
-    empty.classList.add("d-none");
-    content.classList.remove("d-none");
+    el("cart-empty").classList.add("d-none");
+    el("cart-content").classList.remove("d-none");
 
     const totalItems = cart.reduce(
-      (sum, item) => sum + (Number(item.quantity) || 0),
+      (sum, item) => sum + quantity(item.quantity),
       0
     );
 
-    subtitle.textContent =
-      totalItems === 1
-        ? "1 artigo no carrinho"
-        : `${totalItems} artigos no carrinho`;
+    el("cart-subtitle").textContent = totalItems === 1
+      ? "1 artigo no carrinho"
+      : `${totalItems} artigos no carrinho`;
 
-    items.innerHTML = cart.map(item => {
-      const quantity = Math.max(1, Number(item.quantity) || 1);
-      const price = Number(item.price) || 0;
-      const lineTotal = price * quantity;
+    el("cart-items").innerHTML = cart.map(item => {
+      const count = quantity(item.quantity);
+      const price = priceCents(item.price);
+      const name = item.name || item.name_pt || "Produto";
 
       return `
         <div
           class="cart-item"
-          data-id="${escapeHtml(item.id)}"
+          data-id="${escapeHtml(productId(item))}"
           data-variant="${escapeHtml(item.variant_id || "")}"
         >
           <div class="d-flex gap-3">
             <img
               src="${escapeHtml(productImage(item))}"
-              alt="${escapeHtml(item.name || "Produto")}"
+              alt="${escapeHtml(name)}"
               class="cart-item-image"
               loading="lazy"
             >
 
             <div class="flex-grow-1 min-width-0">
               <h6 class="cart-item-name">
-                ${escapeHtml(item.name || "Produto")}
+                ${escapeHtml(name)}
               </h6>
 
               ${
@@ -124,7 +271,7 @@
               }
 
               <p class="cart-item-price">
-                ${escapeHtml(money(price))}
+                ${escapeHtml(money(price / 100))}
               </p>
 
               <div class="d-flex flex-wrap align-items-center gap-2">
@@ -134,6 +281,7 @@
                     class="btn btn-outline-secondary btn-sm"
                     data-action="decrease"
                     aria-label="Diminuir quantidade"
+                    ${count <= 1 ? "disabled" : ""}
                   >
                     <i class="bi bi-dash" aria-hidden="true"></i>
                   </button>
@@ -141,8 +289,9 @@
                   <input
                     type="number"
                     class="form-control cart-quantity"
-                    value="${quantity}"
+                    value="${count}"
                     min="1"
+                    step="1"
                     aria-label="Quantidade"
                   >
 
@@ -169,7 +318,7 @@
 
             <div class="text-end">
               <strong class="cart-line-total">
-                ${escapeHtml(money(lineTotal))}
+                ${escapeHtml(money(price * count / 100))}
               </strong>
             </div>
           </div>
@@ -180,46 +329,159 @@
     updateTotals(cart);
   }
 
-  function updateTotals(cart = getCart()) {
-    const subtotal = cart.reduce((sum, item) => {
-      const quantity = Math.max(1, Number(item.quantity) || 1);
-      return sum + (Number(item.price) || 0) * quantity;
-    }, 0);
+  async function applyCoupon(explicitCode) {
+    const input = el("coupon-code");
 
-    el("cart-subtotal").textContent = money(subtotal);
-    el("cart-total").textContent = money(subtotal);
+    if (!input) return;
+
+    const code = (
+      typeof explicitCode === "string"
+        ? explicitCode
+        : input.value
+    ).trim().toUpperCase();
+
+    const version = ++couponVersion;
+    const cart = getCart();
+    const signature = cartSignature(cart);
+    const subtotal = subtotalCents(cart) / 100;
+
+    validatedCoupon = null;
+    updateTotals(cart);
+
+    if (!code) {
+      window.LojaMZCoupons?.saveCode("");
+      setCouponMessage("Escreve o código do cupom.", true);
+      setCouponBusy(false);
+      return;
+    }
+
+    if (!cart.length || subtotal <= 0) {
+      setCouponMessage(
+        "Adiciona produtos com valor superior a zero.",
+        true
+      );
+      setCouponBusy(false);
+      return;
+    }
+
+    input.value = code;
+
+    setCouponBusy(true);
+    setCouponMessage("A consultar o Supabase...");
+
+    try {
+      const api = couponsApi();
+      const coupon = await api.validate(code, subtotal);
+
+      if (version !== couponVersion) return;
+
+      if (cartSignature() !== signature) {
+        throw new Error(
+          "O carrinho mudou. Aplica novamente o cupom."
+        );
+      }
+
+      validatedCoupon = coupon;
+      api.saveCode(coupon.code);
+
+      setCouponMessage(
+        `Cupom ${coupon.code} aplicado: ` +
+        `${money(coupon.discount_amount)} de desconto.`
+      );
+
+      updateTotals();
+    } catch (error) {
+      if (version !== couponVersion) return;
+
+      validatedCoupon = null;
+      window.LojaMZCoupons?.saveCode("");
+
+      setCouponMessage(
+        error.message || "Não foi possível validar o cupom.",
+        true
+      );
+
+      updateTotals();
+    } finally {
+      if (version === couponVersion) {
+        setCouponBusy(false);
+      }
+    }
   }
 
-  function changeQuantity(productId, variantId, quantity) {
-    const cart = getCart();
+  function restoreCoupon() {
+    if (!getCart().length) return;
 
+    const code = window.LojaMZCoupons?.getSavedCode();
+
+    if (!code || !el("coupon-code")) return;
+
+    el("coupon-code").value = code;
+    applyCoupon(code);
+  }
+
+  function refreshAfterCartChange() {
+    // Revalida o cupom confirmado ou uma validação em curso.
+    const code = validatedCoupon?.code ||
+      window.LojaMZCoupons?.getSavedCode() ||
+      (couponBusy ? el("coupon-code")?.value : "");
+
+    invalidateCoupon();
+    renderCart();
+
+    if (code && getCart().length) {
+      applyCoupon(code);
+    } else {
+      setCouponMessage("");
+    }
+  }
+
+  function matches(item, id, variantId) {
+    return (
+      String(productId(item)) === String(id) &&
+      String(item.variant_id || "") === String(variantId || "")
+    );
+  }
+
+  function changeQuantity(id, variantId, value) {
+    const cart = getCart();
     const item = cart.find(current =>
-      String(current.id) === String(productId) &&
-      String(current.variant_id || "") === String(variantId || "")
+      matches(current, id, variantId)
     );
 
     if (!item) return;
 
-    item.quantity = Math.max(1, Number(quantity) || 1);
+    const nextQuantity = Number(value);
 
-    saveCart(cart);
-    renderCart();
+    if (
+      !Number.isSafeInteger(nextQuantity) ||
+      nextQuantity < 1
+    ) {
+      renderCart();
+      return;
+    }
+
+    item.quantity = nextQuantity;
+
+    if (saveCart(cart)) {
+      refreshAfterCartChange();
+    }
   }
 
-  function removeItem(productId, variantId) {
-    const cart = getCart().filter(item =>
-      !(
-        String(item.id) === String(productId) &&
-        String(item.variant_id || "") === String(variantId || "")
-      )
+  function removeItem(id, variantId) {
+    const cart = getCart().filter(
+      item => !matches(item, id, variantId)
     );
 
-    saveCart(cart);
-    renderCart();
+    if (saveCart(cart)) {
+      refreshAfterCartChange();
+    }
   }
 
   function clearCart() {
-    saveCart([]);
+    if (!saveCart([])) return;
+
+    removeCoupon();
     renderCart();
   }
 
@@ -232,22 +494,24 @@
 
     if (!row) return;
 
-    const productId = row.dataset.id;
+    const id = row.dataset.id;
     const variantId = row.dataset.variant || "";
-    const action = button.dataset.action;
-    const input = row.querySelector(".cart-quantity");
-    const currentQuantity = Number(input?.value) || 1;
+    const currentQuantity = quantity(
+      row.querySelector(".cart-quantity")?.value
+    );
 
-    if (action === "increase") {
-      changeQuantity(productId, variantId, currentQuantity + 1);
-    }
+    switch (button.dataset.action) {
+      case "increase":
+        changeQuantity(id, variantId, currentQuantity + 1);
+        break;
 
-    if (action === "decrease") {
-      changeQuantity(productId, variantId, currentQuantity - 1);
-    }
+      case "decrease":
+        changeQuantity(id, variantId, Math.max(1, currentQuantity - 1));
+        break;
 
-    if (action === "remove") {
-      removeItem(productId, variantId);
+      case "remove":
+        removeItem(id, variantId);
+        break;
     }
   }
 
@@ -273,8 +537,34 @@
     el("cart-items").addEventListener("click", handleClick);
     el("cart-items").addEventListener("change", handleQuantityChange);
 
-    el("clear-cart-button")?.addEventListener("click", () => {
-      Swal.fire({
+    el("coupon-message")?.setAttribute("role", "status");
+    el("coupon-message")?.setAttribute("aria-live", "polite");
+
+    el("apply-coupon-button")?.addEventListener("click", () => {
+      applyCoupon();
+    });
+
+    el("coupon-code")?.addEventListener("input", event => {
+      event.target.value = event.target.value.toUpperCase();
+
+      removeCoupon(false);
+    });
+
+    el("coupon-code")?.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        applyCoupon();
+      }
+    });
+
+    // Funciona caso adiciones um botão com este ID.
+    el("remove-coupon-button")?.addEventListener(
+      "click",
+      () => removeCoupon()
+    );
+
+    el("clear-cart-button")?.addEventListener("click", async () => {
+      const result = await Swal.fire({
         icon: "warning",
         title: "Limpar carrinho?",
         text: "Todos os produtos serão removidos.",
@@ -282,20 +572,31 @@
         confirmButtonText: "Limpar",
         cancelButtonText: "Cancelar",
         confirmButtonColor: "#dc3545"
-      }).then(result => {
-        if (result.isConfirmed) clearCart();
       });
+
+      if (result.isConfirmed) clearCart();
+    });
+
+    window.addEventListener("storage", event => {
+      if (
+        event.key === CART_KEY ||
+        event.key === "loja_mz_coupon" ||
+        event.key === null
+      ) {
+        invalidateCoupon();
+        renderCart();
+        restoreCoupon();
+      }
     });
 
     renderCart();
+    restoreCoupon();
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      initialize,
-      { once: true }
-    );
+    document.addEventListener("DOMContentLoaded", initialize, {
+      once: true
+    });
   } else {
     initialize();
   }
