@@ -8,7 +8,7 @@
 
   <meta
     name="description"
-    content="Descobre moda, calçados, telemóveis, beleza, electrónica e muito mais na Loja MZ. Preços em meticais e entregas nas zonas disponíveis."
+    content="Descobre moda, calçados, telemóveis, beleza, electrónica e muito mais na Loja Online. Preços em meticais e entregas nas zonas disponíveis."
   >
   <meta name="author" content="Leonildo Keysse">
 
@@ -18,322 +18,23 @@
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     rel="stylesheet"
   >
+
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css"
     rel="stylesheet"
   >
+
   <link
     href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
     rel="stylesheet"
   >
+
   <link
     href="https://unpkg.com/aos@2.3.4/dist/aos.css"
     rel="stylesheet"
   >
 
   <link href="assets/css/style.css" rel="stylesheet">
-
-  <style>
-    .topbar {
-      position: relative;
-      z-index: 1031;
-      background: #0f172a;
-      color: #fff;
-    }
-
-    .topbar .btn-language {
-      color: #fff;
-    }
-
-    .topbar .dropdown-menu {
-      min-width: 160px;
-      color: #111827;
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, .12);
-    }
-
-    .topbar .dropdown-item {
-      padding: 10px 16px;
-      color: #111827;
-    }
-
-    .topbar .dropdown-item:hover,
-    .topbar .dropdown-item:focus {
-      color: #084298;
-      background: #eff6ff;
-    }
-
-    .store-brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-    }
-
-    .store-logo-frame {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      width: 48px;
-      height: 48px;
-      overflow: hidden;
-    }
-
-    .store-logo-image {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-
-    .store-logo-image[hidden],
-    .store-logo-fallback[hidden] {
-      display: none !important;
-    }
-
-    .store-logo-fallback {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 100%;
-      border-radius: 12px;
-      background: #eff6ff;
-      color: #2563eb;
-      font-size: 1.75rem;
-      line-height: 1;
-    }
-
-    .store-brand .brand-name {
-      line-height: 1.2;
-    }
-
-    .footer-brand {
-      margin-bottom: 16px;
-      color: inherit;
-    }
-
-    .footer-brand:hover,
-    .footer-brand:focus {
-      color: inherit;
-    }
-
-    .footer-brand .store-logo-frame {
-      width: 54px;
-      height: 54px;
-    }
-
-    .footer-brand .footer-title {
-      margin-bottom: 0;
-    }
-
-    .home-section-heading {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .home-section-heading .see-all {
-      white-space: nowrap;
-    }
-
-    .home-section-description {
-      max-width: 720px;
-      margin-bottom: 24px;
-      color: var(--gray, #6b7280);
-      line-height: 1.7;
-    }
-
-    .category-section {
-      background: #f8fafc;
-    }
-
-    #home-categories .category-card {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      padding: 1.5rem;
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 16px;
-      transition: box-shadow .2s ease, transform .2s ease;
-    }
-
-    #home-categories .category-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 30px rgba(37, 99, 235, .1);
-    }
-
-    #home-categories .category-card:focus-within {
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, .2);
-    }
-
-    #home-categories .category-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      width: 64px;
-      height: 64px;
-      margin-bottom: 1rem;
-      overflow: hidden;
-      border-radius: 14px;
-      background: #eff6ff;
-      color: #2563eb;
-    }
-
-    #home-categories .category-icon svg {
-      width: 28px;
-      height: 28px;
-    }
-
-    #home-categories .category-icon img {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    #home-categories .category-title {
-      margin-bottom: .5rem;
-      color: #111827;
-      font-size: 1.05rem;
-      font-weight: 700;
-      overflow-wrap: anywhere;
-    }
-
-    #home-categories .category-description {
-      margin-bottom: 1rem;
-      color: #6b7280;
-      font-size: .875rem;
-      line-height: 1.6;
-      overflow-wrap: anywhere;
-    }
-
-    #home-categories .category-links {
-      display: flex;
-      flex-direction: column;
-      gap: .35rem;
-      margin-bottom: 1rem;
-    }
-
-    #home-categories .category-link {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      padding: .4rem .5rem;
-      border-radius: 8px;
-      color: #374151;
-      font-size: .9rem;
-      text-decoration: none;
-    }
-
-    #home-categories .category-link:hover,
-    #home-categories .category-link:focus-visible {
-      background: #eff6ff;
-      color: #2563eb;
-    }
-
-    #home-categories .category-link svg {
-      width: 17px;
-      height: 17px;
-      flex-shrink: 0;
-    }
-
-    #home-categories .category-view-all {
-      display: inline-flex;
-      align-items: center;
-      gap: .4rem;
-      align-self: flex-start;
-      margin-top: auto;
-      padding-top: .5rem;
-      color: #2563eb;
-      font-size: .9rem;
-      font-weight: 600;
-      text-decoration: none;
-    }
-
-    #home-categories .category-view-all:hover {
-      text-decoration: underline;
-    }
-
-    .category-skeleton {
-      min-height: 300px;
-      padding: 1.5rem;
-      border: 1px solid #e5e7eb;
-      border-radius: 16px;
-      background: #fff;
-    }
-
-    .footer-links a {
-      overflow-wrap: anywhere;
-    }
-
-    .skip-link {
-      position: fixed;
-      top: -100px;
-      left: 12px;
-      z-index: 2000;
-      padding: 12px 18px;
-      border-radius: 8px;
-      background: #fff;
-      color: #111827;
-    }
-
-    .skip-link:focus {
-      top: 12px;
-    }
-
-    @media (max-width: 991.98px) {
-      .search-form {
-        margin: 12px 0;
-      }
-
-      .navbar-collapse > .d-flex {
-        padding-bottom: 12px;
-      }
-    }
-
-    @media (max-width: 575.98px) {
-      .home-section-description {
-        font-size: .92rem;
-      }
-
-      .store-logo-frame {
-        width: 42px;
-        height: 42px;
-      }
-
-      .store-logo-fallback {
-        font-size: 1.5rem;
-      }
-
-      .store-brand {
-        gap: 8px;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      #home-categories .category-card {
-        transition: none;
-      }
-
-      #home-categories .category-card:hover {
-        transform: none;
-      }
-
-      [data-aos] {
-        opacity: 1 !important;
-        transform: none !important;
-      }
-    }
-  </style>
 </head>
 
 <body data-page="home">
@@ -345,6 +46,7 @@
   <!-- Topbar -->
   <div class="topbar py-2">
     <div class="container d-flex justify-content-end align-items-center small gap-2">
+
       <div class="d-flex align-items-center gap-3">
 
         <span class="d-none d-md-inline">
@@ -352,6 +54,7 @@
         </span>
 
         <div class="dropdown">
+
           <button
             class="btn btn-sm btn-language dropdown-toggle"
             type="button"
@@ -390,13 +93,13 @@
               </button>
             </li>
           </ul>
-        </div>
 
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Navegação -->
+  <!-- Navegação principal -->
   <nav
     class="navbar navbar-expand-lg main-navbar sticky-top"
     aria-label="Navegação principal"
@@ -404,6 +107,7 @@
     <div class="container">
 
       <a class="navbar-brand store-brand" href="index.html">
+
         <span class="store-logo-frame" aria-hidden="true">
 
           <img
@@ -426,6 +130,7 @@
         <span class="brand-name" data-store-name>
           Loja online
         </span>
+
       </a>
 
       <button
@@ -545,6 +250,7 @@
               class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
               aria-live="polite"
             >0</span>
+
           </a>
 
         </div>
@@ -559,44 +265,39 @@
       class="hero hero-with-background"
       aria-labelledby="hero-title"
     >
+
       <div class="container">
 
-        <div class="row align-items-center g-5">
+        <div class="hero-content">
 
-          <div class="col-lg-6">
+          <h1 class="hero-title" id="hero-title">
+            Tudo o que procuras, num só lugar.
+          </h1>
 
-            <span class="hero-badge">
-              LOJA ONLINE
-            </span>
+          <p class="hero-text">
+            Descobre uma seleção de produtos de moda, tecnologia,
+            casa, beleza e muito mais. Compra com comodidade na Loja Online.
+          </p>
 
-            <h1 class="hero-title" id="hero-title">
-              Tudo o que procuras, num só lugar.
-            </h1>
-
-            <p class="hero-text">
-              Descobre uma seleção de produtos de moda, tecnologia,
-              casa, beleza e muito mais. Compra com comodidade na Loja online.
-            </p>
-
-            <a
-              href="produtos.html"
-              class="btn btn-primary btn-lg"
-            >
-              Explorar produtos
-              <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i>
-            </a>
-
-          </div>
+          <a
+            href="produtos.html"
+            class="btn btn-primary btn-lg hero-button"
+          >
+            Explorar produtos
+            <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i>
+          </a>
 
         </div>
+
       </div>
     </section>
 
-    <!-- Categorias selecionadas pelo administrador -->
+    <!-- Categorias selecionadas -->
     <section
       class="section category-section"
       aria-labelledby="home-categories-title"
     >
+
       <div class="container">
 
         <div class="home-section-heading">
@@ -638,6 +339,7 @@
           </div>
 
         </div>
+
       </div>
     </section>
 
@@ -646,6 +348,7 @@
       class="section bg-light"
       aria-labelledby="featured-title"
     >
+
       <div class="container">
 
         <div class="home-section-heading">
@@ -687,14 +390,13 @@
           </div>
 
         </div>
+
       </div>
     </section>
 
-    <!-- Benefícios -->
-    <section
-      class="section"
-      aria-label="Serviços da loja"
-    >
+    <!-- Vantagens da loja -->
+    <section class="section" aria-label="Serviços da loja">
+
       <div class="container">
 
         <div class="row g-4">
@@ -763,6 +465,7 @@
 
   <!-- Rodapé -->
   <footer class="footer">
+
     <div class="container">
 
       <div class="row g-4">
@@ -770,10 +473,7 @@
         <!-- Marca -->
         <div class="col-lg-4">
 
-          <a
-            class="store-brand footer-brand"
-            href="index.html"
-          >
+          <a class="store-brand footer-brand" href="index.html">
 
             <span class="store-logo-frame" aria-hidden="true">
 
@@ -818,7 +518,6 @@
 
             <li>
               <i class="bi bi-envelope me-2" aria-hidden="true"></i>
-
               <a href="mailto:leonildokeysse49@gmail.com">
                 leonildokeysse49@gmail.com
               </a>
@@ -826,7 +525,6 @@
 
             <li>
               <i class="bi bi-telephone me-2" aria-hidden="true"></i>
-
               <a href="tel:+258853217149">
                 +258 85 321 7149
               </a>
@@ -834,7 +532,6 @@
 
             <li>
               <i class="bi bi-whatsapp me-2" aria-hidden="true"></i>
-
               <a
                 href="https://wa.me/258853217149"
                 target="_blank"
@@ -845,6 +542,7 @@
             </li>
 
           </ul>
+
         </div>
 
         <!-- Links rápidos -->
@@ -887,6 +585,7 @@
             </li>
 
           </ul>
+
         </div>
 
       </div>
@@ -897,15 +596,14 @@
 
         © <span id="year"></span>
 
-        <span data-store-name>
-          Loja MZ
-        </span>.
+        <span data-store-name>Loja MZ</span>.
 
         <span data-i18n="rights">
           Todos os direitos reservados.
         </span>
 
       </div>
+
     </div>
   </footer>
 
@@ -947,17 +645,17 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Projeto -->
+  <!-- Configuração e funções do projeto -->
   <script src="assets/js/config.js"></script>
   <script src="assets/js/supabase.js"></script>
   <script src="assets/js/utils.js"></script>
   <script src="assets/js/i18n.js"></script>
   <script src="assets/js/ui.js"></script>
 
-  <!-- Categorias públicas -->
+  <!-- Categorias da homepage -->
   <script src="assets/js/home-categories.js"></script>
 
-  <!-- Produtos e restantes funcionalidades -->
+  <!-- Produtos e funcionalidades da homepage -->
   <script src="assets/js/products.js"></script>
   <script src="assets/js/home.js"></script>
 
