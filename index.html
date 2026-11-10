@@ -130,23 +130,6 @@
       margin-bottom: 0;
     }
 
-    .hero.hero-with-background {
-      --hero-background-image: url("assets/img/hero-fundo.jpg");
-
-      background-color: #f8fafc;
-      background-image:
-        linear-gradient(
-          90deg,
-          rgba(248, 250, 252, .96) 0%,
-          rgba(248, 250, 252, .86) 45%,
-          rgba(248, 250, 252, .35) 100%
-        ),
-        var(--hero-background-image);
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-    }
-
     .home-section-heading {
       display: flex;
       align-items: center;
@@ -165,13 +148,6 @@
       margin-bottom: 24px;
       color: var(--gray, #6b7280);
       line-height: 1.7;
-    }
-
-    .hero-image {
-      width: 100%;
-      max-width: 560px;
-      aspect-ratio: 1 / 1;
-      object-fit: contain;
     }
 
     .category-section {
@@ -322,24 +298,11 @@
       .navbar-collapse > .d-flex {
         padding-bottom: 12px;
       }
-
-      .hero.hero-with-background {
-        background-image:
-          linear-gradient(
-            rgba(248, 250, 252, .88),
-            rgba(248, 250, 252, .88)
-          ),
-          var(--hero-background-image);
-      }
     }
 
     @media (max-width: 575.98px) {
       .home-section-description {
         font-size: .92rem;
-      }
-
-      .hero-image {
-        max-height: 320px;
       }
 
       .store-logo-frame {
@@ -374,6 +337,7 @@
 </head>
 
 <body data-page="home">
+
   <a class="skip-link" href="#main-content">
     Saltar para o conteúdo
   </a>
@@ -382,6 +346,7 @@
   <div class="topbar py-2">
     <div class="container d-flex justify-content-end align-items-center small gap-2">
       <div class="d-flex align-items-center gap-3">
+
         <span class="d-none d-md-inline">
           Entregas nas zonas disponíveis
         </span>
@@ -413,6 +378,7 @@
                 Português
               </button>
             </li>
+
             <li>
               <button
                 class="dropdown-item"
@@ -425,6 +391,7 @@
             </li>
           </ul>
         </div>
+
       </div>
     </div>
   </div>
@@ -435,8 +402,10 @@
     aria-label="Navegação principal"
   >
     <div class="container">
+
       <a class="navbar-brand store-brand" href="index.html">
         <span class="store-logo-frame" aria-hidden="true">
+
           <img
             src="assets/img/logo.png"
             alt=""
@@ -451,9 +420,12 @@
           <span class="store-logo-fallback" data-logo-fallback>
             <i class="bi bi-bag-heart-fill" aria-hidden="true"></i>
           </span>
+
         </span>
 
-        <span class="brand-name" data-store-name>Loja online</span>
+        <span class="brand-name" data-store-name>
+          Loja online
+        </span>
       </a>
 
       <button
@@ -469,7 +441,9 @@
       </button>
 
       <div class="collapse navbar-collapse" id="mainMenu">
+
         <ul class="navbar-nav mx-auto">
+
           <li class="nav-item">
             <a
               class="nav-link active"
@@ -480,29 +454,47 @@
               Início
             </a>
           </li>
+
           <li class="nav-item">
-            <a class="nav-link" href="produtos.html" data-i18n="products">
+            <a
+              class="nav-link"
+              href="produtos.html"
+              data-i18n="products"
+            >
               Produtos
             </a>
           </li>
+
           <li class="nav-item">
-            <a class="nav-link" href="categorias.html" data-i18n="categories">
+            <a
+              class="nav-link"
+              href="categorias.html"
+              data-i18n="categories"
+            >
               Categorias
             </a>
           </li>
+
           <li class="nav-item">
-            <a class="nav-link" href="contacto.html" data-i18n="contact">
+            <a
+              class="nav-link"
+              href="contacto.html"
+              data-i18n="contact"
+            >
               Contacto
             </a>
           </li>
+
         </ul>
 
+        <!-- Pesquisa -->
         <form
           class="d-flex search-form"
           role="search"
           action="produtos.html"
           method="get"
         >
+
           <label for="search-input" class="visually-hidden">
             Pesquisar produtos
           </label>
@@ -525,9 +517,12 @@
           >
             <i class="bi bi-search" aria-hidden="true"></i>
           </button>
+
         </form>
 
+        <!-- Conta e carrinho -->
         <div class="d-flex align-items-center gap-2 ms-lg-3">
+
           <a
             href="login.html"
             class="btn btn-light btn-icon"
@@ -551,21 +546,28 @@
               aria-live="polite"
             >0</span>
           </a>
+
         </div>
       </div>
     </div>
   </nav>
 
   <main id="main-content">
-    <!-- Hero -->
+
+    <!-- Banner principal -->
     <section
       class="hero hero-with-background"
       aria-labelledby="hero-title"
     >
       <div class="container">
+
         <div class="row align-items-center g-5">
+
           <div class="col-lg-6">
-            <span class="hero-badge">LOJA ONLINE</span>
+
+            <span class="hero-badge">
+              LOJA ONLINE
+            </span>
 
             <h1 class="hero-title" id="hero-title">
               Tudo o que procuras, num só lugar.
@@ -576,17 +578,16 @@
               casa, beleza e muito mais. Compra com comodidade na Loja online.
             </p>
 
-            <a href="produtos.html" class="btn btn-primary btn-lg">
+            <a
+              href="produtos.html"
+              class="btn btn-primary btn-lg"
+            >
               Explorar produtos
               <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i>
             </a>
+
           </div>
 
-          <div class="col-lg-6 text-center">
-            <img
-
-            >
-          </div>
         </div>
       </div>
     </section>
@@ -597,7 +598,9 @@
       aria-labelledby="home-categories-title"
     >
       <div class="container">
+
         <div class="home-section-heading">
+
           <h2
             class="section-title mb-0"
             id="home-categories-title"
@@ -609,6 +612,7 @@
             Ver todas
             <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
           </a>
+
         </div>
 
         <p class="home-section-description">
@@ -622,24 +626,30 @@
           aria-live="polite"
           aria-busy="true"
         >
+
           <div class="col-12 text-center text-muted py-5">
+
             <div class="spinner-border text-primary" role="status">
               <span class="visually-hidden">
                 A carregar categorias...
               </span>
             </div>
+
           </div>
+
         </div>
       </div>
     </section>
 
-    <!-- Produtos -->
+    <!-- Produtos em destaque -->
     <section
       class="section bg-light"
       aria-labelledby="featured-title"
     >
       <div class="container">
+
         <div class="home-section-heading">
+
           <h2
             class="section-title mb-0"
             id="featured-title"
@@ -655,6 +665,7 @@
           >
             Ver tudo
           </a>
+
         </div>
 
         <p class="home-section-description">
@@ -667,43 +678,75 @@
           id="featured-products"
           aria-live="polite"
         >
+
           <div
             class="col-12 text-center text-muted"
             data-i18n="loading"
           >
             A carregar...
           </div>
+
         </div>
       </div>
     </section>
 
     <!-- Benefícios -->
-    <section class="section" aria-label="Serviços da loja">
+    <section
+      class="section"
+      aria-label="Serviços da loja"
+    >
       <div class="container">
+
         <div class="row g-4">
+
           <div class="col-md-4">
             <div class="feature-card text-center h-100">
+
               <i class="bi bi-truck" aria-hidden="true"></i>
-              <h3 class="h5 mt-3">Entregas</h3>
-              <p class="mb-0">Nas zonas disponíveis.</p>
+
+              <h3 class="h5 mt-3">
+                Entregas
+              </h3>
+
+              <p class="mb-0">
+                Nas zonas disponíveis.
+              </p>
+
             </div>
           </div>
 
           <div class="col-md-4">
             <div class="feature-card text-center h-100">
+
               <i class="bi bi-credit-card" aria-hidden="true"></i>
-              <h3 class="h5 mt-3">Pagamentos</h3>
-              <p class="mb-0">Consulta os métodos disponíveis.</p>
+
+              <h3 class="h5 mt-3">
+                Pagamentos
+              </h3>
+
+              <p class="mb-0">
+                Consulta os métodos disponíveis.
+              </p>
+
             </div>
           </div>
 
           <div class="col-md-4">
             <div class="feature-card text-center h-100">
+
               <i class="bi bi-headset" aria-hidden="true"></i>
-              <h3 class="h5 mt-3">Suporte</h3>
-              <p class="mb-0">Por telefone, e-mail ou WhatsApp.</p>
+
+              <h3 class="h5 mt-3">
+                Suporte
+              </h3>
+
+              <p class="mb-0">
+                Por telefone, e-mail ou WhatsApp.
+              </p>
+
             </div>
           </div>
+
         </div>
       </div>
     </section>
@@ -715,15 +758,25 @@
         </p>
       </div>
     </noscript>
+
   </main>
 
   <!-- Rodapé -->
   <footer class="footer">
     <div class="container">
+
       <div class="row g-4">
+
+        <!-- Marca -->
         <div class="col-lg-4">
-          <a class="store-brand footer-brand" href="index.html">
+
+          <a
+            class="store-brand footer-brand"
+            href="index.html"
+          >
+
             <span class="store-logo-frame" aria-hidden="true">
+
               <img
                 src="assets/img/logo.png"
                 alt=""
@@ -738,27 +791,34 @@
               <span class="store-logo-fallback" data-logo-fallback>
                 <i class="bi bi-bag-heart-fill" aria-hidden="true"></i>
               </span>
+
             </span>
 
             <span class="h5 footer-title" data-store-name>
               Loja MZ
             </span>
+
           </a>
 
           <p>
             Moda, tecnologia, casa, beleza e muito mais.
             Descobre a nossa seleção de produtos em Moçambique.
           </p>
+
         </div>
 
+        <!-- Contactos -->
         <div class="col-lg-4">
+
           <h2 class="h5 footer-title" data-i18n="contact">
             Contacto
           </h2>
 
           <ul class="footer-links">
+
             <li>
               <i class="bi bi-envelope me-2" aria-hidden="true"></i>
+
               <a href="mailto:leonildokeysse49@gmail.com">
                 leonildokeysse49@gmail.com
               </a>
@@ -766,6 +826,7 @@
 
             <li>
               <i class="bi bi-telephone me-2" aria-hidden="true"></i>
+
               <a href="tel:+258853217149">
                 +258 85 321 7149
               </a>
@@ -773,6 +834,7 @@
 
             <li>
               <i class="bi bi-whatsapp me-2" aria-hidden="true"></i>
+
               <a
                 href="https://wa.me/258853217149"
                 target="_blank"
@@ -781,61 +843,79 @@
                 Falar pelo WhatsApp
               </a>
             </li>
+
           </ul>
         </div>
 
+        <!-- Links rápidos -->
         <div class="col-lg-4">
+
           <h2 class="h5 footer-title" data-i18n="quick_links">
             Links rápidos
           </h2>
 
           <ul class="footer-links">
+
             <li>
               <a href="produtos.html" data-i18n="products">
                 Produtos
               </a>
             </li>
+
             <li>
               <a href="categorias.html" data-i18n="categories">
                 Todas as categorias
               </a>
             </li>
+
             <li>
               <a href="carrinho.html" data-i18n="cart">
                 Carrinho
               </a>
             </li>
+
             <li>
               <a href="conta.html" data-i18n="my_account">
                 A minha conta
               </a>
             </li>
+
             <li>
               <a href="contacto.html" data-i18n="contact">
                 Contacto
               </a>
             </li>
+
           </ul>
         </div>
+
       </div>
 
       <hr class="footer-divider">
 
       <div class="text-center small">
+
         © <span id="year"></span>
-        <span data-store-name>Loja MZ</span>.
+
+        <span data-store-name>
+          Loja MZ
+        </span>.
+
         <span data-i18n="rights">
           Todos os direitos reservados.
         </span>
+
       </div>
     </div>
   </footer>
 
+  <!-- Gestão do logotipo -->
   <script>
     (function initStoreLogos() {
       "use strict";
 
       document.querySelectorAll("[data-store-logo]").forEach(image => {
+
         const fallback = image.parentElement.querySelector(
           "[data-logo-fallback]"
         );
@@ -854,6 +934,7 @@
         image.addEventListener("error", updateLogoVisibility);
 
         updateLogoVisibility();
+
       });
     })();
   </script>
@@ -880,9 +961,11 @@
   <script src="assets/js/products.js"></script>
   <script src="assets/js/home.js"></script>
 
+  <!-- Ano automático -->
   <script>
     document.getElementById("year").textContent =
       new Date().getFullYear();
   </script>
+
 </body>
 </html>
