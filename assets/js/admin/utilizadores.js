@@ -1,3 +1,8 @@
+
+/* =========================================
+   Loja MZ — Gestão de utilizadores
+   ========================================= */
+
 (function usersAdmin() {
   "use strict";
 
@@ -15,11 +20,20 @@
     admin: "Administrador"
   };
 
+  const validRoles = Object.keys(roles);
+
   function client() {
     const value = window.lojaMzSupabaseClient;
 
-    if (!value?.auth || !value?.functions) {
-      throw new Error("O cliente Supabase não está disponível.");
+    if (
+      !value?.auth ||
+      !value?.functions ||
+      !value.supabaseUrl ||
+      !value.supabaseKey
+    ) {
+      throw new Error(
+        "O cliente Supabase não está disponível."
+      );
     }
 
     return value;
@@ -51,9 +65,11 @@
         text: message,
         confirmButtonText: "Entendido"
       });
-    } else {
-      window.alert(message);
+
+      return;
     }
+
+    window.alert(message);
   }
 
   async function confirmMessage(message) {
@@ -89,40 +105,56 @@
       );
     }
 
-    const { data, error } = await supabase.functions.invoke(name, {
+    const endpoint = `${supabase.supabaseUrl}/functions/v1/${name}`;
+
+    const response = await fetch(endpoint, {
+      method: "POST",
       headers: {
-        Authorization: `Bearer ${session.access_token}`
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token}`,
+        "apikey": supabase.supabaseKey
       },
-      body
+      body: JSON.stringify(body)
     });
 
-    if (error) {
-      let message = error.message;
+    let result = null;
 
-      if (error.context instanceof Response) {
-        try {
-          const details = await error.context.clone().json();
-          message = details.error || details.message || message;
-        } catch {
-          // Manter a mensagem original.
-        }
-      }
-
-      throw new Error(message);
+    try {
+      result = await response.json();
+    } catch {
+      result = null;
     }
 
-    if (data?.error) throw new Error(data.error);
+    if (!response.ok) {
+      const details = [
+        result?.error,
+        result?.message,
+        result?.details,
+        result?.hint
+      ]
+        .filter(Boolean)
+        .join(" | ");
 
-    return data;
+      throw new Error(
+        details ||
+        `A operação falhou (HTTP ${response.status}).`
+      );
+    }
+
+    if (result?.error) {
+      throw new Error(result.error);
+    }
+
+    return result;
   }
 
   function setBusy(value) {
     busy = value;
 
     document.querySelectorAll(
-      '#user-form [type="submit"], #user-block-button, ' +
-      '#user-delete-button, #new-user-button, ' +
-      '#users-table-body button'
+      '#user-form [type="submit"], ' +
+      "#user-block-button, #user-delete-button, " +
+      "#new-user-button, #users-table-body button"
     ).forEach(button => {
       button.disabled = value;
     });
@@ -131,14 +163,16 @@
   function renderUsers() {
     const table = el("users-table-body");
 
-    const search = (el("user-search")?.value || "")
-      .trim()
-      .toLowerCase();
+    const search = (
+      el("user-search")?.value || ""
+    ).trim().toLowerCase();
 
     const filtered = users.filter(user =>
-      String(user.full_name || "").toLowerCase()
+      String(user.full_name || "")
+        .toLowerCase()
         .includes(search) ||
-      String(user.email || "").toLowerCase()
+      String(user.email || "")
+        .toLowerCase()
         .includes(search)
     );
 
@@ -150,6 +184,7 @@
           </td>
         </tr>
       `;
+
       return;
     }
 
@@ -202,6 +237,7 @@
           .range(offset, offset + 499);
 
         if (error) throw error;
+
         if (!data?.length) break;
 
         records.push(...data);
@@ -251,8 +287,7 @@
       : "Obrigatória. Usa entre 8 e 128 caracteres.";
 
     el("user-creation-note").textContent =
-      "O administrador deve verificar o endereço de e-mail. " +
-      "A criação ou alteração administrativa não envia um convite.";
+      "A conta será criada com o e-mail confirmado pelo administrador.";
 
     const blockButton = el("user-block-button");
     const deleteButton = el("user-delete-button");
@@ -353,6 +388,12 @@
     if (!form.reportValidity()) return;
 
     const fullName = el("user-name").value.trim();
+    const email = el("user-email")
+      .value
+      .trim()
+      .toLowerCase();
+    const password = el("user-password").value;
+    const role = el("user-role").value;
 
     if (!fullName) {
       await alertMessage(
@@ -362,13 +403,57 @@
       return;
     }
 
+    if (fullName.length > 150) {
+      await alertMessage(
+        "O nome deve ter até 150 caracteres.",
+        "warning"
+      );
+      return;
+    }
+
+    const emailPattern =
+      /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+    if (!emailPattern.test(email) || email.length > 254) {
+      await alertMessage(
+        "Escreve um endereço de e-mail válido, " +
+        "por exemplo: nome@dominio.com",
+        "warning"
+      );
+      return;
+    }
+
+    if (!validRoles.includes(role)) {
+      await alertMessage(
+        "Seleciona um papel válido.",
+        "warning"
+      );
+      return;
+    }
+
     const wasEditing = Boolean(editingId);
+
+    if (!wasEditing && password.length < 8) {
+      await alertMessage(
+        "A palavra-passe deve ter pelo menos 8 caracteres.",
+        "warning"
+      );
+      return;
+    }
+
+    if (password && password.length > 128) {
+      await alertMessage(
+        "A palavra-passe deve ter no máximo 128 caracteres.",
+        "warning"
+      );
+      return;
+    }
 
     const payload = {
       full_name: fullName,
-      email: el("user-email").value.trim().toLowerCase(),
-      password: el("user-password").value,
-      role: el("user-role").value
+      email,
+      password,
+      role
     };
 
     if (wasEditing) {
@@ -385,7 +470,9 @@
 
     try {
       const data = await invoke(
-        wasEditing ? "admin-manage-user" : "admin-create-user",
+        wasEditing
+          ? "admin-manage-user"
+          : "admin-create-user",
         payload
       );
 
@@ -480,7 +567,9 @@
 
     if (!original) return;
 
-    const isSelf = original.id === window.currentAdmin?.id;
+    const isSelf =
+      original.id === window.currentAdmin?.id;
+
     const isAdmin = original.role === "admin";
 
     let warning =
@@ -498,7 +587,8 @@
     if (isAdmin) {
       warning =
         "Esta é uma conta de administrador. " +
-        "A eliminação pode remover o último administrador e impedir o acesso ao painel. " +
+        "A eliminação pode remover o último administrador " +
+        "e impedir o acesso ao painel. " +
         warning;
     }
 
@@ -551,12 +641,15 @@
 
   function configureForm() {
     const roleSelect = el("user-role");
+
     roleSelect.replaceChildren();
 
     Object.entries(roles).forEach(([value, label]) => {
       const option = document.createElement("option");
+
       option.value = value;
       option.textContent = label;
+
       roleSelect.append(option);
     });
 
@@ -564,11 +657,14 @@
     el("user-email").maxLength = 254;
 
     const password = el("user-password");
+
     password.minLength = 8;
     password.maxLength = 128;
     password.autocomplete = "new-password";
 
-    let help = password.parentElement.querySelector(".form-text");
+    let help = password.parentElement.querySelector(
+      ".form-text"
+    );
 
     if (!help) {
       help = document.createElement("div");
@@ -659,13 +755,16 @@
       missing.length ||
       !document.querySelector("#user-form .modal-body") ||
       !document.querySelector("#user-form .modal-footer") ||
-      !document.querySelector('#user-form [type="submit"]') ||
+      !document.querySelector(
+        '#user-form [type="submit"]'
+      ) ||
       !window.bootstrap?.Modal
     ) {
       console.error(
         "[Utilizadores] HTML ou Bootstrap indisponível:",
         missing
       );
+
       return;
     }
 

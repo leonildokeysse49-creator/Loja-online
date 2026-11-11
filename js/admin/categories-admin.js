@@ -1,6 +1,6 @@
 /* =========================================
    Loja MZ — Gestão de categorias
-   Administração da secção da página inicial
+   Administradores e vendedores
    ========================================= */
 
 (function categoriesAdminPage() {
@@ -25,13 +25,35 @@
     return instance;
   }
 
-  function requireAdmin() {
-    if (
-      typeof window.isAdmin !== "function" ||
-      !window.isAdmin()
-    ) {
+  function requireCategoryManager() {
+    const canManage =
+      typeof window.isAdmin === "function" &&
+      typeof window.isVendor === "function" &&
+      (window.isAdmin() || window.isVendor());
+
+    if (!canManage) {
       throw new Error(
-        "Apenas administradores podem gerir categorias."
+        "Apenas administradores e vendedores podem gerir categorias."
+      );
+    }
+  }
+
+  function canManageCategory(category) {
+    if (!category) return false;
+
+    if (window.isAdmin()) return true;
+
+    return (
+      window.isVendor() &&
+      String(category.created_by || "") ===
+      String(window.currentAdmin?.id || "")
+    );
+  }
+
+  function requireCategoryOwnership(category) {
+    if (!canManageCategory(category)) {
+      throw new Error(
+        "Só podes alterar categorias que criaste."
       );
     }
   }
@@ -66,18 +88,31 @@
   }
 
   async function showError(error) {
-    console.error("[Loja MZ] Categorias:", error);
+    console.error("[Loja online] Categorias:", error);
 
     let text = error.message || "Tenta novamente.";
 
     if (error.code === "23505") {
-      text = "Já existe uma categoria com esses dados. Verifica o slug.";
+      text =
+        "Já existe uma categoria com esses dados. " +
+        "Verifica o slug.";
     }
 
     if (error.code === "23503") {
       text =
         "A categoria está associada a outros registos. " +
         "Desativa-a ou retira-a da página inicial.";
+    }
+
+    if (
+      error.code === "42501" ||
+      /permission denied|row-level security/i.test(
+        error.message || ""
+      )
+    ) {
+      text =
+        "A tua conta não tem permissão para esta ação. " +
+        "Só podes alterar categorias que criaste.";
     }
 
     await message("error", "Não foi possível concluir", text);
@@ -123,7 +158,9 @@
         category.id !== editingCategoryId
       )
       .forEach(category => {
-        select.add(new Option(category.name_pt, category.id));
+        select.add(
+          new Option(category.name_pt, category.id)
+        );
       });
 
     select.value = selectedId || "";
@@ -141,7 +178,9 @@
       value < 0 ||
       value > 2147483647
     ) {
-      throw new Error("As ordens devem ser números inteiros positivos ou zero.");
+      throw new Error(
+        "As ordens devem ser números inteiros positivos ou zero."
+      );
     }
 
     return value;
@@ -155,38 +194,49 @@
     const image = formValue("category-image");
 
     if (!name || !slug) {
-      throw new Error("Preenche o nome em português e um slug válido.");
+      throw new Error(
+        "Preenche o nome em português e um slug válido."
+      );
     }
 
     if (icon && !/^[a-z0-9-]+$/.test(icon)) {
       throw new Error(
-        "O ícone deve conter apenas letras minúsculas, números e hífen."
+        "O ícone deve conter apenas letras minúsculas, " +
+        "números e hífen."
       );
     }
 
+    let imageUrl = null;
+
     if (image) {
-      let url;
-
       try {
-        url = new URL(image);
-      } catch {
-        throw new Error("Escreve uma URL de imagem válida.");
-      }
+        const url = new URL(image);
 
-      if (!["http:", "https:"].includes(url.protocol)) {
-        throw new Error("A imagem deve usar HTTP ou HTTPS.");
+        if (!["http:", "https:"].includes(url.protocol)) {
+          throw new Error();
+        }
+
+        imageUrl = url.href;
+      } catch {
+        throw new Error(
+          "Escreve uma URL de imagem válida."
+        );
       }
     }
 
     if (parentId) {
-      const parent = categories.find(item => item.id === parentId);
+      const parent = categories.find(
+        item => item.id === parentId
+      );
 
       if (
         !parent ||
         parent.parent_id ||
         parentId === editingCategoryId
       ) {
-        throw new Error("Seleciona uma categoria pai válida.");
+        throw new Error(
+          "Seleciona uma categoria pai válida."
+        );
       }
 
       const hasChildren = categories.some(
@@ -208,13 +258,16 @@
       parent_id: parentId,
       sort_order: readOrder("category-sort-order"),
       home_order: readOrder("category-home-order"),
-      image_url: image || null,
+      image_url: imageUrl,
       icon: icon || null,
-      description_pt: formValue("category-description-pt") || null,
-      description_en: formValue("category-description-en") || null,
+      description_pt:
+        formValue("category-description-pt") || null,
+      description_en:
+        formValue("category-description-en") || null,
       is_active: el("category-active").checked,
       show_on_home:
-        !parentId && el("category-show-home").checked
+        !parentId && el("category-show-home").checked,
+      created_by: window.currentAdmin?.id || null
     };
   }
 
@@ -229,11 +282,10 @@
           </td>
         </tr>
       `;
+
       return;
     }
 
-    // Mostra todas as linhas, incluindo eventuais categorias
-    // cujo pai já não esteja na lista.
     const ordered = [];
     const added = new Set();
 
@@ -260,6 +312,8 @@
       const parent = categories.find(
         item => item.id === category.parent_id
       );
+
+      const canManage = canManageCategory(category);
 
       let homeStatus = "Não aparece";
 
@@ -321,67 +375,89 @@
 
           <td class="text-end">
             <div class="d-flex flex-wrap justify-content-end gap-1">
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-primary"
-                data-action="edit"
-                data-id="${escapeHtml(category.id)}"
-                title="Editar"
-                aria-label="Editar categoria"
-              >
-                <i class="bi bi-pencil" aria-hidden="true"></i>
-              </button>
-
               ${
-                !category.parent_id
+                canManage
                   ? `
                     <button
                       type="button"
-                      class="btn btn-sm btn-outline-info"
-                      data-action="home"
+                      class="btn btn-sm btn-outline-primary"
+                      data-action="edit"
+                      data-id="${escapeHtml(category.id)}"
+                      title="Editar"
+                      aria-label="Editar categoria"
+                    >
+                      <i class="bi bi-pencil" aria-hidden="true"></i>
+                    </button>
+
+                    ${
+                      !category.parent_id
+                        ? `
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-outline-info"
+                            data-action="home"
+                            data-id="${escapeHtml(category.id)}"
+                            title="${
+                              category.show_on_home
+                                ? "Retirar do início"
+                                : "Mostrar no início"
+                            }"
+                            aria-label="${
+                              category.show_on_home
+                                ? "Retirar do início"
+                                : "Mostrar no início"
+                            }"
+                          >
+                            <i class="bi ${
+                              category.show_on_home
+                                ? "bi-house-dash"
+                                : "bi-house-add"
+                            }" aria-hidden="true"></i>
+                          </button>
+                        `
+                        : ""
+                    }
+
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-warning"
+                      data-action="active"
                       data-id="${escapeHtml(category.id)}"
                       title="${
-                        category.show_on_home
-                          ? "Retirar do início"
-                          : "Mostrar no início"
+                        category.is_active
+                          ? "Desativar"
+                          : "Ativar"
                       }"
                       aria-label="${
-                        category.show_on_home
-                          ? "Retirar do início"
-                          : "Mostrar no início"
-                      }"
+                        category.is_active
+                          ? "Desativar"
+                          : "Ativar"
+                      } categoria"
                     >
                       <i class="bi ${
-                        category.show_on_home ? "bi-house-dash" : "bi-house-add"
+                        category.is_active
+                          ? "bi-pause"
+                          : "bi-play"
                       }" aria-hidden="true"></i>
                     </button>
+
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      data-action="delete"
+                      data-id="${escapeHtml(category.id)}"
+                      title="Apagar categoria"
+                      aria-label="Apagar categoria"
+                    >
+                      <i class="bi bi-trash" aria-hidden="true"></i>
+                    </button>
                   `
-                  : ""
+                  : `
+                    <span class="badge bg-secondary">
+                      Criada por outro utilizador
+                    </span>
+                  `
               }
-
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-warning"
-                data-action="active"
-                data-id="${escapeHtml(category.id)}"
-                title="${category.is_active ? "Desativar" : "Ativar"}"
-                aria-label="${category.is_active ? "Desativar" : "Ativar"} categoria"
-              >
-                <i class="bi ${
-                  category.is_active ? "bi-pause" : "bi-play"
-                }" aria-hidden="true"></i>
-              </button>
-
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-danger"
-                data-action="delete"
-                data-id="${escapeHtml(category.id)}"
-                title="Apagar categoria"
-                aria-label="Apagar categoria"
-              >
-                <i class="bi bi-trash" aria-hidden="true"></i>
-              </button>
             </div>
           </td>
         </tr>
@@ -401,15 +477,25 @@
     `;
 
     try {
-      requireAdmin();
+      requireCategoryManager();
 
       const { data, error } = await client()
         .from("categories")
         .select(`
-          id, name_pt, name_en, slug,
-          description_pt, description_en,
-          image_url, parent_id, sort_order,
-          is_active, icon, show_on_home, home_order
+          id,
+          name_pt,
+          name_en,
+          slug,
+          description_pt,
+          description_en,
+          image_url,
+          parent_id,
+          sort_order,
+          is_active,
+          icon,
+          show_on_home,
+          home_order,
+          created_by
         `)
         .order("sort_order", { ascending: true })
         .order("name_pt", { ascending: true });
@@ -418,17 +504,20 @@
 
       categories = data || [];
       loaded = true;
+
       renderCategories();
     } catch (error) {
       el("categories-table").innerHTML = `
         <tr>
           <td colspan="7" class="text-center text-danger py-4">
-            ${escapeHtml(error.message || "Erro ao carregar categorias.")}
+            ${escapeHtml(
+              error.message || "Erro ao carregar categorias."
+            )}
           </td>
         </tr>
       `;
 
-      console.error("[Loja MZ] Categorias:", error);
+      console.error("[Loja online] Categorias:", error);
     }
   }
 
@@ -436,9 +525,14 @@
     if (busy || !loaded) return;
 
     try {
-      requireAdmin();
+      requireCategoryManager();
+
+      if (category) {
+        requireCategoryOwnership(category);
+      }
 
       editingCategoryId = category?.id || null;
+
       el("category-form").reset();
 
       el("category-modal-title").textContent = category
@@ -482,7 +576,6 @@
 
     if (busy || !loaded) return;
 
-    // Preenche o slug se o administrador o deixou vazio.
     if (!formValue("category-slug")) {
       el("category-slug").value = slugify(
         formValue("category-name-pt")
@@ -494,7 +587,7 @@
     let payload;
 
     try {
-      requireAdmin();
+      requireCategoryManager();
       payload = readForm();
     } catch (error) {
       await showError(error);
@@ -502,6 +595,7 @@
     }
 
     const id = editingCategoryId;
+
     setBusy(true);
 
     try {
@@ -511,7 +605,9 @@
         ? query.update(payload).eq("id", id)
         : query.insert(payload);
 
-      const { error } = await query.select("id").single();
+      const { error } = await query
+        .select("id")
+        .single();
 
       if (error) throw error;
 
@@ -523,7 +619,8 @@
       await message(
         "success",
         id ? "Categoria atualizada" : "Categoria criada",
-        "As alterações foram guardadas. Recarrega o início para as consultar."
+        "As alterações foram guardadas. " +
+        "Recarrega o início para as consultar."
       );
     } catch (error) {
       await showError(error);
@@ -552,12 +649,10 @@
       icon: deleting ? "warning" : "question",
       title,
       text: deleting
-        ? `"${category.name_pt}". Prefere retirar do início se só queres ocultar o cartão.`
+        ? `"${category.name_pt}". Se só queres ocultar o cartão, ` +
+          "usa “Retirar do início”."
         : home
-          ? `"${category.name_pt}". Esta ação não apaga produtos. ` +
-            (!category.is_active
-              ? "A categoria continuará oculta enquanto estiver inativa."
-              : "")
+          ? `"${category.name_pt}". Esta ação não apaga produtos.`
           : `"${category.name_pt}".`,
       showCancelButton: true,
       confirmButtonText: deleting ? "Apagar" : "Confirmar",
@@ -570,11 +665,10 @@
     setBusy(true);
 
     try {
-      requireAdmin();
+      requireCategoryManager();
+      requireCategoryOwnership(category);
 
       if (deleting) {
-        // Verificações preventivas; as relações da base de dados
-        // devem também proteger contra eliminações concorrentes.
         const checks = await Promise.all([
           client()
             .from("categories")
@@ -639,7 +733,7 @@
     initialized = true;
 
     try {
-      requireAdmin();
+      requireCategoryManager();
     } catch (error) {
       el("new-category-button").disabled = true;
 
@@ -650,6 +744,7 @@
           </td>
         </tr>
       `;
+
       return;
     }
 
@@ -657,9 +752,12 @@
       el("category-modal")
     );
 
-    el("category-modal").addEventListener("hide.bs.modal", event => {
-      if (busy) event.preventDefault();
-    });
+    el("category-modal").addEventListener(
+      "hide.bs.modal",
+      event => {
+        if (busy) event.preventDefault();
+      }
+    );
 
     el("new-category-button").addEventListener(
       "click",
@@ -702,7 +800,9 @@
 
       if (action === "edit") {
         openModal(category);
-      } else if (["home", "active", "delete"].includes(action)) {
+      } else if (
+        ["home", "active", "delete"].includes(action)
+      ) {
         mutateCategory(category, action);
       }
     });
@@ -713,9 +813,11 @@
   document.addEventListener("admin:ready", initialize);
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initialize, {
-      once: true
-    });
+    document.addEventListener(
+      "DOMContentLoaded",
+      initialize,
+      { once: true }
+    );
   } else {
     initialize();
   }
