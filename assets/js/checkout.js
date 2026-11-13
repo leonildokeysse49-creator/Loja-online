@@ -1,5 +1,5 @@
 /* =========================================
-   Loja MZ — Checkout e entrega configurada
+   Loja MZ — Checkout, entrega e recolha
    ========================================= */
 
 (function checkoutPage() {
@@ -31,12 +31,16 @@
       return supabase;
     }
 
-    throw new Error("O cliente Supabase não está disponível.");
+    throw new Error(
+      "O cliente Supabase não está disponível."
+    );
   }
 
   function english() {
-    return typeof getCurrentLanguage === "function" &&
-      getCurrentLanguage() === "en";
+    return (
+      typeof getCurrentLanguage === "function" &&
+      getCurrentLanguage() === "en"
+    );
   }
 
   function text(pt, en) {
@@ -73,8 +77,10 @@
         localStorage.getItem(COUPON_KEY) || "null"
       );
 
-      return value && typeof value === "object" ? value : null;
-    } catch (error) {
+      return value && typeof value === "object"
+        ? value
+        : null;
+    } catch {
       return null;
     }
   }
@@ -85,18 +91,24 @@
       return;
     }
 
-    localStorage.setItem(COUPON_KEY, JSON.stringify(coupon));
+    localStorage.setItem(
+      COUPON_KEY,
+      JSON.stringify(coupon)
+    );
   }
 
   function calculateDiscount(coupon, subtotalValue) {
     if (!coupon) return 0;
 
-    if (Number(coupon.min_order_value) > subtotalValue) {
+    if (
+      Number(coupon.min_order_value) > subtotalValue
+    ) {
       return 0;
     }
 
     if (coupon.discount_type === "percentage") {
-      return subtotalValue * (Number(coupon.discount_value) / 100);
+      return subtotalValue *
+        (Number(coupon.discount_value) / 100);
     }
 
     if (coupon.discount_type === "fixed") {
@@ -111,7 +123,12 @@
 
   function validateCart(items) {
     if (!Array.isArray(items) || !items.length) {
-      throw new Error(text("O carrinho está vazio.", "Your cart is empty."));
+      throw new Error(
+        text(
+          "O carrinho está vazio.",
+          "Your cart is empty."
+        )
+      );
     }
 
     items.forEach(item => {
@@ -135,9 +152,25 @@
   function subtotalCents() {
     return cart.reduce(
       (sum, item) =>
-        sum + cents(item.price) * Number(item.quantity),
+        sum +
+        cents(item.price) *
+        Number(item.quantity),
       0
     );
+  }
+
+  function fulfillmentMethod() {
+    return document.querySelector(
+      'input[name="fulfillment_method"]:checked'
+    )?.value || "";
+  }
+
+  function isPickup() {
+    return fulfillmentMethod() === "pickup";
+  }
+
+  function isDelivery() {
+    return fulfillmentMethod() === "delivery";
   }
 
   async function loadDeliverySettings() {
@@ -166,14 +199,27 @@
   }
 
   function deliveryState() {
+    if (!isDelivery()) {
+      return {
+        valid: true,
+        feeCents: 0
+      };
+    }
+
     if (deliveryError) {
-      return { valid: false, message: deliveryError };
+      return {
+        valid: false,
+        message: deliveryError
+      };
     }
 
     if (!settings) {
       return {
         valid: false,
-        message: text("A carregar entrega...", "Loading delivery...")
+        message: text(
+          "A carregar entrega...",
+          "Loading delivery..."
+        )
       };
     }
 
@@ -187,7 +233,8 @@
       };
     }
 
-    const province = el("customer-province").value;
+    const province =
+      el("customer-province")?.value || "";
 
     if (!province) {
       return {
@@ -238,20 +285,34 @@
   function updateSummary() {
     const subtotalValue = subtotalCents() / 100;
     const coupon = getCoupon();
-    const discount = calculateDiscount(coupon, subtotalValue);
+    const discount = calculateDiscount(
+      coupon,
+      subtotalValue
+    );
     const delivery = deliveryState();
 
     const total = delivery.valid
-      ? Math.max(0, subtotalValue - discount + delivery.feeCents / 100)
+      ? Math.max(
+          0,
+          subtotalValue -
+          discount +
+          delivery.feeCents / 100
+        )
       : 0;
 
-    el("checkout-subtotal").textContent = money(subtotalValue);
+    el("checkout-subtotal").textContent =
+      money(subtotalValue);
 
     const discountRow = el("coupon-discount-row");
 
     if (discountRow) {
-      discountRow.classList.toggle("d-none", discount <= 0);
-      el("checkout-discount").textContent = `- ${money(discount)}`;
+      discountRow.classList.toggle(
+        "d-none",
+        discount <= 0
+      );
+
+      el("checkout-discount").textContent =
+        `- ${money(discount)}`;
     }
 
     el("checkout-delivery").textContent = delivery.valid
@@ -264,8 +325,20 @@
       ? money(total)
       : "—";
 
-    el("place-order-button").disabled =
-      submitting || orderWriteStarted || !delivery.valid;
+    if (el("place-order-button")) {
+      el("place-order-button").disabled =
+        submitting ||
+        orderWriteStarted ||
+        !delivery.valid;
+    }
+  }
+
+  function getProductImage(item) {
+    return (
+      item.image ||
+      item.image_url ||
+      "assets/img/placeholder.png"
+    );
   }
 
   function renderItems() {
@@ -277,19 +350,25 @@
         <div class="checkout-item">
           <div class="checkout-item-image">
             <img
-              src="${escapeHtml(getProductImage(item.image))}"
-              alt="${escapeHtml(item.name || item.name_pt || "Produto")}"
+              src="${escapeHtml(getProductImage(item))}"
+              alt="${escapeHtml(
+                item.name || item.name_pt || "Produto"
+              )}"
             >
           </div>
 
           <div class="checkout-item-info">
             <h6>
-              ${escapeHtml(item.name || item.name_pt || "Produto")}
+              ${escapeHtml(
+                item.name || item.name_pt || "Produto"
+              )}
             </h6>
 
             ${
               item.variant_name
-                ? `<small>${escapeHtml(item.variant_name)}</small>`
+                ? `<small>${escapeHtml(
+                    item.variant_name
+                  )}</small>`
                 : ""
             }
 
@@ -299,7 +378,11 @@
           </div>
 
           <div class="checkout-item-price">
-            ${escapeHtml(money(cents(price) * quantity / 100))}
+            ${escapeHtml(
+              money(
+                cents(price) * quantity / 100
+              )
+            )}
           </div>
         </div>
       `;
@@ -308,21 +391,24 @@
 
   async function prefillCustomer() {
     try {
-      const { data, error } = await client().auth.getUser();
+      const { data, error } =
+        await client().auth.getUser();
 
       if (error || !data.user) return;
 
       const user = data.user;
 
-      if (!el("customer-email").value) {
-        el("customer-email").value = user.email || "";
+      if (el("customer-email") && !el("customer-email").value) {
+        el("customer-email").value =
+          user.email || "";
       }
 
-      const { data: profile, error: profileError } = await client()
-        .from("profiles")
-        .select("full_name, phone, phone_alt")
-        .eq("id", user.id)
-        .maybeSingle();
+      const { data: profile, error: profileError } =
+        await client()
+          .from("profiles")
+          .select("full_name, phone, phone_alt")
+          .eq("id", user.id)
+          .maybeSingle();
 
       if (profileError) throw profileError;
       if (!profile) return;
@@ -334,31 +420,43 @@
       };
 
       Object.entries(values).forEach(([id, value]) => {
-        if (!el(id).value) {
+        if (el(id) && !el(id).value) {
           el(id).value = value || "";
         }
       });
     } catch (error) {
-      console.warn("[Loja MZ] Dados do cliente:", error);
+      console.warn(
+        "[Loja MZ] Dados do cliente:",
+        error
+      );
     }
   }
 
   async function applyCoupon() {
-    const code = el("coupon-code").value.trim().toUpperCase();
+    const code = el("coupon-code")
+      .value
+      .trim()
+      .toUpperCase();
+
     const message = el("coupon-message");
     const button = el("apply-coupon-button");
 
     if (!code) {
-      message.className = "small mt-2 mb-0 text-danger";
+      message.className =
+        "small mt-2 mb-0 text-danger";
       message.textContent = text(
         "Escreve o código do cupom.",
         "Enter the coupon code."
       );
+
       return;
     }
 
     button.disabled = true;
-    button.textContent = text("A verificar...", "Checking...");
+    button.textContent = text(
+      "A verificar...",
+      "Checking..."
+    );
 
     try {
       const { data: coupon, error } = await client()
@@ -378,7 +476,10 @@
 
       const now = new Date();
 
-      if (coupon.starts_at && new Date(coupon.starts_at) > now) {
+      if (
+        coupon.starts_at &&
+        new Date(coupon.starts_at) > now
+      ) {
         throw new Error(
           text(
             "Este cupom ainda não está disponível.",
@@ -387,9 +488,15 @@
         );
       }
 
-      if (coupon.expires_at && new Date(coupon.expires_at) < now) {
+      if (
+        coupon.expires_at &&
+        new Date(coupon.expires_at) < now
+      ) {
         throw new Error(
-          text("Este cupom expirou.", "This coupon has expired.")
+          text(
+            "Este cupom expirou.",
+            "This coupon has expired."
+          )
         );
       }
 
@@ -407,18 +514,27 @@
 
       const subtotalValue = subtotalCents() / 100;
 
-      if (subtotalValue < Number(coupon.min_order_value)) {
+      if (
+        subtotalValue <
+        Number(coupon.min_order_value)
+      ) {
         throw new Error(
           text(
-            `Compra mínima de ${money(coupon.min_order_value)}.`,
-            `Minimum order is ${money(coupon.min_order_value)}.`
+            `Compra mínima de ${money(
+              coupon.min_order_value
+            )}.`,
+            `Minimum order is ${money(
+              coupon.min_order_value
+            )}.`
           )
         );
       }
 
       saveCoupon(coupon);
 
-      message.className = "small mt-2 mb-0 text-success";
+      message.className =
+        "small mt-2 mb-0 text-success";
+
       message.textContent =
         coupon.discount_type === "percentage"
           ? text(
@@ -426,30 +542,114 @@
               `Coupon applied: ${coupon.discount_value}% discount.`
             )
           : text(
-              `Cupom aplicado: ${money(coupon.discount_value)} de desconto.`,
-              `Coupon applied: ${money(coupon.discount_value)} discount.`
+              `Cupom aplicado: ${money(
+                coupon.discount_value
+              )} de desconto.`,
+              `Coupon applied: ${money(
+                coupon.discount_value
+              )} discount.`
             );
 
       updateSummary();
-
     } catch (error) {
       saveCoupon(null);
 
-      message.className = "small mt-2 mb-0 text-danger";
+      message.className =
+        "small mt-2 mb-0 text-danger";
       message.textContent = error.message;
 
       updateSummary();
-
     } finally {
       button.disabled = false;
-      button.textContent = text("Aplicar", "Apply");
+      button.textContent = text(
+        "Aplicar",
+        "Apply"
+      );
     }
+  }
+
+  function updateFulfillmentFields() {
+    const method = fulfillmentMethod();
+
+    const isPickup = method === "pickup";
+    const isDelivery = method === "delivery";
+
+    el("pickup-fields")?.classList.toggle(
+      "is-visible",
+      isPickup
+    );
+
+    el("delivery-fields")?.classList.toggle(
+      "is-visible",
+      isDelivery
+    );
+
+    const message = el("fulfillment-message");
+
+    if (message) {
+      message.classList.toggle(
+        "alert-warning",
+        !method
+      );
+
+      message.classList.toggle(
+        "alert-success",
+        Boolean(method)
+      );
+
+      message.textContent = !method
+        ? "Escolhe buscar na loja ou entrega ao domicílio."
+        : isPickup
+          ? "Vais buscar o pedido na loja selecionada."
+          : "O pedido será entregue no endereço indicado.";
+    }
+
+    if (el("pickup-store")) {
+      el("pickup-store").required = isPickup;
+    }
+
+    if (el("customer-province")) {
+      el("customer-province").required = isDelivery;
+    }
+
+    if (el("customer-city")) {
+      el("customer-city").required = isDelivery;
+    }
+
+    if (el("customer-neighborhood")) {
+      el("customer-neighborhood").required =
+        isDelivery;
+    }
+
+    if (el("customer-street")) {
+      el("customer-street").required = isDelivery;
+    }
+
+    updateSummary();
   }
 
   async function placeOrder() {
     if (submitting || orderWriteStarted) return;
 
     if (!el("checkout-form").reportValidity()) return;
+
+    const method = fulfillmentMethod();
+
+    if (!["pickup", "delivery"].includes(method)) {
+      await window.Swal.fire({
+        icon: "warning",
+        title: text(
+          "Escolhe a receção",
+          "Choose fulfilment"
+        ),
+        text: text(
+          "Escolhe buscar na loja ou entrega ao domicílio.",
+          "Choose store pickup or home delivery."
+        )
+      });
+
+      return;
+    }
 
     const originalCart = JSON.stringify(cart);
     const previousDelivery = deliveryState();
@@ -461,13 +661,20 @@
 
     const button = el("place-order-button");
     const originalText = button.innerHTML;
-    button.textContent = text("A processar...", "Processing...");
+
+    button.textContent = text(
+      "A processar...",
+      "Processing..."
+    );
 
     try {
       const latestCart = getCart();
+
       validateCart(latestCart);
 
-      if (JSON.stringify(latestCart) !== originalCart) {
+      if (
+        JSON.stringify(latestCart) !== originalCart
+      ) {
         cart = latestCart;
         renderItems();
 
@@ -479,43 +686,67 @@
         );
       }
 
-      try {
-        await loadDeliverySettings();
-      } catch (error) {
-        settings = null;
-        deliveryError = text(
-          "Não foi possível confirmar a taxa de entrega.",
-          "Could not confirm the delivery fee."
-        );
-        throw error;
+      if (isDelivery()) {
+        try {
+          await loadDeliverySettings();
+        } catch (error) {
+          settings = null;
+          deliveryError = text(
+            "Não foi possível confirmar a taxa de entrega.",
+            "Could not confirm the delivery fee."
+          );
+
+          throw error;
+        }
+
+        const delivery = deliveryState();
+
+        if (!delivery.valid) {
+          throw new Error(delivery.message);
+        }
+
+        if (
+          delivery.feeCents !==
+          previousDelivery.feeCents
+        ) {
+          throw new Error(
+            text(
+              "A taxa de entrega foi atualizada. Confirma o novo total.",
+              "The delivery fee changed. Review the new total."
+            )
+          );
+        }
       }
 
-      const delivery = deliveryState();
+      const paymentMethod =
+        el("payment-method")?.value || "";
 
-      if (!delivery.valid) {
-        throw new Error(delivery.message);
-      }
-
-      if (delivery.feeCents !== previousDelivery.feeCents) {
+      if (
+        ![
+          "multicaixa_express",
+          "bank_transfer",
+          "cash_on_delivery",
+          "cash_on_pickup",
+          "mpesa",
+          "emola"
+        ].includes(paymentMethod)
+      ) {
         throw new Error(
           text(
-            "A taxa de entrega foi atualizada. Confirma o novo total.",
-            "The delivery fee changed. Review the new total."
+            "Escolhe o pagamento.",
+            "Choose a payment method."
           )
         );
       }
 
-      const paymentMethod = document.querySelector(
-        'input[name="payment_method"]:checked'
-      )?.value;
-
-      if (![
-        "multicaixa_express",
-        "bank_transfer",
-        "cash_on_delivery"
-      ].includes(paymentMethod)) {
+      if (
+        ["mpesa", "emola"].includes(paymentMethod)
+      ) {
         throw new Error(
-          text("Escolhe o pagamento.", "Choose a payment method.")
+          text(
+            "O pagamento online ainda não está ativo. Escolhe pagamento na recolha ou na entrega.",
+            "Online payment is not active yet. Choose payment on pickup or delivery."
+          )
         );
       }
 
@@ -524,45 +755,103 @@
 
       if (sessionError) throw sessionError;
 
-      const user = sessionData.session?.user || null;
+      const user =
+        sessionData.session?.user || null;
 
       const coupon = getCoupon();
       const subtotal = subtotalCents() / 100;
-      const fee = delivery.feeCents / 100;
-      const discount = calculateDiscount(coupon, subtotal);
-      const total = Math.max(0, subtotal - discount + fee);
+      const fee = previousDelivery.feeCents / 100;
+      const discount = calculateDiscount(
+        coupon,
+        subtotal
+      );
+      const total = Math.max(
+        0,
+        subtotal - discount + fee
+      );
 
-      const value = id => el(id).value.trim();
+      const value = id =>
+        el(id)?.value.trim() || "";
 
       const orderData = {
         user_id: user?.id || null,
+
         customer_name: value("customer-name"),
-        customer_email: value("customer-email"),
+        customer_email:
+          value("customer-email") || null,
         customer_phone: value("customer-phone"),
-        customer_phone_alt: value("customer-phone-alt") || null,
-        province: value("customer-province"),
-        city: value("customer-city"),
-        neighborhood: value("customer-neighborhood"),
-        street: value("customer-street"),
-        reference: value("customer-reference") || null,
+        customer_phone_alt:
+          value("customer-phone-alt") || null,
+
+        fulfillment_method: method,
+
+        pickup_store_id: isPickup()
+          ? value("pickup-store")
+          : null,
+
+        pickup_store_name: isPickup()
+          ? el("pickup-store")
+            ?.selectedOptions[0]?.textContent || null
+          : null,
+
+        pickup_date: isPickup()
+          ? value("pickup-date") || null
+          : null,
+
+        pickup_period: isPickup()
+          ? value("pickup-period") || null
+          : null,
+
+        province: isDelivery()
+          ? value("customer-province")
+          : null,
+
+        city: isDelivery()
+          ? value("customer-city")
+          : null,
+
+        neighborhood: isDelivery()
+          ? value("customer-neighborhood")
+          : null,
+
+        street: isDelivery()
+          ? value("customer-street")
+          : null,
+
+        reference: isDelivery()
+          ? value("customer-reference") || null
+          : null,
+
         notes: value("order-notes") || null,
+
         payment_method: paymentMethod,
+
         coupon_id: coupon?.id || null,
         coupon_code: coupon?.code || null,
         coupon_discount: discount,
+
         subtotal,
         delivery_fee: fee,
         total,
-        status: "pending"
+        currency: "MZN",
+
+        payment_status:
+          paymentMethod === "cash_on_delivery" ||
+          paymentMethod === "cash_on_pickup"
+            ? "pending"
+            : "awaiting_confirmation",
+
+        order_status: "pending"
       };
 
       orderWriteStarted = true;
 
-      const { data: order, error: orderError } = await client()
-        .from("orders")
-        .insert(orderData)
-        .select()
-        .single();
+      const { data: order, error: orderError } =
+        await client()
+          .from("orders")
+          .insert(orderData)
+          .select()
+          .single();
 
       if (orderError) throw orderError;
 
@@ -572,11 +861,15 @@
         order_id: order.id,
         product_id: item.id || item.product_id,
         variant_id: item.variant_id || null,
-        product_name: item.name || item.name_pt || "Produto",
+        product_name:
+          item.name || item.name_pt || "Produto",
         variant_name: item.variant_name || null,
         price: Number(item.price),
         quantity: Number(item.quantity),
-        total: cents(item.price) * Number(item.quantity) / 100
+        total:
+          cents(item.price) *
+          Number(item.quantity) /
+          100
       }));
 
       const { error: itemsError } = await client()
@@ -591,9 +884,11 @@
           order_id: order.id,
           method: paymentMethod,
           amount: total,
-          status: paymentMethod === "cash_on_delivery"
-            ? "pending"
-            : "awaiting_confirmation"
+          status:
+            paymentMethod === "cash_on_delivery" ||
+            paymentMethod === "cash_on_pickup"
+              ? "pending"
+              : "awaiting_confirmation"
         });
 
       if (paymentError) throw paymentError;
@@ -602,13 +897,16 @@
         await client()
           .from("coupons")
           .update({
-            used_count: (Number(coupon.used_count) || 0) + 1
+            used_count:
+              (Number(coupon.used_count) || 0) + 1
           })
           .eq("id", coupon.id);
       }
 
       try {
-        if (JSON.stringify(getCart()) === originalCart) {
+        if (
+          JSON.stringify(getCart()) === originalCart
+        ) {
           localStorage.removeItem("loja_mz_cart");
           localStorage.removeItem(COUPON_KEY);
         }
@@ -621,19 +919,30 @@
 
       await window.Swal.fire({
         icon: "success",
-        title: text("Pedido criado", "Order created"),
-        text: `${text("Pedido", "Order")}: ${
-          order.order_number || order.id
-        }`,
-        confirmButtonText: text("Ver pedido", "View order")
+        title: text(
+          "Pedido criado",
+          "Order created"
+        ),
+        text: `${text(
+          "Pedido",
+          "Order"
+        )}: ${order.order_number || order.id}`,
+        confirmButtonText: text(
+          "Ver pedido",
+          "View order"
+        )
       });
 
       window.location.assign(
-        `pedido.html?id=${encodeURIComponent(order.id)}`
+        `pedido.html?id=${encodeURIComponent(
+          order.id
+        )}`
       );
-
     } catch (error) {
-      console.error("[Loja MZ] Checkout:", error);
+      console.error(
+        "[Loja MZ] Checkout:",
+        error
+      );
 
       const warning = orderWriteStarted
         ? text(
@@ -652,11 +961,16 @@
         ),
         text: [
           warning,
-          createdOrderId ? `ID: ${createdOrderId}` : "",
-          orderWriteStarted ? error.message : ""
-        ].filter(Boolean).join("\n")
+          createdOrderId
+            ? `ID: ${createdOrderId}`
+            : "",
+          orderWriteStarted
+            ? error.message
+            : ""
+        ]
+          .filter(Boolean)
+          .join("\n")
       });
-
     } finally {
       submitting = false;
       button.innerHTML = originalText;
@@ -667,26 +981,48 @@
   async function initialize() {
     if (!el("checkout-form")) return;
 
-    el("place-order-button").disabled = true;
+    if (el("place-order-button")) {
+      el("place-order-button").disabled = true;
+    }
 
     try {
       cart = getCart();
 
       if (!cart.length) {
-        el("checkout-empty").classList.remove("d-none");
-        el("checkout-content").classList.add("d-none");
+        el("checkout-empty")?.classList.remove(
+          "d-none"
+        );
+
+        el("checkout-content")?.classList.add(
+          "d-none"
+        );
+
         return;
       }
 
       validateCart(cart);
 
-      el("checkout-empty").classList.add("d-none");
-      el("checkout-content").classList.remove("d-none");
+      el("checkout-empty")?.classList.add("d-none");
+      el("checkout-content")?.classList.remove(
+        "d-none"
+      );
 
       renderItems();
       updateSummary();
+      updateFulfillmentFields();
 
-      el("customer-province").addEventListener(
+      document
+        .querySelectorAll(
+          'input[name="fulfillment_method"]'
+        )
+        .forEach(input => {
+          input.addEventListener(
+            "change",
+            updateFulfillmentFields
+          );
+        });
+
+      el("customer-province")?.addEventListener(
         "change",
         updateSummary
       );
@@ -696,45 +1032,56 @@
         applyCoupon
       );
 
-      el("coupon-code").addEventListener("input", () => {
-        saveCoupon(null);
-        el("coupon-message").textContent = "";
-        updateSummary();
-      });
+      el("coupon-code")?.addEventListener(
+        "input",
+        () => {
+          saveCoupon(null);
 
-      el("place-order-button").addEventListener(
+          if (el("coupon-message")) {
+            el("coupon-message").textContent = "";
+          }
+
+          updateSummary();
+        }
+      );
+
+      el("place-order-button")?.addEventListener(
         "click",
         placeOrder
       );
 
-      el("checkout-form").addEventListener("submit", event => {
-        event.preventDefault();
-        placeOrder();
-      });
+      el("checkout-form").addEventListener(
+        "submit",
+        event => {
+          event.preventDefault();
+          placeOrder();
+        }
+      );
 
       prefillCustomer();
 
-      try {
-        await loadDeliverySettings();
-      } catch (error) {
-        console.error("[Loja MZ] Entrega:", error);
-
-        deliveryError = text(
-          "Não foi possível carregar a entrega. Contacta a loja.",
-          "Could not load delivery rates. Contact the store."
-        );
-      }
-
-      updateSummary();
-
+      await loadDeliverySettings();
     } catch (error) {
-      console.error("[Loja MZ] Preparação do checkout:", error);
+      console.error(
+        "[Loja MZ] Preparação do checkout:",
+        error
+      );
+
+      deliveryError = text(
+        "Não foi possível carregar a entrega. Contacta a loja.",
+        "Could not load delivery rates. Contact the store."
+      );
 
       await window.Swal.fire({
         icon: "error",
-        title: text("Erro no carrinho", "Cart error"),
+        title: text(
+          "Erro no carrinho",
+          "Cart error"
+        ),
         text: error.message
       });
+    } finally {
+      updateSummary();
     }
   }
 
