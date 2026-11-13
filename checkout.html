@@ -8,35 +8,103 @@
 
   <link rel="icon" href="assets/img/favicon.png">
 
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css"
+    rel="stylesheet"
+  >
 
   <link href="assets/css/style.css" rel="stylesheet">
   <link href="assets/css/checkout.css" rel="stylesheet">
+
+  <style>
+    .pickup-fields,
+    .delivery-fields {
+      display: none;
+    }
+
+    .pickup-fields.is-visible,
+    .delivery-fields.is-visible {
+      display: block;
+    }
+
+    .fulfillment-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .fulfillment-option:hover {
+      border-color: #2563eb;
+      background: #f8fbff;
+    }
+
+    .fulfillment-option input {
+      margin-top: 4px;
+    }
+
+    .fulfillment-option strong {
+      display: block;
+    }
+
+    .fulfillment-option small {
+      color: #6b7280;
+    }
+  </style>
 </head>
 
 <body>
   <!-- Topbar -->
   <div class="topbar py-2">
     <div class="container d-flex justify-content-between align-items-center small">
-      <a href="contacto.html" class="text-white text-decoration-none">
-        <i class="bi bi-telephone me-1"></i>
+      <a
+        href="contacto.html"
+        class="text-white text-decoration-none"
+      >
+        <i class="bi bi-telephone me-1" aria-hidden="true"></i>
         +258 85 321 7149
       </a>
 
       <div class="dropdown">
-        <button class="btn btn-sm btn-language dropdown-toggle" type="button" data-bs-toggle="dropdown">
-          <i class="bi bi-translate me-1"></i>
+        <button
+          class="btn btn-sm btn-language dropdown-toggle"
+          type="button"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+          aria-label="Escolher idioma"
+        >
+          <i class="bi bi-translate me-1" aria-hidden="true"></i>
           <span id="current-language">PT</span>
         </button>
 
         <ul class="dropdown-menu dropdown-menu-end">
           <li>
-            <button class="dropdown-item" type="button" data-language="pt">Português</button>
+            <button
+              class="dropdown-item"
+              type="button"
+              data-language="pt"
+            >
+              Português
+            </button>
           </li>
 
           <li>
-            <button class="dropdown-item" type="button" data-language="en">English</button>
+            <button
+              class="dropdown-item"
+              type="button"
+              data-language="en"
+            >
+              English
+            </button>
           </li>
         </ul>
       </div>
@@ -44,45 +112,86 @@
   </div>
 
   <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg main-navbar sticky-top">
+  <nav
+    class="navbar navbar-expand-lg main-navbar sticky-top"
+    aria-label="Navegação principal"
+  >
     <div class="container">
       <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">
-        <i class="bi bi-bag-heart-fill brand-icon"></i>
+        <i class="bi bi-bag-heart-fill brand-icon" aria-hidden="true"></i>
         <span class="brand-name">Loja MZ</span>
       </a>
 
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainMenu">
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#mainMenu"
+        aria-controls="mainMenu"
+        aria-expanded="false"
+        aria-label="Abrir menu"
+      >
         <span class="navbar-toggler-icon"></span>
       </button>
 
       <div class="collapse navbar-collapse" id="mainMenu">
         <ul class="navbar-nav mx-auto">
           <li class="nav-item">
-            <a class="nav-link" href="index.html" data-i18n="home">Início</a>
+            <a class="nav-link" href="index.html" data-i18n="home">
+              Início
+            </a>
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="produtos.html" data-i18n="products">Produtos</a>
+            <a class="nav-link" href="produtos.html" data-i18n="products">
+              Produtos
+            </a>
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="carrinho.html" data-i18n="cart">Carrinho</a>
+            <a
+              class="nav-link active"
+              href="carrinho.html"
+              data-i18n="cart"
+              aria-current="page"
+            >
+              Carrinho
+            </a>
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="contacto.html" data-i18n="contact">Contacto</a>
+            <a class="nav-link" href="contacto.html" data-i18n="contact">
+              Contacto
+            </a>
           </li>
         </ul>
 
         <div class="d-flex align-items-center gap-2 ms-lg-3">
-          <a href="login.html" class="btn btn-light btn-icon" data-i18n-title="my_account" data-i18n-aria-label="my_account">
-            <i class="bi bi-person-circle"></i>
+          <a
+            href="login.html"
+            class="btn btn-light btn-icon"
+            title="A minha conta"
+            aria-label="A minha conta"
+            data-i18n-title="my_account"
+            data-i18n-aria-label="my_account"
+          >
+            <i class="bi bi-person-circle" aria-hidden="true"></i>
           </a>
 
-          <a href="carrinho.html" class="btn btn-light btn-icon position-relative" data-i18n-title="cart" data-i18n-aria-label="cart">
-            <i class="bi bi-cart3"></i>
+          <a
+            href="carrinho.html"
+            class="btn btn-light btn-icon position-relative"
+            title="Carrinho"
+            aria-label="Carrinho"
+            data-i18n-title="cart"
+            data-i18n-aria-label="cart"
+          >
+            <i class="bi bi-cart3" aria-hidden="true"></i>
 
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cart-count">
+            <span
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              id="cart-count"
+            >
               0
             </span>
           </a>
@@ -94,7 +203,9 @@
   <!-- Cabeçalho -->
   <section class="page-header">
     <div class="container">
-      <h1 data-i18n="checkout_title">Finalizar compra</h1>
+      <h1 data-i18n="checkout_title">
+        Finalizar compra
+      </h1>
 
       <p class="mb-0" data-i18n="checkout_subtitle">
         Confirme os seus dados e finalize o pedido.
@@ -105,158 +216,443 @@
   <!-- Checkout -->
   <section class="section">
     <div class="container">
+      <!-- Carrinho vazio -->
       <div id="checkout-empty" class="text-center py-5 d-none">
-        <i class="bi bi-cart-x display-3 text-muted"></i>
+        <i
+          class="bi bi-cart-x display-3 text-muted"
+          aria-hidden="true"
+        ></i>
 
         <h3 class="mt-3" data-i18n="cart_empty">
           O seu carrinho está vazio
         </h3>
 
-        <a href="produtos.html" class="btn btn-primary mt-3" data-i18n="continue_shopping">
+        <a
+          href="produtos.html"
+          class="btn btn-primary mt-3"
+          data-i18n="continue_shopping"
+        >
           Continuar a comprar
         </a>
       </div>
 
+      <!-- Checkout -->
       <div id="checkout-content" class="d-none">
         <div class="row g-4">
           <!-- Formulário -->
           <div class="col-lg-8">
-            <form id="checkout-form" class="checkout-form">
+            <form
+              id="checkout-form"
+              class="checkout-form"
+              novalidate
+            >
+              <!-- Dados do cliente -->
               <div class="checkout-card mb-4">
                 <h5>
-                  <i class="bi bi-person me-2"></i>
-                  <span data-i18n="customer_information">Dados do cliente</span>
+                  <i class="bi bi-person me-2" aria-hidden="true"></i>
+                  <span data-i18n="customer_information">
+                    Dados do cliente
+                  </span>
                 </h5>
 
                 <div class="row g-3">
                   <div class="col-md-6">
-                    <label class="form-label" data-i18n="full_name">Nome completo</label>
-                    <input type="text" class="form-control" id="customer-name" required>
+                    <label
+                      for="customer-name"
+                      class="form-label"
+                      data-i18n="full_name"
+                    >
+                      Nome completo
+                    </label>
+
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="customer-name"
+                      required
+                      maxlength="150"
+                    >
                   </div>
 
                   <div class="col-md-6">
-                    <label class="form-label" data-i18n="email">E-mail</label>
-                    <input type="email" class="form-control" id="customer-email" required>
+                    <label
+                      for="customer-email"
+                      class="form-label"
+                      data-i18n="email"
+                    >
+                      E-mail
+                    </label>
+
+                    <input
+                      type="email"
+                      class="form-control"
+                      id="customer-email"
+                      required
+                      maxlength="254"
+                    >
                   </div>
 
                   <div class="col-md-6">
-                    <label class="form-label" data-i18n="phone">Telefone</label>
-                    <input type="tel" class="form-control" id="customer-phone" placeholder="+258 8X XXX XXXX" required>
+                    <label
+                      for="customer-phone"
+                      class="form-label"
+                      data-i18n="phone"
+                    >
+                      Telefone
+                    </label>
+
+                    <input
+                      type="tel"
+                      class="form-control"
+                      id="customer-phone"
+                      placeholder="+258 8X XXX XXXX"
+                      required
+                      maxlength="20"
+                    >
                   </div>
 
                   <div class="col-md-6">
-                    <label class="form-label" data-i18n="alternative_phone">Telefone alternativo</label>
-                    <input type="tel" class="form-control" id="customer-phone-alt" placeholder="+258 8X XXX XXXX">
+                    <label
+                      for="customer-phone-alt"
+                      class="form-label"
+                      data-i18n="alternative_phone"
+                    >
+                      Telefone alternativo
+                    </label>
+
+                    <input
+                      type="tel"
+                      class="form-control"
+                      id="customer-phone-alt"
+                      placeholder="+258 8X XXX XXXX"
+                      maxlength="20"
+                    >
                   </div>
                 </div>
               </div>
 
+              <!-- Receção -->
               <div class="checkout-card mb-4">
                 <h5>
-                  <i class="bi bi-geo-alt me-2"></i>
-                  <span data-i18n="delivery_address">Morada de entrega</span>
+                  <i class="bi bi-truck me-2" aria-hidden="true"></i>
+                  Como queres receber?
                 </h5>
 
                 <div class="row g-3">
                   <div class="col-md-6">
-                    <label class="form-label" data-i18n="province">Província</label>
+                    <label class="fulfillment-option">
+                      <input
+                        type="radio"
+                        name="fulfillment_method"
+                        value="pickup"
+                        id="fulfillment-method-pickup"
+                      >
 
-                    <select class="form-select" id="customer-province" required>
-                      <option value="">Selecione</option>
-                      <option value="Maputo Cidade">Maputo Cidade</option>
-                      <option value="Maputo Província">Maputo Província</option>
-                      <option value="Gaza">Gaza</option>
-                      <option value="Inhambane">Inhambane</option>
-                      <option value="Sofala">Sofala</option>
-                      <option value="Manica">Manica</option>
-                      <option value="Tete">Tete</option>
-                      <option value="Zambézia">Zambézia</option>
-                      <option value="Nampula">Nampula</option>
-                      <option value="Cabo Delgado">Cabo Delgado</option>
-                      <option value="Niassa">Niassa</option>
-                    </select>
+                      <span>
+                        <strong>
+                          <i class="bi bi-shop me-1" aria-hidden="true"></i>
+                          Buscar na loja
+                        </strong>
+
+                        <small>
+                          Recolhe o pedido na loja escolhida.
+                        </small>
+                      </span>
+                    </label>
                   </div>
 
                   <div class="col-md-6">
-                    <label class="form-label" data-i18n="city">Cidade / Distrito</label>
-                    <input type="text" class="form-control" id="customer-city" required>
-                  </div>
+                    <label class="fulfillment-option">
+                      <input
+                        type="radio"
+                        name="fulfillment_method"
+                        value="delivery"
+                        id="fulfillment-method-delivery"
+                      >
 
-                  <div class="col-md-6">
-                    <label class="form-label" data-i18n="neighborhood">Bairro</label>
-                    <input type="text" class="form-control" id="customer-neighborhood" required>
-                  </div>
+                      <span>
+                        <strong>
+                          <i class="bi bi-truck me-1" aria-hidden="true"></i>
+                          Entrega ao domicílio
+                        </strong>
 
-                  <div class="col-md-6">
-                    <label class="form-label" data-i18n="street">Rua / Avenida</label>
-                    <input type="text" class="form-control" id="customer-street" required>
+                        <small>
+                          Recebe o pedido no endereço indicado.
+                        </small>
+                      </span>
+                    </label>
                   </div>
 
                   <div class="col-12">
-                    <label class="form-label" data-i18n="address_reference">Ponto de referência</label>
-                    <textarea class="form-control" id="customer-reference" rows="3"></textarea>
+                    <div
+                      class="alert alert-warning mb-0"
+                      id="fulfillment-message"
+                    >
+                      Escolhe buscar na loja ou entrega ao domicílio.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Recolha -->
+                <div
+                  class="pickup-fields mt-3"
+                  id="pickup-fields"
+                >
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label
+                        for="pickup-store"
+                        class="form-label"
+                      >
+                        Loja de recolha *
+                      </label>
+
+                      <select
+                        class="form-select"
+                        id="pickup-store"
+                      >
+                        <option value="loja-central">
+                          Loja Central
+                        </option>
+                      </select>
+                    </div>
+
+                    <div class="col-md-3">
+                      <label
+                        for="pickup-date"
+                        class="form-label"
+                      >
+                        Data preferida
+                      </label>
+
+                      <input
+                        type="date"
+                        class="form-control"
+                        id="pickup-date"
+                      >
+                    </div>
+
+                    <div class="col-md-3">
+                      <label
+                        for="pickup-period"
+                        class="form-label"
+                      >
+                        Período
+                      </label>
+
+                      <select
+                        class="form-select"
+                        id="pickup-period"
+                      >
+                        <option value="">
+                          Qualquer período
+                        </option>
+                        <option value="manha">
+                          Manhã
+                        </option>
+                        <option value="tarde">
+                          Tarde
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Entrega -->
+                <div
+                  class="delivery-fields mt-3"
+                  id="delivery-fields"
+                >
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label
+                        for="customer-province"
+                        class="form-label"
+                        data-i18n="province"
+                      >
+                        Província
+                      </label>
+
+                      <select
+                        class="form-select"
+                        id="customer-province"
+                      >
+                        <option value="">
+                          Selecione
+                        </option>
+                        <option value="Maputo Cidade">
+                          Maputo Cidade
+                        </option>
+                        <option value="Maputo Província">
+                          Maputo Província
+                        </option>
+                        <option value="Gaza">
+                          Gaza
+                        </option>
+                        <option value="Inhambane">
+                          Inhambane
+                        </option>
+                        <option value="Sofala">
+                          Sofala
+                        </option>
+                        <option value="Manica">
+                          Manica
+                        </option>
+                        <option value="Tete">
+                          Tete
+                        </option>
+                        <option value="Zambézia">
+                          Zambézia
+                        </option>
+                        <option value="Nampula">
+                          Nampula
+                        </option>
+                        <option value="Cabo Delgado">
+                          Cabo Delgado
+                        </option>
+                        <option value="Niassa">
+                          Niassa
+                        </option>
+                      </select>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label
+                        for="customer-city"
+                        class="form-label"
+                        data-i18n="city"
+                      >
+                        Cidade / Distrito
+                      </label>
+
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="customer-city"
+                        maxlength="100"
+                      >
+                    </div>
+
+                    <div class="col-md-6">
+                      <label
+                        for="customer-neighborhood"
+                        class="form-label"
+                        data-i18n="neighborhood"
+                      >
+                        Bairro
+                      </label>
+
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="customer-neighborhood"
+                        maxlength="120"
+                      >
+                    </div>
+
+                    <div class="col-md-6">
+                      <label
+                        for="customer-street"
+                        class="form-label"
+                        data-i18n="street"
+                      >
+                        Rua / Avenida
+                      </label>
+
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="customer-street"
+                        maxlength="200"
+                      >
+                    </div>
+
+                    <div class="col-12">
+                      <label
+                        for="customer-reference"
+                        class="form-label"
+                        data-i18n="address_reference"
+                      >
+                        Ponto de referência
+                      </label>
+
+                      <textarea
+                        class="form-control"
+                        id="customer-reference"
+                        rows="2"
+                        maxlength="300"
+                      ></textarea>
+                    </div>
                   </div>
                 </div>
               </div>
 
+              <!-- Pagamento -->
               <div class="checkout-card mb-4">
                 <h5>
-                  <i class="bi bi-credit-card me-2"></i>
-                  <span data-i18n="payment_method">Método de pagamento</span>
+                  <i class="bi bi-credit-card me-2" aria-hidden="true"></i>
+                  <span data-i18n="payment_method">
+                    Método de pagamento
+                  </span>
                 </h5>
 
-                <div class="payment-options">
-                  <label class="payment-option">
-                    <input type="radio" name="payment_method" value="multicaixa_express" checked>
-
-                    <div class="payment-option-body">
-                      <i class="bi bi-phone"></i>
-
-                      <div>
-                        <strong data-i18n="multicaixa_express">Multicaixa Express</strong>
-                        <small data-i18n="multicaixa_express_text">Receberá instruções para confirmar o pagamento.</small>
-                      </div>
-                    </div>
+                <div class="mb-3">
+                  <label
+                    for="payment-method"
+                    class="form-label"
+                  >
+                    Escolhe o método *
                   </label>
 
-                  <label class="payment-option">
-                    <input type="radio" name="payment_method" value="bank_transfer">
+                  <select
+                    class="form-select"
+                    id="payment-method"
+                    required
+                  >
+                    <option value="">
+                      Escolhe uma opção
+                    </option>
+                    <option value="cash_on_pickup">
+                      Pagar na recolha
+                    </option>
+                    <option value="cash_on_delivery">
+                      Pagar na entrega
+                    </option>
+                    <option value="multicaixa_express">
+                      Multicaixa Express
+                    </option>
+                    <option value="bank_transfer">
+                      Transferência bancária
+                    </option>
+                    <option value="mpesa">
+                      M-Pesa
+                    </option>
+                    <option value="emola">
+                      e-Mola
+                    </option>
+                  </select>
 
-                    <div class="payment-option-body">
-                      <i class="bi bi-bank"></i>
-
-                      <div>
-                        <strong data-i18n="bank_transfer">Transferência bancária</strong>
-                        <small data-i18n="bank_transfer_text">Envie o comprovativo após a transferência.</small>
-                      </div>
-                    </div>
-                  </label>
-
-                  <label class="payment-option">
-                    <input type="radio" name="payment_method" value="cash_on_delivery">
-
-                    <div class="payment-option-body">
-                      <i class="bi bi-cash-coin"></i>
-
-                      <div>
-                        <strong data-i18n="cash_on_delivery">Pagamento na entrega</strong>
-                        <small data-i18n="cash_on_delivery_text">Pague em dinheiro ao receber o pedido.</small>
-                      </div>
-                    </div>
-                  </label>
+                  <div class="form-text">
+                    M-Pesa e e-Mola ficarão disponíveis
+                    quando a integração da operadora for ativada.
+                  </div>
                 </div>
               </div>
 
+              <!-- Notas -->
               <div class="checkout-card mb-4">
                 <h5>
-                  <i class="bi bi-chat-left-text me-2"></i>
-                  <span data-i18n="order_notes">Notas do pedido</span>
+                  <i class="bi bi-chat-left-text me-2" aria-hidden="true"></i>
+                  <span data-i18n="order_notes">
+                    Notas do pedido
+                  </span>
                 </h5>
 
                 <textarea
                   class="form-control"
                   id="order-notes"
                   rows="3"
+                  maxlength="500"
                   data-i18n-placeholder="order_notes_placeholder"
                   placeholder="Escreva alguma observação sobre a entrega ou o pedido..."
                 ></textarea>
@@ -267,25 +663,40 @@
           <!-- Resumo -->
           <div class="col-lg-4">
             <div class="checkout-summary">
-              <h5 data-i18n="order_summary">Resumo do pedido</h5>
+              <h5 data-i18n="order_summary">
+                Resumo do pedido
+              </h5>
 
               <div id="checkout-items"></div>
 
               <hr>
 
               <div class="summary-row">
-                <span data-i18n="subtotal">Subtotal</span>
-                <strong id="checkout-subtotal">MT 0,00</strong>
+                <span data-i18n="subtotal">
+                  Subtotal
+                </span>
+
+                <strong id="checkout-subtotal">
+                  MT 0,00
+                </strong>
               </div>
 
               <div class="summary-row">
-                <span data-i18n="delivery_fee">Taxa de entrega</span>
-                <strong id="checkout-delivery">MT 0,00</strong>
+                <span data-i18n="delivery_fee">
+                  Taxa de entrega
+                </span>
+
+                <strong id="checkout-delivery">
+                  MT 0,00
+                </strong>
               </div>
 
               <!-- Cupom -->
               <div class="coupon-box mt-3">
-                <label for="coupon-code" class="form-label">
+                <label
+                  for="coupon-code"
+                  class="form-label"
+                >
                   Código do cupom
                 </label>
 
@@ -295,7 +706,10 @@
                     id="coupon-code"
                     class="form-control"
                     placeholder="Ex.: BEMVINDO10"
+                    maxlength="64"
                     autocomplete="off"
+                    autocapitalize="characters"
+                    spellcheck="false"
                   >
 
                   <button
@@ -307,27 +721,56 @@
                   </button>
                 </div>
 
-                <p id="coupon-message" class="small mt-2 mb-0"></p>
+                <p
+                  id="coupon-message"
+                  class="small mt-2 mb-0"
+                  role="status"
+                  aria-live="polite"
+                ></p>
               </div>
 
-              <div class="summary-row d-none mt-2" id="coupon-discount-row">
+              <div
+                class="summary-row d-none mt-2"
+                id="coupon-discount-row"
+              >
                 <span>Desconto</span>
-                <strong id="checkout-discount" class="text-success">MT 0,00</strong>
+
+                <strong
+                  id="checkout-discount"
+                  class="text-success"
+                >
+                  MT 0,00
+                </strong>
               </div>
 
               <hr>
 
               <div class="summary-row total-row">
-                <span data-i18n="total">Total</span>
-                <strong id="checkout-total">MT 0,00</strong>
+                <span data-i18n="total">
+                  Total
+                </span>
+
+                <strong id="checkout-total">
+                  MT 0,00
+                </strong>
               </div>
 
-              <button class="btn btn-primary btn-lg w-100 mt-3" id="place-order-button" type="button">
-                <i class="bi bi-check2-circle me-2"></i>
-                <span data-i18n="place_order">Confirmar pedido</span>
+              <button
+                class="btn btn-primary btn-lg w-100 mt-3"
+                id="place-order-button"
+                type="button"
+              >
+                <i class="bi bi-check2-circle me-2" aria-hidden="true"></i>
+                <span data-i18n="place_order">
+                  Confirmar pedido
+                </span>
               </button>
 
-              <a href="carrinho.html" class="btn btn-outline-secondary w-100 mt-2" data-i18n="back_to_cart">
+              <a
+                href="carrinho.html"
+                class="btn btn-outline-secondary w-100 mt-2"
+                data-i18n="back_to_cart"
+              >
                 Voltar ao carrinho
               </a>
             </div>
@@ -345,16 +788,20 @@
           <h5 class="footer-title">Loja MZ</h5>
 
           <p data-i18n="footer_about">
-            A sua loja online para malas, roupas, telemóveis e acessórios em Moçambique.
+            A sua loja online para malas, roupas, telemóveis
+            e acessórios em Moçambique.
           </p>
         </div>
 
         <div class="col-lg-4">
-          <h5 class="footer-title" data-i18n="contact">Contacto</h5>
+          <h5 class="footer-title" data-i18n="contact">
+            Contacto
+          </h5>
 
           <ul class="footer-links">
             <li>
               <i class="bi bi-envelope me-2" aria-hidden="true"></i>
+
               <a href="mailto:leonildokeysse49@gmail.com">
                 leonildokeysse49@gmail.com
               </a>
@@ -373,19 +820,27 @@
         </div>
 
         <div class="col-lg-4">
-          <h5 class="footer-title" data-i18n="quick_links">Links rápidos</h5>
+          <h5 class="footer-title" data-i18n="quick_links">
+            Links rápidos
+          </h5>
 
           <ul class="footer-links">
             <li>
-              <a href="produtos.html" data-i18n="products">Produtos</a>
+              <a href="produtos.html" data-i18n="products">
+                Produtos
+              </a>
             </li>
 
             <li>
-              <a href="carrinho.html" data-i18n="cart">Carrinho</a>
+              <a href="carrinho.html" data-i18n="cart">
+                Carrinho
+              </a>
             </li>
 
             <li>
-              <a href="conta.html" data-i18n="my_account">A minha conta</a>
+              <a href="conta.html" data-i18n="my_account">
+                A minha conta
+              </a>
             </li>
           </ul>
         </div>
@@ -394,7 +849,10 @@
       <hr class="footer-divider">
 
       <div class="text-center small">
-        © <span id="year"></span> Loja MZ. <span data-i18n="rights">Todos os direitos reservados.</span>
+        © <span id="year"></span> Loja MZ.
+        <span data-i18n="rights">
+          Todos os direitos reservados.
+        </span>
       </div>
     </div>
   </footer>

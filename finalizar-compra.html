@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Finalizar compra — Loja MZ</title>
+
+  <link rel="icon" href="assets/img/favicon.png">
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css"
+    rel="stylesheet"
+  >
+
+  <link href="assets/css/style.css" rel="stylesheet">
+
+  <style>
+    .checkout-section {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .checkout-summary-item {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .checkout-summary-item:last-child {
+      border-bottom: 0;
+    }
+
+    .checkout-summary-image {
+      width: 64px;
+      height: 64px;
+      flex-shrink: 0;
+      object-fit: cover;
+      border-radius: 10px;
+      background: #f1f5f9;
+    }
+
+    .checkout-total {
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .delivery-fields,
+    .pickup-fields {
+      display: none;
+    }
+
+    .delivery-fields.is-visible,
+    .pickup-fields.is-visible {
+      display: block;
+    }
+  </style>
+</head>
+
+<body data-page="checkout">
+  <nav class="navbar navbar-expand-lg main-navbar sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="index.html">
+        <i class="bi bi-bag-heart-fill me-2" aria-hidden="true"></i>
+        Loja MZ
+      </a>
+
+      <a href="carrinho.html" class="btn btn-light btn-sm">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Voltar ao carrinho
+      </a>
+    </div>
+  </nav>
+
+  <main class="section">
+    <div class="container">
+      <h1 class="section-title mb-4">
+        Finalizar compra
+      </h1>
+
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <form id="checkout-form" novalidate>
+            <!-- Dados -->
+            <section class="checkout-section mb-4">
+              <h2 class="h5 mb-3">Dados do cliente</h2>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="customer-name" class="form-label">
+                    Nome completo *
+                  </label>
+
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="customer-name"
+                    required
+                    maxlength="150"
+                  >
+                </div>
+
+                <div class="col-md-6">
+                  <label for="customer-phone" class="form-label">
+                    Telefone / WhatsApp *
+                  </label>
+
+                  <input
+                    type="tel"
+                    class="form-control"
+                    id="customer-phone"
+                    required
+                    maxlength="20"
+                    placeholder="+258..."
+                  >
+                </div>
+
+                <div class="col-12">
+                  <label for="customer-email" class="form-label">
+                    E-mail
+                  </label>
+
+                  <input
+                    type="email"
+                    class="form-control"
+                    id="customer-email"
+                    maxlength="254"
+                  >
+                </div>
+
+                <div class="col-12">
+                  <label for="customer-notes" class="form-label">
+                    Nota para a loja
+                  </label>
+
+                  <textarea
+                    class="form-control"
+                    id="customer-notes"
+                    rows="2"
+                    maxlength="500"
+                  ></textarea>
+                </div>
+              </div>
+            </section>
+
+            <!-- Receção -->
+            <section class="checkout-section mb-4">
+              <h2 class="h5 mb-3">Como queres receber?</h2>
+
+              <div class="mb-3">
+                <label for="fulfillment-method" class="form-label">
+                  Método de receção *
+                </label>
+
+                <select
+                  class="form-select"
+                  id="fulfillment-method"
+                  required
+                >
+                  <option value="">
+                    Escolhe uma opção
+                  </option>
+                  <option value="pickup">
+                    Buscar na loja
+                  </option>
+                  <option value="delivery">
+                    Entrega ao domicílio
+                  </option>
+                </select>
+              </div>
+
+              <!-- Recolha -->
+              <div
+                class="pickup-fields"
+                id="pickup-fields"
+              >
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label for="pickup-store" class="form-label">
+                      Loja de recolha *
+                    </label>
+
+                    <select
+                      class="form-select"
+                      id="pickup-store"
+                    >
+                      <option value="loja-central">
+                        Loja Central
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-3">
+                    <label for="pickup-date" class="form-label">
+                      Data preferida
+                    </label>
+
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="pickup-date"
+                    >
+                  </div>
+
+                  <div class="col-md-3">
+                    <label for="pickup-period" class="form-label">
+                      Período
+                    </label>
+
+                    <select
+                      class="form-select"
+                      id="pickup-period"
+                    >
+                      <option value="">
+                        Qualquer período
+                      </option>
+                      <option value="manha">
+                        Manhã
+                      </option>
+                      <option value="tarde">
+                        Tarde
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Entrega -->
+              <div
+                class="delivery-fields"
+                id="delivery-fields"
+              >
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label for="delivery-province" class="form-label">
+                      Província *
+                    </label>
+
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="delivery-province"
+                      maxlength="100"
+                    >
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="delivery-city" class="form-label">
+                      Cidade / distrito *
+                    </label>
+
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="delivery-city"
+                      maxlength="100"
+                    >
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="delivery-neighborhood" class="form-label">
+                      Bairro ou zona *
+                    </label>
+
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="delivery-neighborhood"
+                      maxlength="120"
+                    >
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="delivery-fee" class="form-label">
+                      Taxa de entrega
+                    </label>
+
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="delivery-fee"
+                      value="0"
+                      min="0"
+                      step="0.01"
+                      readonly
+                    >
+
+                    <div class="form-text">
+                      A taxa é definida pela loja.
+                    </div>
+                  </div>
+
+                  <div class="col-12">
+                    <label for="delivery-address" class="form-label">
+                      Endereço completo *
+                    </label>
+
+                    <textarea
+                      class="form-control"
+                      id="delivery-address"
+                      rows="2"
+                      maxlength="500"
+                    ></textarea>
+                  </div>
+
+                  <div class="col-12">
+                    <label for="delivery-reference" class="form-label">
+                      Ponto de referência
+                    </label>
+
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="delivery-reference"
+                      maxlength="200"
+                    >
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Pagamento -->
+            <section class="checkout-section mb-4">
+              <h2 class="h5 mb-3">Pagamento</h2>
+
+              <div class="mb-3">
+                <label for="payment-method" class="form-label">
+                  Método de pagamento *
+                </label>
+
+                <select
+                  class="form-select"
+                  id="payment-method"
+                  required
+                >
+                  <option value="">
+                    Escolhe uma opção
+                  </option>
+                  <option value="cash_on_pickup">
+                    Pagar na recolha
+                  </option>
+                  <option value="cash_on_delivery">
+                    Pagar na entrega
+                  </option>
+                  <option value="mpesa">
+                    M-Pesa
+                  </option>
+                  <option value="emola">
+                    e-Mola
+                  </option>
+                </select>
+
+                <div class="form-text">
+                  M-Pesa e e-Mola ficarão disponíveis
+                  quando a integração da operadora for ativada.
+                </div>
+              </div>
+            </section>
+
+            <button
+              type="submit"
+              class="btn btn-primary btn-lg w-100"
+              id="place-order-button"
+            >
+              <i class="bi bi-bag-check me-2" aria-hidden="true"></i>
+              Confirmar pedido
+            </button>
+          </form>
+        </div>
+
+        <!-- Resumo -->
+        <div class="col-lg-5">
+          <section
+            class="checkout-section position-sticky"
+            style="top: 100px"
+          >
+            <h2 class="h5 mb-3">Resumo do pedido</h2>
+
+            <div id="checkout-items"></div>
+
+            <hr>
+
+            <div class="d-flex justify-content-between mb-2">
+              <span>Subtotal</span>
+              <strong id="checkout-subtotal">MZN 0,00</strong>
+            </div>
+
+            <div class="d-flex justify-content-between mb-2">
+              <span>Entrega</span>
+              <strong id="checkout-delivery">MZN 0,00</strong>
+            </div>
+
+            <hr>
+
+            <div
+              class="d-flex justify-content-between align-items-center"
+            >
+              <span>Total</span>
+              <span
+                class="checkout-total"
+                id="checkout-total"
+              >
+                MZN 0,00
+              </span>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/supabase.js"></script>
+  <script src="assets/js/utils.js"></script>
+  <script src="assets/js/cart.js"></script>
+  <script src="assets/js/checkout.js"></script>
+</body>
+</html>
